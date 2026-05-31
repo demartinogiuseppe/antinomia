@@ -397,6 +397,18 @@ class WelcomeModal extends Modal {
 
     contentEl.createEl("h2", { text: "Benvenuto in Antinomia" });
 
+    // Banner SICUREZZA: cosa Antinomia non e' (sempre visibile, in cima)
+    const safety = contentEl.createDiv();
+    safety.style.cssText =
+      "background:rgba(220,53,69,0.10); border-left:3px solid #dc3545; " +
+      "padding:10px 12px; margin-bottom:12px; border-radius:4px; font-size:0.88em;";
+    safety.createEl("strong", { text: "⚠ Cosa Antinomia NON e'" });
+    const safetyP = safety.createEl("p");
+    safetyP.style.margin = "6px 0 0 0";
+    safetyP.setText(
+      "Questo strumento nasce per aiutarti a comprendere l'evoluzione del tuo pensiero, mappando tensioni e contraddizioni che gia' porti dentro. NON e' un sistema di supporto decisionale. Non usarlo per decidere in situazioni reali (lavoro, salute, finanza, relazioni). Le coppie che il Hunter propone sono spunti di riflessione, non verita': il modello AI puo' allucinare, semplificare, fraintendere. Ogni uso diverso da 'pratica riflessiva personale' e' improprio."
+    );
+
     // Banner avviso se Front Matter Title non e' installato/attivo
     if (!this.plugin.isFrontMatterTitleEnabled()) {
       const banner = contentEl.createDiv();
@@ -986,6 +998,18 @@ class AntinomiaSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
     containerEl.createEl("h2", { text: "Antinomia" });
+
+    // Disclaimer permanente sull'uso appropriato dello strumento
+    const disclaimer = containerEl.createDiv();
+    disclaimer.style.cssText =
+      "background:rgba(220,53,69,0.08); border-left:3px solid #dc3545; " +
+      "padding:10px 12px; margin:8px 0 16px 0; border-radius:4px; font-size:0.88em;";
+    disclaimer.createEl("strong", { text: "⚠ Uso previsto" });
+    const dp = disclaimer.createEl("p");
+    dp.style.margin = "6px 0 0 0";
+    dp.setText(
+      "Antinomia e' una pratica riflessiva personale, non un sistema di supporto decisionale. Non usarla per decidere in situazioni reali (lavoro, salute, finanza, relazioni). Le coppie del Hunter sono spunti, non verita': l'AI puo' allucinare. Ogni uso diverso e' improprio."
+    );
     containerEl.createEl("p", {
       text: "Backend AI configurabili come profili. Puoi avere piu' profili (es. LM Studio locale + Anthropic Cloud) e switchare quale e' attivo, con override opzionale per il Hunter.",
     });
@@ -3863,6 +3887,15 @@ class HunterResultsView extends ItemView {
     renderAntinomiaNav(this.plugin, container as HTMLElement, this.leaf);
     renderVaultLabel(container, this.plugin.settings.vaultDisplayName);
     container.createEl("h4", { text: "Contradiction Hunter" });
+
+    // Disclaimer permanente sopra ogni run
+    const warn = container.createEl("div");
+    warn.style.cssText =
+      "background:rgba(220,53,69,0.08); border-left:3px solid #dc3545; " +
+      "padding:6px 10px; margin-bottom:8px; border-radius:4px; font-size:0.78em; opacity:0.9;";
+    warn.setText(
+      "⚠ Spunti riflessivi, non verita'. L'AI puo' allucinare. Non usare per decidere in situazioni reali."
+    );
 
     // ---- First-time hint banner ----
     if (!this.plugin.settings.hintsHunterShown) {
