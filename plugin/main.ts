@@ -1411,14 +1411,14 @@ class AntinomiaSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Vault di esempio")
       .setDesc(
-        "Crea 3 tensioni + 2 substrate ben costruiti per vedere subito come si comporta il Hunter. Marcate antinomia_esempio: true, cancellabili in un click."
+        "Crea 21 note (3 tensioni + 15 substrate + 1 defeated + 1 principio Design C) + ESEMPIO-CHIAVE.md nella root con guida per beta tester. Le note contengono contraddizioni reali da scoprire col Hunter, oltre a rumore di controllo. Tutte marcate antinomia_esempio: true, cancellabili in un click."
       )
       .addButton((b) =>
         b.setButtonText("Crea esempi").onClick(() => {
           new ConfirmModal(
             this.app,
             "Crea vault di esempio",
-            "Verranno create 5 note marcate come esempio (prefisso 'ESEMPIO -' nel titolo, flag antinomia_esempio: true).",
+            "Verranno create 21 note demo (3 tensioni + 15 substrate + 1 defeated + 1 principio Design C) + ESEMPIO-CHIAVE.md nella root del vault. Tutte cancellabili in un click via 'Cancella esempi'.",
             "Crea",
             () => void this.plugin.createExampleNotes()
           ).open();
@@ -7278,7 +7278,7 @@ export default class AntinomiaPlugin extends Plugin {
         new ConfirmModal(
           this.app,
           "Crea vault di esempio",
-          "Verranno create 5 note marcate come esempio (prefisso 'ESEMPIO -' nel titolo, flag antinomia_esempio: true). Cancellabili in 1 click col comando 'cancella esempi'.",
+          "Verranno create 21 note demo + ESEMPIO-CHIAVE.md per i beta tester. Tutte marcate antinomia_esempio: true, cancellabili in 1 click col comando 'cancella esempi'.",
           "Crea",
           () => void this.createExampleNotes()
         ).open();
@@ -7447,9 +7447,11 @@ export default class AntinomiaPlugin extends Plugin {
   }
 
   /**
-   * Create a small example vault: 3 tensions + 2 substrate, all with
-   * `antinomia_esempio: true` so they can be wiped in one go via
-   * `deleteExampleNotes()`.
+   * Create a rich example vault for beta testers:
+   *   - 18 note (3 tensioni aperte + 15 substrate) tratte dal test_vault_disordinato
+   *   - 2 note Design C: 1 principio P + 1 defeated D collegati (motivo: elevata)
+   *   - 1 ESEMPIO-CHIAVE.md nella root del vault (documentazione contraddizioni seminate)
+   * Tutte marcate `antinomia_esempio: true` per cancellazione one-click.
    */
   async createExampleNotes(): Promise<void> {
     await ensureFolder(this.app, FOLDER.notes);
@@ -7494,68 +7496,250 @@ antinomia_esempio: true
 - **Originale:**
 `;
 
-    const items: Array<{ prefix: string; content: string }> = [
-      {
-        prefix: "T",
+    // Template principio (Design C: file separato, origine_tensione punta al defeated)
+    const principleTpl = (
+      titolo: string,
+      ifA: string, thenA: string,
+      ifB: string, thenB: string,
+      grey: string,
+      origineBasename: string
+    ) => `---
+antinomia_tipo: ${TYPE.principle}
+titolo: ${yamlQuote(titolo)}
+data: ${today}
+data_modifica: ${today}
+origine_tensione: "[[${origineBasename}]]"
+antinomia_esempio: true
+collegamenti: []
+---
+## IF / THEN
+
+- **IF (A):** ${ifA}
+- **THEN (A):** ${thenA}
+
+- **IF (B):** ${ifB}
+- **THEN (B):** ${thenB}
+
+## GREY ZONE
+
+${grey}
+
+## Origine (tensione)
+
+> Deriva da: [[${origineBasename}]]
+
+_(testo originale conservato nel defeated linkato)_
+`;
+
+    // Template defeated motivo=elevata (Design C: la tensione originale convertita in defeated)
+    const defeatedTpl = (
+      titolo: string,
+      a: string, b: string,
+      sostituitaDaBasename: string
+    ) => `---
+antinomia_tipo: ${TYPE.defeated}
+titolo: ${yamlQuote(titolo)}
+motivo: elevata
+data: ${today}
+data_modifica: ${today}
+sostituita_da: "[[${sostituitaDaBasename}]]"
+antinomia_esempio: true
+collegamenti: []
+---
+- **A (originale):** ${a}
+- **B (originale):** ${b}
+
+> Sostituita da: [[${sostituitaDaBasename}]]
+`;
+
+    // 18 note del test_vault_disordinato + 2 Design C (P + D collegati).
+    // I basename usano prefisso ESEMPIO- per essere identificabili a vista.
+    const PRINC_ID = "ESEMPIO-P-quantita-qualita";
+    const DEF_ID = "ESEMPIO-D-quantita-qualita";
+    type Item = { id: string; content: string };
+    const items: Item[] = [
+      // ====== 3 tensioni dichiarate ======
+      { id: "ESEMPIO-T-02-remoto-vs-ufficio",
         content: tensionTpl(
-          "ESEMPIO - Solitudine creativa vs correzione sociale",
-          "Il lavoro creativo profondo richiede solitudine prolungata. La presenza altrui diluisce l'intuizione e spinge verso il conformismo.",
-          "La condivisione continua con altri corregge gli errori e impedisce ai pensieri di girare a vuoto. Da solo si finisce per confermare i propri pregiudizi.",
-          "L'individuo isolato accede a una fonte di sapere migliore di quella sociale.",
-          "Il pensiero individuale, senza correzione esterna, tende sistematicamente all'errore."
-        ),
-      },
-      {
-        prefix: "T",
+          "ESEMPIO - Lavoro remoto vs ufficio",
+          "Il lavoro da remoto mi rende piu' produttivo perche' nessuno mi interrompe.",
+          "In ufficio concludo molto di piu', il confronto diretto sblocca le cose."
+        )},
+      { id: "ESEMPIO-T-08-esperienze-vs-beni",
         content: tensionTpl(
-          "ESEMPIO - Processi codificati vs giudizio esperto",
-          "Per ridurre il rischio servono processi, checklist, regole codificate. L'eccezionalita' individuale e' l'inizio della catastrofe.",
-          "Le decisioni davvero importanti sfuggono ai processi. Nei momenti critici contano il giudizio, l'esperienza diretta, l'eccezione consapevole alla regola.",
-          "La conoscenza rilevante deve essere centralizzata e codificata in regole per essere sicura.",
-          "La conoscenza locale e tacita degli esperti non e' codificabile e va lasciata operare."
-        ),
-      },
-      {
-        prefix: "T",
+          "ESEMPIO - Esperienze vs beni materiali",
+          "Spendere per esperienze (viaggi, corsi) vale piu' che accumulare beni materiali.",
+          "I beni durano, le esperienze svaniscono; investire in cose solide e' piu' saggio."
+        )},
+      { id: "ESEMPIO-T-15-social-tempo-vs-brand",
         content: tensionTpl(
-          "ESEMPIO - Apprendimento: pratica vs teoria",
-          "L'apprendimento vero avviene solo facendo. La teoria senza pratica e' inerte; si capisce davvero qualcosa solo quando si sbaglia provandola.",
-          "L'esperienza non guidata da una struttura teorica ripete gli stessi errori. Chi pratica senza capire diventa piu' rapido ma non piu' profondo.",
-          "L'esperienza diretta e' la fonte primaria di conoscenza affidabile.",
-          "La struttura teorica precede e organizza l'esperienza; senza di essa, la pratica e' cieca."
-        ),
-      },
-      {
-        prefix: "S",
-        content: substrateTpl(
-          "ESEMPIO - Cit. Kahneman sull'isolamento",
-          "Studi mostrano che in isolamento il cervello amplifica i bias di conferma: le proprie convinzioni si rafforzano senza correzione. La discussione con un peer riduce gli errori di valutazione di circa il 40%."
-        ),
-      },
-      {
-        prefix: "S",
-        content: substrateTpl(
-          "ESEMPIO - Cit. Hayek su ordine spontaneo",
-          "L'ordine spontaneo del mercato emerge dall'azione decentralizzata di milioni di agenti che inseguono i propri fini con conoscenza locale e parziale, non dal disegno centralizzato di un pianificatore che pretende di conoscere il tutto."
-        ),
-      },
+          "ESEMPIO - Social: perdita di tempo vs personal brand",
+          "I social media sono una perdita di tempo che andrebbe eliminata.",
+          "I social mi hanno fatto crescere professionalmente, sono un investimento sul mio personal brand."
+        )},
+
+      // ====== 15 substrate ======
+      { id: "ESEMPIO-S-01-decisioni-pancia",
+        content: substrateTpl("ESEMPIO - Decisioni di pancia",
+          "Le decisioni importanti vanno prese di pancia, l'istinto raramente sbaglia.")},
+      { id: "ESEMPIO-S-03-decisioni-impulso-dati",
+        content: substrateTpl("ESEMPIO - Decisioni impulsive — dati",
+          "Cit. da un libro di management: i dati mostrano che le decisioni prese d'impulso hanno un tasso di errore tre volte superiore a quelle ponderate con analisi.")},
+      { id: "ESEMPIO-S-04-spesa",
+        content: substrateTpl("ESEMPIO - Nota operativa: spesa",
+          "Oggi ho comprato il latte e il pane. Devo ricordarmi di chiamare l'idraulico.")},
+      { id: "ESEMPIO-S-05-disciplina-batte-talento",
+        content: substrateTpl("ESEMPIO - Disciplina batte talento",
+          "La disciplina conta piu' del talento: chi si impegna con costanza supera sempre il predestinato pigro.")},
+      { id: "ESEMPIO-S-06-produttivita-risultati",
+        content: substrateTpl("ESEMPIO - Produttivita' = risultati",
+          "La produttivita' non si misura in ore ma in risultati. Stare di piu' alla scrivania non significa produrre di piu'.")},
+      { id: "ESEMPIO-S-07-talento-tutto",
+        content: substrateTpl("ESEMPIO - Talento e' tutto",
+          "Il talento e' tutto. Senza un dono naturale, per quanto ti impegni, resti mediocre nelle cose che contano.")},
+      { id: "ESEMPIO-S-09-preferenze",
+        content: substrateTpl("ESEMPIO - Preferenze neutre",
+          "Mi piace il caffe' la mattina. Il blu e' il mio colore preferito.")},
+      { id: "ESEMPIO-S-10-seneca",
+        content: substrateTpl("ESEMPIO - Cit. Seneca sul tempo",
+          "Cit. Seneca: non abbiamo poco tempo, ma ne sprechiamo molto. La vita e' abbastanza lunga se si sa usarla.")},
+      { id: "ESEMPIO-S-11-carpe-diem",
+        content: substrateTpl("ESEMPIO - Carpe diem",
+          "La vita e' troppo breve per pianificare a lungo termine, bisogna godersi l'attimo perche' non si sa cosa succede domani.")},
+      { id: "ESEMPIO-S-12-delega-crescita",
+        content: substrateTpl("ESEMPIO - Delega = crescita",
+          "Delegare e' la chiave della crescita: chi vuole fare tutto da solo non scala mai oltre se stesso.")},
+      { id: "ESEMPIO-S-13-fai-da-te",
+        content: substrateTpl("ESEMPIO - Fai da te per fare bene",
+          "Se vuoi una cosa fatta bene, falla da solo. Gli altri non hanno mai la tua stessa cura.")},
+      { id: "ESEMPIO-S-14-sonno",
+        content: substrateTpl("ESEMPIO - Nota operativa: sonno",
+          "Ho dormito male stanotte. Domani riunione alle 10.")},
+      { id: "ESEMPIO-S-16-risparmio-ossessivo",
+        content: substrateTpl("ESEMPIO - Risparmio ossessivo = falsa economia",
+          "Risparmiare ossessivamente su tutto e' una falsa economia: il tempo speso a inseguire lo sconto vale piu' dello sconto stesso.")},
+      { id: "ESEMPIO-S-17-compro-economico",
+        content: substrateTpl("ESEMPIO - Compro sempre il piu' economico",
+          "Compro sempre il prodotto piu' economico disponibile, a prescindere da tutto. Ogni centesimo risparmiato e' un centesimo guadagnato.")},
+      { id: "ESEMPIO-S-18-ai-cambia-tutto",
+        content: substrateTpl("ESEMPIO - AI cambiera' tutto",
+          "L'AI cambiera' tutto nei prossimi anni, e' la rivoluzione piu' grande dai tempi di internet.")},
+
+      // ====== 2 note Design C: defeated <- principio (per mostrare arco rosso nel grafo) ======
+      { id: DEF_ID,
+        content: defeatedTpl(
+          "ESEMPIO - Quantita' vs qualita' (tensione originaria)",
+          "Per crescere serve produrre molto: piu' output, piu' iterazioni, piu' rapidita'.",
+          "La quantita' senza cura diluisce il risultato; meglio meno e fatto bene.",
+          PRINC_ID
+        )},
+      { id: PRINC_ID,
+        content: principleTpl(
+          "ESEMPIO - Principio: quantita' o qualita' secondo il contesto",
+          "fase esplorativa, costi di produzione bassi, feedback rapido",
+          "preferisci volume: itera molto, scarta in fretta",
+          "fase di consolidamento, costi alti, conseguenze durature",
+          "preferisci cura: meno output ma di livello",
+          "Esiste una zona grigia quando esplorazione e consolidamento si sovrappongono (es. lavoro creativo professionale): in quel caso il criterio diventa il costo del singolo errore.",
+          DEF_ID
+        )},
     ];
 
     let created = 0;
     for (const it of items) {
-      const id = `${it.prefix}-${stamp()}`;
-      const path = `${FOLDER.notes}/${id}.md`;
+      const path = `${FOLDER.notes}/${it.id}.md`;
       try {
         await this.app.vault.create(path, it.content);
         created++;
-        // tiny pause so timestamps differ
-        await new Promise((r) => setTimeout(r, 1100));
       } catch (e) {
-        console.error("[Antinomia] example create failed", e);
+        console.error("[Antinomia] example create failed for", it.id, e);
       }
     }
+
+    // ====== ESEMPIO-CHIAVE.md nella ROOT del vault (NON in notes/) ======
+    const chiaveContent = `---
+antinomia_esempio: true
+titolo: "ESEMPIO — Chiave delle contraddizioni seminate"
+---
+# Chiave del vault di esempio
+
+> Questo file accompagna le note ESEMPIO-* nel tuo vault. Spiega quali contraddizioni sono state seminate, cosa il Hunter dovrebbe trovare, e cosa rappresenta rumore di controllo.
+>
+> Cancella questo file (e tutte le note ESEMPIO-*) con: Settings -> Antinomia -> "Cancella esempi" oppure comando palette "Antinomia: cancella esempi".
+
+---
+
+## Contraddizioni REALI seminate (cosa il Hunter DOVREBBE trovare)
+
+### CN1 — NETTA. Decisioni di pancia vs ponderate
+- **Decisioni di pancia** ↔ **Decisioni impulsive — dati**
+- Contraddizione frontale, quasi esplicita. Confidence attesa: **alta**.
+
+### CN2 — NETTA. Talento vs disciplina
+- **Disciplina batte talento** ↔ **Talento e' tutto**
+- Opposizione diretta su quale fattore conta. Confidence attesa: **alta**.
+
+### CN3 — MEDIA. Fai da solo vs delega
+- **Delega = crescita** ↔ **Fai da te per fare bene**
+- Contraddizione chiara ma con registri diversi. Confidence attesa: **medio-alta**.
+
+### CN4 — MEDIA, substrate↔substrate. Risparmio
+- **Risparmio ossessivo = falsa economia** ↔ **Compro sempre il piu' economico**
+- Test della scansione substrate↔substrate. Confidence attesa: **media**.
+
+### CN5 — SOTTILE. Tempo: Seneca vs carpe diem
+- **Cit. Seneca sul tempo** ↔ **Carpe diem**
+- Contraddizione filosofica, meno lessicalmente evidente. Confidence attesa: **bassa-media**.
+
+---
+
+## RUMORE — elementi che NON devono generare contraddizioni
+
+- **Nota operativa: spesa** (latte, pane, idraulico)
+- **Preferenze neutre** (caffe', colore blu)
+- **Nota operativa: sonno** (dormito male, riunione domani)
+- **AI cambiera' tutto** (opinione isolata, nessun opposto nel vault)
+
+Se il Hunter accoppia uno di questi con "contraddizione", e' un FALSO POSITIVO.
+
+---
+
+## Tensioni gia' marcate come tali (NON le scopre il Hunter, sono gia' aperte)
+
+- **Lavoro remoto vs ufficio**
+- **Esperienze vs beni materiali**
+- **Social: perdita di tempo vs personal brand**
+
+NB: la "Produttivita' = risultati" tocca lo stesso tema di "Lavoro remoto vs ufficio". Il Hunter POTREBBE collegarle — connessione legittima debole, non un errore.
+
+---
+
+## Esempio Design C (visibile nel grafo)
+
+- **Defeated**: ESEMPIO - Quantita' vs qualita' (tensione originaria)
+- **Principio**: ESEMPIO - Principio: quantita' o qualita' secondo il contesto
+
+Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated → sostituita_da → principio). E' un esempio di tensione gia' elevata: il principio operativo nasce dalla risoluzione della tensione, il defeated conserva la storia.
+
+---
+
+## Come misurare il Hunter
+
+- **Recall su CN1, CN2** (nette): se ne manca anche una, problema serio del modello.
+- **CN4 substrate↔substrate**: la trova? -> scansione completa funziona.
+- **CN5 sottile**: la trova? -> il modello ragiona bene; se la salta -> limite del modello, non del design.
+- **Falsi positivi sul rumore**: zero e' l'ideale.
+- **Ordinamento confidence**: le nette (CN1, CN2) dovrebbero stare sopra la sottile (CN5).
+`;
+    try {
+      await this.app.vault.create("ESEMPIO-CHIAVE.md", chiaveContent);
+      created++;
+    } catch (e) {
+      console.error("[Antinomia] example chiave create failed", e);
+    }
+
     new Notice(
-      `Esempi creati: ${created} note (3 tensioni + 2 substrate). Cancellabili con 'cancella esempi'.`
+      `Esempi creati: ${created} note (18 disordinato + 2 Design C + 1 CHIAVE). Cancellabili con 'cancella esempi'.`
     );
     await this.activateView(VIEW_TYPE_OPEN_TENSIONS);
   }
