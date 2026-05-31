@@ -2253,6 +2253,14 @@ const HUNTER_SYSTEM = `Sei il Contradiction Hunter di Antinomia.
 
 IL TUO COMPITO: identificare COPPIE di note che si contraddicono.
 
+COPPIE DA CONSIDERARE — ESAMINA TUTTE le combinazioni possibili tra le note inviate:
+- tensione ↔ tensione
+- tensione ↔ substrate
+- **substrate ↔ substrate** (frequentemente ignorate, ma ALTRETTANTO IMPORTANTI)
+
+Per N note ci sono N*(N-1)/2 coppie. Devi considerarle tutte prima di scartare quelle non contraddittorie.
+NON privilegiare le tensioni rispetto ai substrate solo perche' sono "piu' polari": i substrate spesso contengono presupposti che entrano in conflitto tra loro o con tensioni esistenti.
+
 CRUCIALE — NON devi:
 - Suggerire risoluzioni o sintesi
 - Spiegare come la contraddizione potrebbe essere risolta
@@ -2263,6 +2271,7 @@ Vale come contraddizione:
 - Due note semanticamente incompatibili (A dice X, B dice non-X)
 - Due note i cui PRESUPPOSTI sono incompatibili (anche se i temi superficiali differiscono)
 - Una nota la cui pratica contraddice cio' che un'altra afferma
+- Due substrate che assumono presupposti epistemici/valoriali in conflitto
 
 NON vale:
 - Note su temi diversi non incompatibili
@@ -6509,6 +6518,162 @@ export default class AntinomiaPlugin extends Plugin {
       this.hunterAbortController.abort();
       this.hunterAbortController = null;
     }
+  }
+
+  /**
+   * Contradiction Hunter: scansiona tensioni aperte + substrate, manda al
+   * modello, parsea coppie contraddittorie, filtra falsi positivi gia'
+   * dismissati, salva ultimo run nei settings, mostra in HunterResultsView.
+   * Supporta cancellazione via Stop button (AbortController).
+   */
+  async runHunter(): Promise<void> {
+    const profile = this.profileFor("hunter");
+    if (!profile.apiKey) {
+      new Notice("API key mancante nel profilo Hunter (o nell'attivo). Impostazioni -> Antinomia.");
+      return;
+    }
+    if (!this.settings.hasRunHunter) {
+      this.settings.hasRunHunter = true;
+      void this.saveSettings();
+    }
+    const all = this.app.vault.getMarkdownFiles();
+    const candidates: TFile[] = [];
+    for (const f of all) {
+      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const t = fm?.antinomia_tipo;
+      const isOpenTension = t === TYPE.tension && fm?.stato === "aperta";
+      const isSubstrate = t === TYPE.substrate;
+      if (isOpenTension || isSubstrate) candidates.push(f);
+    }
+    if (candidates.length < 2) {
+      new Notice(`Hunter: servono almeno 2 note. Trovate: ${candidates.length}.`);
+      return;
+    }
+    candidates.sort((a, b) => b.stat.mtime - a.stat.mtime);
+    const cap = this.settings.hunterMaxNotes;
+    const truncated = candidates.length > cap;
+    const selected = candidates.slice(0, cap);
+
+    // Conta tipi per il prompt (cosi' il modello sa quante substrate ci sono)
+    let nTensions = 0, nSubstrates = 0;
+    for (const f of selected) {
+      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      if (fm?.antinomia_tipo === TYPE.tension) nTensions++;
+      else if (fm?.antinomia_tipo === TYPE.substrate) nSubstrates++;
+    }
+
+    const bodyLimit = this.settings.hunterNoteBodyLimit;
+    const noteBlocks: string[] = [];
+    for (const f of selected) {
+      const raw = await this.app.vault.read(f);
+      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const body = stripFrontmatter(raw).trim();
+      const truncBody = body.length > bodyLimit ? body.slice(0, bodyLimit) + "..." : body;
+      const tipo = fm?.antinomia_tipo || "?";
+      noteBlocks.push(`### ${f.basename} [${tipo}]\n${truncBody}`);
+    }
+    const nTotal = selected.length;
+    const userContent =
+      `Analizza queste ${nTotal} note Antinomia (${nTensions} tensioni, ${nSubstrates} substrate) ` +
+      `e identifica coppie contraddittorie. ESAMINA TUTTE le ${(nTotal * (nTotal - 1)) / 2} coppie possibili, ` +
+      `incluse substrate-substrate. Rispondi SOLO con JSON conforme allo schema.\n\n` +
+      noteBlocks.join("\n\n");
+
+    await this.activateView(VIEW_TYPE_HUNTER_RESULTS);
+    const hunterLeaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_HUNTER_RESULTS)[0];
+    const hunterView =
+      hunterLeaf && hunterLeaf.view instanceof HunterResultsView
+        ? hunterLeaf.view
+        : null;
+
+    new Notice(`Hunter: invio ${selected.length} note (${nTensions}T + ${nSubstrates}S)...${truncated ? " (troncate)" : ""}`);
+    hunterView?.setLoading(true, selected.length);
+
+    this.hunterAbortController = new AbortController();
+    const abortSignal = this.hunterAbortController.signal;
+
+    const t0 = Date.now();
+    let result: { text: string; usage?: ClaudeResponse["usage"] };
+    try {
+      const aiPromise = callAI({
+        baseUrl: profile.baseUrl,
+        apiKey: profile.apiKey,
+        model: profile.model,
+        format: profile.format,
+        system: buildHunterSystem(this.settings.hunterReasoningStyle),
+        messages: [{ role: "user", content: userContent }],
+        maxTokens: 2048,
+        signal: abortSignal,
+      });
+      const abortPromise = new Promise<never>((_, reject) => {
+        abortSignal.addEventListener("abort", () => reject(new Error("hunter_aborted")));
+      });
+      result = await Promise.race([aiPromise, abortPromise]);
+    } catch (e) {
+      hunterView?.setLoading(false);
+      this.hunterAbortController = null;
+      if ((e as Error).message === "hunter_aborted") {
+        new Notice("Hunter fermato dall'utente.");
+        console.log("[Antinomia] hunter aborted by user");
+      } else {
+        new Notice(`Hunter errore: ${(e as Error).message}`);
+        console.error("[Antinomia] hunter call failed", e);
+      }
+      return;
+    }
+    hunterView?.setLoading(false);
+    this.hunterAbortController = null;
+    const durationMs = Date.now() - t0;
+
+    const parsed = extractJson<HunterResult>(result.text);
+    if (!parsed || !Array.isArray(parsed.contraddizioni)) {
+      console.error("[Antinomia] hunter unparseable:", result.text);
+      new Notice("Hunter: risposta non parseable. Vedi console.");
+      return;
+    }
+
+    // Filtra falsi positivi gia' dismissati
+    const dismissedSet = new Set<string>();
+    for (const f of selected) {
+      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fp = fm?.hunter_falsi_positivi;
+      if (Array.isArray(fp)) {
+        for (const peer of fp) {
+          const key = [f.basename, String(peer)].sort().join("|");
+          dismissedSet.add(key);
+        }
+      }
+    }
+    let dismissedFiltered = 0;
+    const filtered = parsed.contraddizioni.filter((c) => {
+      const key = [c.nota_a, c.nota_b].sort().join("|");
+      if (dismissedSet.has(key)) {
+        dismissedFiltered++;
+        return false;
+      }
+      return true;
+    });
+
+    const meta: HunterRunMetadata = {
+      timestamp: new Date().toISOString(),
+      notesExamined: selected.length,
+      totalCandidates: candidates.length,
+      truncated,
+      durationMs,
+      model: profile.model,
+      inputTokens: result.usage?.input_tokens,
+      outputTokens: result.usage?.output_tokens,
+      dismissedFiltered,
+    };
+    const run: HunterRun = { meta, result: { contraddizioni: filtered } };
+
+    this.settings.lastHunterRunISO = meta.timestamp;
+    this.settings.lastHunterRunCount = filtered.length;
+    void this.saveSettings();
+
+    hunterView?.setRun(run);
+    new Notice(`Hunter: ${filtered.length} coppie in ${(durationMs / 1000).toFixed(1)}s.`);
+    console.log("[Antinomia] hunter run", meta);
   }
 
   /**
