@@ -397,6 +397,29 @@ class WelcomeModal extends Modal {
 
     contentEl.createEl("h2", { text: "Benvenuto in Antinomia" });
 
+    // Banner avviso se Front Matter Title non e' installato/attivo
+    if (!this.plugin.isFrontMatterTitleEnabled()) {
+      const banner = contentEl.createDiv();
+      banner.style.cssText =
+        "background:rgba(255,193,7,0.12); border-left:3px solid #ffc107; " +
+        "padding:10px 12px; margin-bottom:12px; border-radius:4px; font-size:0.9em;";
+      banner.createEl("strong", { text: "Plugin consigliato mancante: Front Matter Title" });
+      const p = banner.createEl("p");
+      p.style.margin = "6px 0";
+      p.setText(
+        "Senza questo plugin il File Explorer ti mostra i basename tecnici (T-20260530-091416) invece dei titoli umani delle tue note. Antinomia funziona lo stesso, ma vederli e' molto piu' comodo."
+      );
+      const btn = banner.createEl("button", { text: "Apri Community Plugins" });
+      btn.style.cssText = "margin-top:4px; padding:4px 10px; cursor:pointer;";
+      btn.onclick = () => {
+        const setting = (this.app as any).setting;
+        if (setting?.open) {
+          setting.open();
+          if (setting.openTabById) setting.openTabById("community-plugins");
+        }
+      };
+    }
+
     const intro = contentEl.createEl("p");
     intro.setText(
       "Antinomia e' un sistema di Personal Knowledge Management basato su un'idea controintuitiva: la contraddizione e' l'unita' fondamentale del pensiero. Non costruisci una gerarchia di idee, costruisci una mappa delle tensioni che strutturano come pensi."
@@ -2278,6 +2301,19 @@ NON vale:
 - Differenze di tono/registro/lunghezza
 - Una nota piu' dettagliata di un'altra
 - Coppie deboli/forzate (se incerto, NON includere o usa confidence: bassa)
+- Connessioni TEMATICHE deboli (entrambe parlano di "tempo" ma in modi diversi non opposti)
+- Coppie dove devi INVENTARE un presupposto comune per giustificarle: non scrivere "una assume X mentre l'altra Y" se nessuna delle due dice quello esplicitamente
+
+**PRECISIONE > RECALL**: meglio dire "nessuna contraddizione" che produrre coppie deboli. Lo scopo del Hunter e' farti vedere conflitti REALI, non darti l'illusione di profondita'.
+
+**ESEMPI DI CONTRADDIZIONI VALIDE (frontali, sullo STESSO criterio):**
+- A: "le decisioni di pancia sono affidabili, l'istinto raramente sbaglia" ↔ B: "i dati mostrano che le decisioni d'impulso hanno tasso di errore 3x superiore alle ponderate" → confidence alta, opposizione esplicita sullo stesso oggetto (qualita' delle decisioni intuitive).
+- A: "il talento e' tutto, senza dono naturale resti mediocre" ↔ B: "la disciplina conta piu' del talento, l'impegno supera il predestinato pigro" → confidence alta, opposizione su quale fattore determina il successo.
+
+**ESEMPI DA NON ACCOPPIARE:**
+- Una nota su "produttivita' in ufficio" e una su "risparmio economico": temi diversi, non contraddizione.
+- Una nota di promemoria operativo ("dormito male, riunione domani") con qualsiasi tensione: il promemoria non afferma una tesi.
+- Due note che entrambe menzionano il "tempo" ma una parla di productivity-time e l'altra di philosophy-of-time: tema vicino, sostanza diversa.
 
 Confidence:
 - "alta" — contraddizione chiara, sui presupposti o esplicita
@@ -6517,6 +6553,21 @@ export default class AntinomiaPlugin extends Plugin {
     if (this.hunterAbortController) {
       this.hunterAbortController.abort();
       this.hunterAbortController = null;
+    }
+  }
+
+  /**
+   * True se il plugin community "Front Matter Title" (Snezhig) e' installato
+   * e attivo. Usato per mostrare warning nel WelcomeModal e nella Dashboard.
+   * Accede a app.plugins.enabledPlugins (API interna, ma stabile).
+   */
+  isFrontMatterTitleEnabled(): boolean {
+    try {
+      const ep = (this.app as any).plugins?.enabledPlugins;
+      if (!ep) return false;
+      return ep.has("obsidian-front-matter-title-plugin");
+    } catch {
+      return false;
     }
   }
 

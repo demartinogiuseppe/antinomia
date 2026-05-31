@@ -11,6 +11,12 @@ TestVault/.obsidian/plugins/antinomia/data.json
 TestVault/.obsidian/workspace*
 TestVault/.obsidian/cache
 
+# Test vault disordinato (vault separato per misurazione Hunter)
+TestVaultDisordinato/.obsidian/plugins/antinomia/main.js
+TestVaultDisordinato/.obsidian/plugins/antinomia/data.json
+TestVaultDisordinato/.obsidian/workspace*
+TestVaultDisordinato/.obsidian/cache
+
 # OS
 .DS_Store
 Thumbs.db
@@ -27,3 +33,8 @@ check_env.bat
 check_env.ps1
 check_output.txt
 ps_log.txt
+
+# Archivi compressi (manuali di backup, non versionati)
+*.rar
+*.zip
+*.7z
