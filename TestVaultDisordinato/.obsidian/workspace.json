@@ -194,12 +194,12 @@
             "state": {
               "type": "antinomia-hunter-results",
               "state": {},
-              "icon": "lucide-ghost",
-              "title": "antinomia-hunter-results"
+              "icon": "search",
+              "title": "Antinomia — Contradiction Hunter"
             }
           }
         ],
-        "currentTab": 7
+        "currentTab": 8
       }
     ],
     "direction": "horizontal",

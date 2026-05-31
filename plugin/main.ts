@@ -6683,6 +6683,26 @@ export default class AntinomiaPlugin extends Plugin {
       return;
     }
 
+    // Validazione anti-hallucinazione: scarta basename inventati, self-pair, descrizioni vuote
+    const realBasenames = new Set(selected.map((f) => f.basename));
+    let halluFiltered = 0;
+    const validated = parsed.contraddizioni.filter((c) => {
+      const a = String(c.nota_a || "").trim();
+      const b = String(c.nota_b || "").trim();
+      const desc = String(c.descrizione || "").trim();
+      if (!a || !b || a === b) { halluFiltered++; return false; }
+      if (!desc || desc === "undefined") { halluFiltered++; return false; }
+      if (!realBasenames.has(a) || !realBasenames.has(b)) {
+        halluFiltered++;
+        console.warn("[Antinomia] hunter: scartata coppia con basename inesistenti:", a, "<->", b);
+        return false;
+      }
+      return true;
+    });
+    if (halluFiltered > 0) {
+      console.log(`[Antinomia] hunter: filtrate ${halluFiltered} coppie hallucinate/invalide`);
+    }
+
     // Filtra falsi positivi gia' dismissati
     const dismissedSet = new Set<string>();
     for (const f of selected) {
@@ -6696,7 +6716,7 @@ export default class AntinomiaPlugin extends Plugin {
       }
     }
     let dismissedFiltered = 0;
-    const filtered = parsed.contraddizioni.filter((c) => {
+    const filtered = validated.filter((c) => {
       const key = [c.nota_a, c.nota_b].sort().join("|");
       if (dismissedSet.has(key)) {
         dismissedFiltered++;
@@ -8817,6 +8837,26 @@ antinomia_esempio: true
       return;
     }
 
+    // Validazione anti-hallucinazione: scarta basename inventati, self-pair, descrizioni vuote
+    const realBasenames = new Set(selected.map((f) => f.basename));
+    let halluFiltered = 0;
+    const validated = parsed.contraddizioni.filter((c) => {
+      const a = String(c.nota_a || "").trim();
+      const b = String(c.nota_b || "").trim();
+      const desc = String(c.descrizione || "").trim();
+      if (!a || !b || a === b) { halluFiltered++; return false; }
+      if (!desc || desc === "undefined") { halluFiltered++; return false; }
+      if (!realBasenames.has(a) || !realBasenames.has(b)) {
+        halluFiltered++;
+        console.warn("[Antinomia] hunter: scartata coppia con basename inesistenti:", a, "<->", b);
+        return false;
+      }
+      return true;
+    });
+    if (halluFiltered > 0) {
+      console.log(`[Antinomia] hunter: filtrate ${halluFiltered} coppie hallucinate/invalide`);
+    }
+
     // Filtra falsi positivi gia' dismissati
     const dismissedSet = new Set<string>();
     for (const f of selected) {
@@ -8830,7 +8870,7 @@ antinomia_esempio: true
       }
     }
     let dismissedFiltered = 0;
-    const filtered = parsed.contraddizioni.filter((c) => {
+    const filtered = validated.filter((c) => {
       const key = [c.nota_a, c.nota_b].sort().join("|");
       if (dismissedSet.has(key)) {
         dismissedFiltered++;
