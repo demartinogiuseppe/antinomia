@@ -1162,6 +1162,32 @@ class AntinomiaSettingTab extends PluginSettingTab {
 
     containerEl.createEl("h3", { text: "Profili AI" });
 
+    // Info box su API costose vs locali gratuite
+    const apiInfo = containerEl.createDiv();
+    apiInfo.style.cssText =
+      "background:rgba(13,110,253,0.08); border-left:3px solid #0d6efd; " +
+      "padding:10px 12px; margin:4px 0 12px 0; border-radius:4px; font-size:0.86em;";
+    apiInfo.createEl("strong", { text: "ℹ Modelli AI: cloud vs locale" });
+    const aiP = apiInfo.createEl("p");
+    aiP.style.margin = "6px 0 0 0";
+    aiP.setText(
+      "Antinomia usa modelli AI per le funzioni intelligenti (Hunter, propose IF/THEN, presupposti, classifica). Due opzioni:"
+    );
+    const ul = apiInfo.createEl("ul");
+    ul.style.cssText = "margin:6px 0 0 0; padding-left:22px;";
+    const li1 = ul.createEl("li");
+    li1.innerHTML =
+      "<strong>API cloud a pagamento</strong> (Anthropic Claude, OpenAI GPT, Groq, OpenRouter): qualita' top, costo per token consumato. Servono account + API key.";
+    const li2 = ul.createEl("li");
+    li2.innerHTML =
+      "<strong>Modello locale gratuito</strong> (LM Studio, Ollama): privacy completa, zero costi, qualita' variabile. Servono ~10GB di RAM/VRAM e download iniziale del modello.";
+    const aiP2 = apiInfo.createEl("p");
+    aiP2.style.margin = "6px 0 0 0";
+    aiP2.style.opacity = "0.85";
+    aiP2.setText(
+      "Puoi configurare piu' profili e cambiarli a piacere (es. LM Studio per uso quotidiano, Claude solo per Hunter approfondito)."
+    );
+
     // List existing profiles
     for (const profile of this.plugin.settings.profiles) {
       const row = new Setting(containerEl)
@@ -7835,7 +7861,15 @@ antinomia_esempio: true
    * gia' presenti (frontmatter o body) e li pre-popola; sul submit li
    * applica via applyPresupposti.
    */
+  // Guardia anti-doppia-apertura: alcuni click handler/re-render della sidebar
+  // possono triggerare due volte openElevateModal in rapida sequenza.
+  private elevateModalOpen = false;
+
   async openElevateModal(file: TFile): Promise<void> {
+    if (this.elevateModalOpen) {
+      console.warn("[Antinomia] openElevateModal: gia' aperto, ignoro richiesta duplicata");
+      return;
+    }
     const fm0 = this.app.metadataCache.getFileCache(file)?.frontmatter;
     if (fm0?.antinomia_tipo !== TYPE.tension) {
       new Notice("Eleva: la nota attiva non e' una tensione.");
@@ -7848,7 +7882,8 @@ antinomia_esempio: true
       new Notice(`Errore lettura: ${(e as Error).message}`);
       return;
     }
-    new ElevateToPrincipleModal(
+    this.elevateModalOpen = true;
+    const modal = new ElevateToPrincipleModal(
       this.app,
       this,
       file,
@@ -7857,7 +7892,14 @@ antinomia_esempio: true
         if (fields === null && !skipped) return;
         await this.elevateToPrinciple(file, fields ?? undefined);
       }
-    ).open();
+    );
+    // Sblocca il guard quando il modal si chiude (qualsiasi via)
+    const originalOnClose = modal.onClose?.bind(modal);
+    modal.onClose = () => {
+      this.elevateModalOpen = false;
+      if (originalOnClose) originalOnClose();
+    };
+    modal.open();
   }
 
   /**
