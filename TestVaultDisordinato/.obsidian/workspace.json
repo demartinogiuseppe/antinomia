@@ -16,8 +16,19 @@
               "icon": "git-fork",
               "title": "Antinomia Graph"
             }
+          },
+          {
+            "id": "7032becbffb38d77",
+            "type": "leaf",
+            "state": {
+              "type": "antinomia-audit",
+              "state": {},
+              "icon": "shield-alert",
+              "title": "Antinomia — audit"
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -174,8 +185,8 @@
             "state": {
               "type": "antinomia-onboarding-checklist",
               "state": {},
-              "icon": "lucide-ghost",
-              "title": "antinomia-onboarding-checklist"
+              "icon": "list-checks",
+              "title": "Antinomia — guida iniziale"
             }
           },
           {
@@ -194,12 +205,42 @@
             "state": {
               "type": "antinomia-hunter-results",
               "state": {},
-              "icon": "lucide-ghost",
-              "title": "antinomia-hunter-results"
+              "icon": "search",
+              "title": "Antinomia — Contradiction Hunter"
+            }
+          },
+          {
+            "id": "97b2fc4b26b82ecc",
+            "type": "leaf",
+            "state": {
+              "type": "antinomia-open-tensions",
+              "state": {},
+              "icon": "git-pull-request",
+              "title": "Antinomia — tensioni aperte"
+            }
+          },
+          {
+            "id": "e6247ce86c929cdc",
+            "type": "leaf",
+            "state": {
+              "type": "antinomia-substrate-list",
+              "state": {},
+              "icon": "layers",
+              "title": "Antinomia — substrate"
+            }
+          },
+          {
+            "id": "7dc326b88c1cba00",
+            "type": "leaf",
+            "state": {
+              "type": "antinomia-dismissed-pairs",
+              "state": {},
+              "icon": "list-x",
+              "title": "Antinomia — falsi positivi"
             }
           }
         ],
-        "currentTab": 7
+        "currentTab": 8
       }
     ],
     "direction": "horizontal",
@@ -220,6 +261,6 @@
       "antinomia:Antinomia: Graph View": false
     }
   },
-  "active": "10675b8709f5aaf2",
+  "active": "7032becbffb38d77",
   "lastOpenFiles": []
 }

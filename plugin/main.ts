@@ -3546,6 +3546,37 @@ function renderAntinomiaNav(
       i.setTitle("Esegui Hunter ora").setIcon("play")
         .onClick(() => void plugin.runHunter())
     );
+    m.addItem((i) =>
+      i.setTitle("Hunter su una nota (focus)").setIcon("target")
+        .onClick(() => {
+          const isCandidate = (f: TFile): boolean => {
+            if (f.extension !== "md") return false;
+            const fm = plugin.app.metadataCache.getFileCache(f)?.frontmatter;
+            const t = fm?.antinomia_tipo;
+            const isOpenTension = t === TYPE.tension && fm?.stato === "aperta";
+            return isOpenTension || t === TYPE.substrate;
+          };
+          // Se la nota attiva e' una tensione aperta o un substrate, usala direttamente
+          const active = plugin.app.workspace.getActiveFile();
+          if (active && isCandidate(active)) {
+            void plugin.runHunter(active);
+            return;
+          }
+          // Altrimenti apri picker filtrato
+          const candidates = plugin.app.vault.getMarkdownFiles().filter(isCandidate);
+          if (candidates.length === 0) {
+            new Notice("Nessuna tensione aperta o substrate nel vault.");
+            return;
+          }
+          const dummy = plugin.app.vault.getMarkdownFiles().find((f) => !isCandidate(f)) ?? candidates[0];
+          new NotePickerModal(
+            plugin.app, dummy,
+            (chosen) => void plugin.runHunter(chosen),
+            isCandidate,
+            "Scegli una nota (tensione aperta o substrate) per il Hunter focus..."
+          ).open();
+        })
+    );
   });
 
   // -- Crea (submenu)
@@ -6636,7 +6667,7 @@ export default class AntinomiaPlugin extends Plugin {
    * dismissati, salva ultimo run nei settings, mostra in HunterResultsView.
    * Supporta cancellazione via Stop button (AbortController).
    */
-  async runHunter(): Promise<void> {
+  async runHunter(focusFile?: TFile): Promise<void> {
     const profile = this.profileFor("hunter");
     if (!profile.apiKey) {
       new Notice("API key mancante nel profilo Hunter (o nell'attivo). Impostazioni -> Antinomia.");
@@ -6661,8 +6692,17 @@ export default class AntinomiaPlugin extends Plugin {
     }
     candidates.sort((a, b) => b.stat.mtime - a.stat.mtime);
     const cap = this.settings.hunterMaxNotes;
-    const truncated = candidates.length > cap;
-    const selected = candidates.slice(0, cap);
+    let selected: TFile[];
+    let truncated = false;
+    if (focusFile) {
+      // Modalita' focalizzata: target + altri candidati per riempire fino al cap
+      const others = candidates.filter((f) => f.path !== focusFile.path);
+      truncated = others.length > cap - 1;
+      selected = [focusFile, ...others.slice(0, cap - 1)];
+    } else {
+      truncated = candidates.length > cap;
+      selected = candidates.slice(0, cap);
+    }
 
     // Conta tipi per il prompt (cosi' il modello sa quante substrate ci sono)
     let nTensions = 0, nSubstrates = 0;
@@ -6683,11 +6723,15 @@ export default class AntinomiaPlugin extends Plugin {
       noteBlocks.push(`### ${f.basename} [${tipo}]\n${truncBody}`);
     }
     const nTotal = selected.length;
-    const userContent =
-      `Analizza queste ${nTotal} note Antinomia (${nTensions} tensioni, ${nSubstrates} substrate) ` +
-      `e identifica coppie contraddittorie. ESAMINA TUTTE le ${(nTotal * (nTotal - 1)) / 2} coppie possibili, ` +
-      `incluse substrate-substrate. Rispondi SOLO con JSON conforme allo schema.\n\n` +
-      noteBlocks.join("\n\n");
+    const userContent = focusFile
+      ? `Analizza queste ${nTotal} note Antinomia. La nota FOCUS e' "${focusFile.basename}" (la prima sotto). ` +
+        `Identifica SOLO coppie contraddittorie che COINVOLGONO "${focusFile.basename}" — cioe' coppie (FOCUS, altra). ` +
+        `NON includere coppie tra le altre note tra loro. Rispondi SOLO con JSON conforme allo schema.\n\n` +
+        noteBlocks.join("\n\n")
+      : `Analizza queste ${nTotal} note Antinomia (${nTensions} tensioni, ${nSubstrates} substrate) ` +
+        `e identifica coppie contraddittorie. ESAMINA TUTTE le ${(nTotal * (nTotal - 1)) / 2} coppie possibili, ` +
+        `incluse substrate-substrate. Rispondi SOLO con JSON conforme allo schema.\n\n` +
+        noteBlocks.join("\n\n");
 
     await this.activateView(VIEW_TYPE_HUNTER_RESULTS);
     const hunterLeaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_HUNTER_RESULTS)[0];
@@ -6696,7 +6740,7 @@ export default class AntinomiaPlugin extends Plugin {
         ? hunterLeaf.view
         : null;
 
-    new Notice(`Hunter: invio ${selected.length} note (${nTensions}T + ${nSubstrates}S)...${truncated ? " (troncate)" : ""}`);
+    new Notice(`Hunter${focusFile ? ` su ${focusFile.basename}` : ""}: invio ${selected.length} note (${nTensions}T + ${nSubstrates}S)...${truncated ? " (troncate)" : ""}`);
     hunterView?.setLoading(true, selected.length);
 
     this.hunterAbortController = new AbortController();
@@ -6754,6 +6798,11 @@ export default class AntinomiaPlugin extends Plugin {
       if (!realBasenames.has(a) || !realBasenames.has(b)) {
         halluFiltered++;
         console.warn("[Antinomia] hunter: scartata coppia con basename inesistenti:", a, "<->", b);
+        return false;
+      }
+      // In modalita' focus, scarta coppie che NON coinvolgono il focusFile
+      if (focusFile && a !== focusFile.basename && b !== focusFile.basename) {
+        halluFiltered++;
         return false;
       }
       return true;
@@ -7037,6 +7086,21 @@ export default class AntinomiaPlugin extends Plugin {
       id: "hunt-contradictions",
       name: "cerca contraddizioni (Hunter)",
       callback: () => this.runHunter(),
+    });
+    this.addCommand({
+      id: "hunt-contradictions-on-active",
+      name: "cerca contraddizioni che coinvolgono la nota attiva (Hunter focus)",
+      checkCallback: (checking) => {
+        const file = this.app.workspace.getActiveFile();
+        if (!file || file.extension !== "md") return false;
+        const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+        const t = fm?.antinomia_tipo;
+        const isOpenTension = t === TYPE.tension && fm?.stato === "aperta";
+        const isSubstrate = t === TYPE.substrate;
+        if (!isOpenTension && !isSubstrate) return false;
+        if (!checking) void this.runHunter(file);
+        return true;
+      },
     });
     this.addCommand({
       id: "list-dismissed-pairs",
@@ -8817,7 +8881,7 @@ antinomia_esempio: true
    * dismissati, salva ultimo run nei settings, mostra in HunterResultsView.
    * Supporta cancellazione via Stop button (AbortController).
    */
-  async runHunter(): Promise<void> {
+  async runHunter(focusFile?: TFile): Promise<void> {
     const profile = this.profileFor("hunter");
     if (!profile.apiKey) {
       new Notice("API key mancante nel profilo Hunter (o nell'attivo). Impostazioni -> Antinomia.");
@@ -8842,8 +8906,17 @@ antinomia_esempio: true
     }
     candidates.sort((a, b) => b.stat.mtime - a.stat.mtime);
     const cap = this.settings.hunterMaxNotes;
-    const truncated = candidates.length > cap;
-    const selected = candidates.slice(0, cap);
+    let selected: TFile[];
+    let truncated = false;
+    if (focusFile) {
+      // Modalita' focalizzata: target + altri candidati per riempire fino al cap
+      const others = candidates.filter((f) => f.path !== focusFile.path);
+      truncated = others.length > cap - 1;
+      selected = [focusFile, ...others.slice(0, cap - 1)];
+    } else {
+      truncated = candidates.length > cap;
+      selected = candidates.slice(0, cap);
+    }
 
     const bodyLimit = this.settings.hunterNoteBodyLimit;
     const noteBlocks: string[] = [];
@@ -8924,6 +8997,11 @@ antinomia_esempio: true
       if (!realBasenames.has(a) || !realBasenames.has(b)) {
         halluFiltered++;
         console.warn("[Antinomia] hunter: scartata coppia con basename inesistenti:", a, "<->", b);
+        return false;
+      }
+      // In modalita' focus, scarta coppie che NON coinvolgono il focusFile
+      if (focusFile && a !== focusFile.basename && b !== focusFile.basename) {
+        halluFiltered++;
         return false;
       }
       return true;

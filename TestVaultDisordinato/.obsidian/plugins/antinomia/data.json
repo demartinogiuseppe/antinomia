@@ -23,7 +23,7 @@
   "onboardingCompleted": true,
   "hasRunHunter": true,
   "hasUsedFreeInput": false,
-  "hasOpenedListSidebar": false,
+  "hasOpenedListSidebar": true,
   "hintsTensionsShown": false,
   "hintsHunterShown": false,
   "lastHunterRunISO": "2026-05-31T13:41:15.062Z",
