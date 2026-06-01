@@ -278,13 +278,13 @@ class ProfileEditModal extends Modal {
   }
   onOpen(): void {
     const { contentEl } = this;
-    contentEl.createEl("h3", { text: "Modifica profilo AI" });
+    contentEl.createEl("h3", { text: "Edit AI profile" });
 
     const profile = this.current;
 
     new Setting(contentEl)
       .setName("Backend preset")
-      .setDesc("Pre-popola base URL + modello suggerito.")
+      .setDesc("Pre-fills base URL + suggested model.")
       .addDropdown((dd) => {
         for (const p of BACKEND_PRESETS) dd.addOption(p.id, p.label);
         dd.addOption("custom", "Custom / altro");
@@ -302,7 +302,7 @@ class ProfileEditModal extends Modal {
         });
       });
 
-    new Setting(contentEl).setName("Nome").addText((text) =>
+    new Setting(contentEl).setName("Name").addText((text) =>
       text
         .setPlaceholder("Es. Sonnet Cloud, Qwen 14B locale, ...")
         .setValue(profile.name)
@@ -326,7 +326,7 @@ class ProfileEditModal extends Modal {
     );
 
     new Setting(contentEl)
-      .setName("Modello")
+      .setName("Model")
       .addDropdown((dd) => {
         for (const m of MODEL_PRESETS) dd.addOption(m.id, m.label);
         if (!MODEL_PRESETS.some((m) => m.id === profile.model)) {
@@ -337,8 +337,8 @@ class ProfileEditModal extends Modal {
       });
 
     new Setting(contentEl)
-      .setName("Modello custom")
-      .setDesc("Stringa libera (sovrascrive il dropdown). Vuoto = usa dropdown.")
+      .setName("Custom model")
+      .setDesc("Free-form string (overrides dropdown). Empty = use dropdown.")
       .addText((text) =>
         text
           .setPlaceholder("nome-modello-esatto")
@@ -351,14 +351,14 @@ class ProfileEditModal extends Modal {
 
     new Setting(contentEl)
       .addButton((b) =>
-        b.setButtonText("Annulla").onClick(() => {
+        b.setButtonText("Cancel").onClick(() => {
           this.onSubmit(null);
           this.close();
         })
       )
       .addButton((b) =>
         b
-          .setButtonText("Salva")
+          .setButtonText("Save")
           .setCta()
           .onClick(() => {
             this.onSubmit(this.current);
@@ -395,18 +395,18 @@ class WelcomeModal extends Modal {
     contentEl.style.overflowY = "auto";
     contentEl.style.padding = "0 6px";
 
-    contentEl.createEl("h2", { text: "Benvenuto in Antinomia" });
+    contentEl.createEl("h2", { text: "Welcome to Antinomia" });
 
     // Banner SICUREZZA: cosa Antinomia non e' (sempre visibile, in cima)
     const safety = contentEl.createDiv();
     safety.style.cssText =
       "background:rgba(220,53,69,0.10); border-left:3px solid #dc3545; " +
       "padding:10px 12px; margin-bottom:12px; border-radius:4px; font-size:0.88em;";
-    safety.createEl("strong", { text: "⚠ Cosa Antinomia NON e'" });
+    safety.createEl("strong", { text: "⚠ What Antinomia is NOT" });
     const safetyP = safety.createEl("p");
     safetyP.style.margin = "6px 0 0 0";
     safetyP.setText(
-      "Questo strumento nasce per aiutarti a comprendere l'evoluzione del tuo pensiero, mappando tensioni e contraddizioni che gia' porti dentro. NON e' un sistema di supporto decisionale. Non usarlo per decidere in situazioni reali (lavoro, salute, finanza, relazioni). Le coppie che il Hunter propone sono spunti di riflessione, non verita': il modello AI puo' allucinare, semplificare, fraintendere. Ogni uso diverso da 'pratica riflessiva personale' e' improprio."
+      "This tool exists to help you understand the evolution of your own thinking by mapping tensions and contradictions you already carry inside. It is NOT a decision-support system. Do not use it to decide in real situations (work, health, finance, relationships). The pairs the Hunter proposes are prompts for reflection, not truths: the AI model can hallucinate, oversimplify, misinterpret. Any use other than 'personal reflective practice' is improper."
     );
 
     // Banner avviso se Front Matter Title non e' installato/attivo
@@ -415,13 +415,13 @@ class WelcomeModal extends Modal {
       banner.style.cssText =
         "background:rgba(255,193,7,0.12); border-left:3px solid #ffc107; " +
         "padding:10px 12px; margin-bottom:12px; border-radius:4px; font-size:0.9em;";
-      banner.createEl("strong", { text: "Plugin consigliato mancante: Front Matter Title" });
+      banner.createEl("strong", { text: "Recommended plugin missing: Front Matter Title" });
       const p = banner.createEl("p");
       p.style.margin = "6px 0";
       p.setText(
-        "Senza questo plugin il File Explorer ti mostra i basename tecnici (T-20260530-091416) invece dei titoli umani delle tue note. Antinomia funziona lo stesso, ma vederli e' molto piu' comodo."
+        "Without this plugin, the File Explorer shows technical basenames (T-20260530-091416) instead of the human titles of your notes. Antinomia still works, but seeing them is much more convenient."
       );
-      const btn = banner.createEl("button", { text: "Apri Community Plugins" });
+      const btn = banner.createEl("button", { text: "Open Community Plugins" });
       btn.style.cssText = "margin-top:4px; padding:4px 10px; cursor:pointer;";
       btn.onclick = () => {
         const setting = (this.app as any).setting;
@@ -434,36 +434,36 @@ class WelcomeModal extends Modal {
 
     const intro = contentEl.createEl("p");
     intro.setText(
-      "Antinomia e' un sistema di Personal Knowledge Management basato su un'idea controintuitiva: la contraddizione e' l'unita' fondamentale del pensiero. Non costruisci una gerarchia di idee, costruisci una mappa delle tensioni che strutturano come pensi."
+      "Antinomia is a Personal Tension Management (PTM) system based on a counterintuitive idea: contradiction is the fundamental unit of thought. You don't build a hierarchy of ideas — you build a map of the tensions that structure how you think."
     );
 
-    contentEl.createEl("h3", { text: "I 5 layer del sistema" });
+    contentEl.createEl("h3", { text: "The 5 layers of the system" });
 
     const layers: Array<{ emoji: string; label: string; desc: string }> = [
       {
         emoji: "🔀",
-        label: "Tensione",
-        desc: "Due posizioni in conflitto (A vs B). L'unita' base del pensiero antinomiano.",
+        label: "Tension",
+        desc: "Two positions in conflict (A vs B). The base unit of antinomian thinking.",
       },
       {
         emoji: "📚",
         label: "Substrate",
-        desc: "Materiale grezzo: citazioni, fatti, osservazioni, appunti di lettura.",
+        desc: "Raw material: quotes, facts, observations, reading notes.",
       },
       {
         emoji: "🧭",
-        label: "Principio",
-        desc: "Regola operativa IF/THEN che emerge dalla risoluzione di una tensione.",
+        label: "Principle",
+        desc: "An operational IF/THEN rule that emerges from resolving a tension.",
       },
       {
         emoji: "📦",
         label: "Defeated",
-        desc: "Convinzioni archiviate (falsi positivi, superate, elevate a principio).",
+        desc: "Archived beliefs (false positives, superseded, elevated to principle).",
       },
       {
         emoji: "📝",
-        label: "Meta-nota",
-        desc: "Riflessione sull'uso del sistema stesso (rapporto utente-vault).",
+        label: "Meta-note",
+        desc: "Reflection on the use of the system itself (user-vault relationship).",
       },
     ];
     const layerList = contentEl.createEl("div");
@@ -487,25 +487,25 @@ class WelcomeModal extends Modal {
       d.setText(l.desc);
     }
 
-    contentEl.createEl("h3", { text: "Come funziona in pratica" });
+    contentEl.createEl("h3", { text: "How it works in practice" });
     const flow = contentEl.createEl("ol");
     flow.style.lineHeight = "1.6";
     flow.style.marginBottom = "16px";
     const steps = [
-      "Butti dentro substrate (citazioni, osservazioni) quando li incontri — bottone '+ Nuovo substrate' o '✨ Libero' (AI classifica per te).",
-      "Quando vedi una contraddizione, la registri come tensione (statement A vs statement B).",
-      "Il Hunter (icona 🔍) scansiona il vault e trova contraddizioni anche tra note che non avevi messo in relazione.",
-      "Quando capisci una tensione, la elevi a principio (IF/THEN/GREY ZONE). L'AI puo' proporre i campi.",
-      "Le convinzioni sconfitte vanno nell'archivio defeated come memoria storica di cio' che NON era vero.",
+      "Drop in substrate notes (quotes, observations) when you encounter them — '+ New substrate' button or '✨ Free' (AI classifies for you).",
+      "When you see a contradiction, record it as a tension (statement A vs statement B).",
+      "The Hunter (🔍 icon) scans the vault and finds contradictions even between notes you hadn't linked.",
+      "When you understand a tension, elevate it to a principle (IF/THEN/GREY ZONE). The AI can propose the fields.",
+      "Defeated beliefs go to the defeated archive as historical memory of what was NOT true.",
     ];
     for (const s of steps) flow.createEl("li", { text: s });
 
-    contentEl.createEl("h3", { text: "Un consiglio iniziale" });
+    contentEl.createEl("h3", { text: "An initial tip" });
     const tip = contentEl.createEl("p");
     tip.style.fontSize = "0.92em";
     tip.style.opacity = "0.85";
     tip.setText(
-      "Non cercare la perfezione subito. Butta dentro materiale grezzo (substrate) e tensioni mal formulate. Il sistema migliora le tue formulazioni col tempo — il Hunter ti mostra cose che non avevi visto, e mappare i presupposti ti costringe a esplicitare cio' che dai per scontato. Antinomia non e' uno strumento da riempire, e' una pratica."
+      "Don't aim for perfection right away. Dump in raw material (substrate) and poorly-formed tensions. The system improves your formulations over time — the Hunter shows you things you hadn't seen, and mapping presuppositions forces you to make explicit what you take for granted. Antinomia is not a tool to fill up; it is a practice."
     );
 
     // ---- Action buttons ----
@@ -530,9 +530,9 @@ class WelcomeModal extends Modal {
     };
 
     const dontShowBtn = mkBtn(
-      "Capito, non mostrare piu'",
+      "Got it, don't show again",
       false,
-      "Marca l'onboarding come completato. Potrai sempre riaprirlo da Ctrl+P -> Antinomia: mostra welcome."
+      "Mark onboarding as completed. You can always reopen it from Ctrl+P -> Antinomia: show welcome."
     );
     dontShowBtn.onclick = async () => {
       this.plugin.settings.onboardingCompleted = true;
@@ -543,18 +543,18 @@ class WelcomeModal extends Modal {
     };
 
     const exploreBtn = mkBtn(
-      "Esplora da solo",
+      "Explore on my own",
       false,
-      "Chiudi il welcome senza completare. Si riaprira' al prossimo lancio."
+      "Close the welcome without completing. It will reopen on next launch."
     );
     exploreBtn.onclick = () => {
       this.close();
     };
 
     const startBtn = mkBtn(
-      "Crea la mia prima tensione (guidata)",
+      "Create my first tension (guided)",
       true,
-      "Apre il modal di creazione tensione pre-popolato con un esempio chiaro."
+      "Opens the tension creation modal pre-filled with a clear example."
     );
     startBtn.onclick = async () => {
       this.plugin.settings.onboardingCompleted = true;
@@ -574,11 +574,11 @@ class WelcomeModal extends Modal {
           void this.plugin.createNote("T", content);
         },
         {
-          title: "Esempio — Solitudine creativa vs correzione sociale",
+          title: "Example — Creative solitude vs social correction",
           statementA:
-            "Il lavoro creativo profondo richiede solitudine prolungata. Le idee originali nascono nel silenzio, lontano dal rumore degli altri. La presenza altrui diluisce l'intuizione e spinge verso il conformismo.",
+            "Deep creative work requires prolonged solitude. Original ideas are born in silence, away from the noise of others. The presence of others dilutes intuition and pushes toward conformism.",
           statementB:
-            "La condivisione continua con altre menti corregge gli errori e impedisce ai pensieri di girare a vuoto. Da solo si finisce per confermare i propri pregiudizi: la qualita' del pensiero dipende dal contraddittorio.",
+            "Continuous sharing with other minds corrects errors and prevents thoughts from spinning in circles. Alone, you end up confirming your own biases: the quality of thinking depends on the contradictor.",
         }
       ).open();
       new Notice(
@@ -600,79 +600,79 @@ interface TutorialStep {
 
 const TUTORIAL_STEPS: TutorialStep[] = [
   {
-    title: "1. Tensione",
+    title: "1. Tension",
     paragraphs: [
-      "Una tensione cattura una contraddizione tra due posizioni A e B. Piu' sono incompatibili, piu' la tensione e' feconda. La tensione e' l'unita' fondamentale del pensiero antinomiano — non parti dalle idee 'pulite', parti dai conflitti.",
-      "La tensione non si risolve necessariamente: alcune restano aperte per anni, altre vengono 'elevate' a principi operativi, altre archiviate come 'defeated'.",
+      "A tension captures a contradiction between two positions A and B. The more incompatible they are, the more fertile the tension. The tension is the fundamental unit of antinomian thought — you don't start from 'clean' ideas, you start from conflicts.",
+      "A tension is not necessarily resolved: some stay open for years, others get 'elevated' to operational principles, others archived as 'defeated'.",
     ],
-    exampleTitle: "Esempio — Solitudine creativa",
+    exampleTitle: "Example — Creative solitude",
     exampleLines: [
-      "A: Il lavoro creativo profondo richiede solitudine prolungata.",
-      "B: La condivisione continua con altri corregge gli errori e impedisce ai pensieri di girare a vuoto.",
+      "A: Deep creative work requires prolonged solitude.",
+      "B: Continuous sharing with others corrects errors and prevents thoughts from spinning in circles.",
     ],
   },
   {
     title: "2. Substrate",
     paragraphs: [
-      "Il substrate e' materiale grezzo: una citazione, un fatto, un'osservazione, un appunto di lettura. Non e' ancora ne' tensione ne' principio.",
-      "I substrate sono il deposito da cui emergono le tensioni. Quando il Hunter li mette in relazione con tensioni esistenti, scopri contraddizioni che non avevi visto.",
+      "A substrate is raw material: a quote, a fact, an observation, a reading note. It is not yet a tension nor a principle.",
+      "Substrate notes are the reservoir from which tensions emerge. When the Hunter relates them to existing tensions, you discover contradictions you hadn't seen.",
     ],
-    exampleTitle: "Esempio — Cit. Kahneman",
+    exampleTitle: "Example — Kahneman quote",
     exampleLines: [
-      "\"In isolamento il cervello amplifica i bias di conferma. La discussione con un peer riduce gli errori del 40%.\"",
+      "\"In isolation the brain amplifies confirmation bias. Discussing with a peer reduces errors by 40%.\"",
     ],
   },
   {
-    title: "3. Principio",
+    title: "3. Principle",
     paragraphs: [
-      "Un principio emerge dalla risoluzione di una tensione. Non sceglie un lato — assorbe entrambi i lati come casi contestuali.",
-      "Forma standard: IF/THEN/GREY ZONE. Identifichi i contesti in cui vince A e quelli in cui vince B. La GREY ZONE sono i casi limite dove la regola non basta.",
+      "A principle emerges from resolving a tension. It doesn't pick a side — it absorbs both sides as contextual cases.",
+      "Standard form: IF/THEN/GREY ZONE. You identify the contexts where A wins and those where B wins. The GREY ZONE is the edge cases where the rule isn't enough.",
     ],
-    exampleTitle: "Esempio — Processi vs giudizio",
+    exampleTitle: "Example — Processes vs judgment",
     exampleLines: [
-      "IF [rischio prevedibile, errori costosi] -> processi codificati, checklist",
-      "IF [contesto unico, conoscenza locale distribuita] -> giudizio decentralizzato, eccezioni",
-      "GREY ZONE: progetti complessi dove la ripetibilita' sembra esserci ma c'e' conoscenza tacita",
+      "IF [predictable risk, costly errors] -> codified processes, checklists",
+      "IF [unique context, distributed local knowledge] -> decentralized judgment, exceptions",
+      "GREY ZONE: complex projects where repeatability seems to exist but there is tacit knowledge",
     ],
   },
   {
     title: "4. Defeated",
     paragraphs: [
-      "Defeated e' l'archivio delle convinzioni sconfitte. NON vengono cancellate: restano come memoria storica di cio' che NON era vero.",
-      "Tre motivi possibili: 'falso_positivo' (era un errore di valutazione), 'elevata' (e' diventata principio, link al principio sostituto), 'sconfitta_genuina' (l'evidenza l'ha demolita).",
+      "Defeated is the archive of defeated beliefs. They are NOT deleted: they remain as historical memory of what was NOT true.",
+      "Three possible motives: 'false_positive' (it was a misjudgment), 'elevated' (it became a principle, link to the replacing principle), 'genuinely_defeated' (the evidence demolished it).",
     ],
-    exampleTitle: "Esempio",
+    exampleTitle: "Example",
     exampleLines: [
-      "Convinzione: 'Ogni decisione importante si prende meglio in solitudine.'",
-      "Motivo: sconfitta_genuina (l'esperienza ha mostrato che le decisioni meditate insieme erano migliori).",
+      "Belief: 'Every important decision is better made in solitude.'",
+      "Motive: genuinely_defeated (experience showed that decisions deliberated together were better).",
     ],
   },
   {
-    title: "5. Presupposti",
+    title: "5. Presuppositions",
     paragraphs: [
-      "I presupposti sono le assunzioni epistemiche / valoriali / metafisiche che A e B danno per scontate, spesso senza dirlo.",
-      "Mapparli rende esplicito perche' A e B non possono convivere senza trade-off. E spesso e' nei presupposti che si scioglie la tensione (o si scopre che era mal posta).",
+      "Presuppositions are the epistemic / value / metaphysical assumptions that A and B take for granted, often unspoken.",
+      "Mapping them makes explicit why A and B cannot coexist without trade-offs. And often it is in the presuppositions that the tension dissolves (or is found to be ill-posed).",
     ],
-    exampleTitle: "Esempio — Solitudine creativa",
+    exampleTitle: "Example — Creative solitude",
     exampleLines: [
-      "Presupposti A: l'individuo isolato accede a una fonte di sapere migliore di quella sociale.",
-      "Presupposti B: il pensiero individuale, senza correzione esterna, tende sistematicamente all'errore.",
+      "Presuppositions A: the isolated individual has access to a better source of knowledge than the social one.",
+      "Presuppositions B: individual thought, without external correction, systematically tends toward error.",
     ],
   },
   {
     title: "6. Hunter (Contradiction Hunter)",
     paragraphs: [
-      "Il Hunter scansiona tensioni aperte + substrate del vault e propone COPPIE contraddittorie. Il valore vero del sistema: trova contraddizioni che NON avevi visto.",
-      "Vincolo importante: il Hunter IDENTIFICA, non risolve. La risoluzione e' lavoro tuo (attraverso il dialogo sui presupposti). Far suggerire risoluzioni all'AI distruggerebbe il valore epistemico del sistema.",
-      "Le coppie hanno confidence (alta/media/bassa) e si possono dismissare se sono falsi positivi.",
+      "The Hunter scans open tensions + substrate notes in the vault and proposes contradictory PAIRS. The system's real value: it finds contradictions you had NOT seen.",
+      "Important constraint: the Hunter IDENTIFIES, it does not resolve. The resolution is your work (through the dialogue on presuppositions). Having the AI suggest resolutions would destroy the epistemic value of the system.",
+      "Pairs have confidence (high/medium/low) and can be dismissed if they are false positives.",
     ],
   },
   {
-    title: "7. Grafo e collegamenti",
+    title: "7. Graph and links",
     paragraphs: [
-      "Il grafo di Obsidian mostra i wikilink tra le note. In Antinomia, i collegamenti rappresentano le relazioni epistemiche esplicite: una tensione e' nata da quale substrate, un principio deriva da quale tensione, un defeated e' stato sostituito da quale principio.",
-      "Quando elevi una tensione il plugin scrive 'Deriva da: [[T-...]]' nel body del principio. Quando archivi defeated 'elevata', scrivi 'Sostituita da: [[P-...]]'. Il comando 'Collega questa nota a...' aggiunge wikilink bidirezionali.",
-      "Il grafo che ne risulta NON e' la rete delle contraddizioni del Hunter — quella e' implicita. Il grafo e' la mappa delle connessioni che TU hai dichiarato.",
+      "Obsidian's graph shows the wikilinks between notes. In Antinomia, links represent explicit epistemic relationships: a tension was born from which substrate, a principle derives from which tension, a defeated was replaced by which principle.",
+      "When you elevate a tension the plugin writes 'Derived from: [[T-...]]' in the principle's body. When you archive a defeated as 'elevated', it writes 'Replaced by: [[P-...]]'. The 'Link this note to...' command adds bidirectional wikilinks.",
+      "The resulting graph is NOT the network of contradictions found by the Hunter — that one is implicit. The graph is the map of connections that YOU have declared.",
     ],
   },
 ];
@@ -698,7 +698,7 @@ class ConfirmModal extends Modal {
     p.setText(this.bodyText);
     new Setting(contentEl)
       .addButton((b) =>
-        b.setButtonText("Annulla").onClick(() => this.close())
+        b.setButtonText("Cancel").onClick(() => this.close())
       )
       .addButton((b) =>
         b
@@ -727,13 +727,13 @@ class GuidanceModal extends Modal {
   }
   onOpen(): void {
     const { contentEl } = this;
-    contentEl.createEl("h3", { text: "Come procedere adesso" });
+    contentEl.createEl("h3", { text: "What to do next" });
 
     const intro = contentEl.createEl("p");
     intro.style.fontSize = "0.9em";
     intro.style.opacity = "0.8";
     intro.setText(
-      "Suggerimento contestuale basato sullo stato attuale del tuo vault."
+      "Contextual hint based on the current state of your vault."
     );
 
     const suggestion = this.computeSuggestion();
@@ -762,7 +762,7 @@ class GuidanceModal extends Modal {
     btnRow.style.justifyContent = "flex-end";
     btnRow.style.marginTop = "12px";
 
-    const closeBtn = btnRow.createEl("button", { text: "Chiudi" });
+    const closeBtn = btnRow.createEl("button", { text: "Close" });
     closeBtn.style.padding = "6px 12px";
     closeBtn.style.cursor = "pointer";
     closeBtn.onclick = () => this.close();
@@ -811,9 +811,9 @@ class GuidanceModal extends Modal {
     // No notes at all
     if (totalAntinomia === 0) {
       return {
-        headline: "Vault vuoto: crea la tua prima tensione",
-        body: "Antinomia inizia da una contraddizione. Pensa a un dilemma che hai (lavoro, decisioni, valori) — due posizioni che ti sembrano entrambe vere ma incompatibili. Quello e' il materiale base.",
-        actionLabel: "Crea prima tensione",
+        headline: "Empty vault: create your first tension",
+        body: "Antinomia starts from a contradiction. Think of a dilemma you have (work, decisions, values) — two positions that both seem true but incompatible. That is the base material.",
+        actionLabel: "Create first tension",
         action: () => {
           new NewTensionModal(this.app, this.plugin, (fields, skipped) => {
             if (fields === null && !skipped) return;
@@ -827,9 +827,9 @@ class GuidanceModal extends Modal {
     // 1+ tensioni ma 0 substrate
     if (tensions >= 1 && substrates === 0) {
       return {
-        headline: "Aggiungi del materiale grezzo (substrate)",
-        body: "Hai gia' delle tensioni ma nessun substrate. Il substrate (citazioni, fatti, osservazioni) e' il materiale grezzo da cui emergono contraddizioni nuove. Il Hunter funziona molto meglio se ha substrate da incrociare con le tensioni.",
-        actionLabel: "Crea substrate",
+        headline: "Add some raw material (substrate)",
+        body: "You already have some tensions but no substrate. Substrate (quotes, facts, observations) is the raw material from which new contradictions emerge. The Hunter works much better when it has substrate to cross-reference with tensions.",
+        actionLabel: "Create substrate",
         action: () => {
           new NewSubstrateModal(this.app, this.plugin, (fields, skipped) => {
             if (fields === null && !skipped) return;
@@ -843,38 +843,38 @@ class GuidanceModal extends Modal {
     // Hai materiale ma mai lanciato Hunter
     if (totalAntinomia >= 3 && !s.hasRunHunter) {
       return {
-        headline: "Lancia il primo Hunter",
-        body: `Hai ${totalAntinomia} note nel vault. Il Hunter scansiona tensioni aperte + substrate e identifica coppie contraddittorie che magari non avevi visto. Per modelli locali serve qualche minuto. Niente di distruttivo, solo lettura.`,
-        actionLabel: "Lancia Hunter",
+        headline: "Run your first Hunter",
+        body: `You have ${totalAntinomia} notes in the vault. The Hunter scans open tensions + substrate and identifies contradictory pairs you may not have seen. For local models it takes a few minutes. Nothing destructive, just reading.`,
+        actionLabel: "Run Hunter",
         action: () => void this.plugin.runHunter(),
       };
     }
 
-    // Hai fatto Hunter, hai tensioni aperte, ma nessun principio
+    // You've run Hunter, have open tensions, but no principles
     if (s.hasRunHunter && openTensions >= 1 && principles === 0) {
       return {
-        headline: "Considera di elevare una tensione a principio",
-        body: "Hai tensioni aperte e hai gia' lanciato il Hunter. Se una tensione ti sembra abbastanza chiara, elevala: trasforma la contraddizione in un principio operativo IF/THEN. Non significa 'avere ragione', significa 'aver capito i contesti'.",
-        actionLabel: "Apri sidebar tensioni",
+        headline: "Consider elevating a tension to a principle",
+        body: "You have open tensions and have already run the Hunter. If a tension feels clear enough, elevate it: turn the contradiction into an operational IF/THEN principle. It doesn't mean 'being right', it means 'having understood the contexts'.",
+        actionLabel: "Open tensions sidebar",
         action: () => void this.plugin.activateViewExternal(VIEW_TYPE_OPEN_TENSIONS),
       };
     }
 
-    // Hai diverse tensioni ma nessun presupposto mappato (heuristic check)
+    // Several tensions but no presuppositions mapped (heuristic check)
     if (openTensions >= 2) {
       return {
-        headline: "Mappa i presupposti di una tensione",
-        body: "Le tensioni piu' produttive emergono quando rendi espliciti i presupposti epistemici/valoriali che A e B danno per scontati. Il bottone 'Presupposti' su una tensione aperta apre un form con bottone AI che propone una mappatura.",
-        actionLabel: "Apri tensioni aperte",
+        headline: "Map the presuppositions of a tension",
+        body: "The most productive tensions emerge when you make explicit the epistemic/value presuppositions that A and B take for granted. The 'Presuppositions' button on an open tension opens a form with an AI button that proposes a mapping.",
+        actionLabel: "Open active tensions",
         action: () => void this.plugin.activateViewExternal(VIEW_TYPE_OPEN_TENSIONS),
       };
     }
 
-    // Vault maturo (default fallback)
+    // Mature vault (default fallback)
     return {
-      headline: "Continua a lavorare con il sistema",
-      body: `Stato: ${tensions} tensioni (${openTensions} aperte), ${substrates} substrate, ${principles} principi. Il vault funziona. Quando vuoi un colpo d'occhio sulle contraddizioni nascoste rilancia il Hunter. Quando incontri materiale nuovo, butta dentro un substrate via '✨ Libero' (l'AI classifica per te).`,
-      actionLabel: "Apri sidebar tensioni",
+      headline: "Keep working with the system",
+      body: `Status: ${tensions} tensions (${openTensions} open), ${substrates} substrate, ${principles} principles. The vault is working. When you want an overview of hidden contradictions, run the Hunter again. When you encounter new material, drop in a substrate via '✨ Free' (AI classifies for you).`,
+      actionLabel: "Open tensions sidebar",
       action: () => void this.plugin.activateViewExternal(VIEW_TYPE_OPEN_TENSIONS),
     };
   }
@@ -906,7 +906,7 @@ class TutorialModal extends Modal {
     progress.style.opacity = "0.6";
     progress.style.marginBottom = "8px";
     progress.setText(
-      `Step ${this.currentStep + 1} di ${TUTORIAL_STEPS.length}`
+      `Step ${this.currentStep + 1} of ${TUTORIAL_STEPS.length}`
     );
 
     contentEl.createEl("h2", { text: step.title });
@@ -948,7 +948,7 @@ class TutorialModal extends Modal {
     leftGroup.style.display = "flex";
     leftGroup.style.gap = "6px";
 
-    const backBtn = leftGroup.createEl("button", { text: "← Indietro" });
+    const backBtn = leftGroup.createEl("button", { text: "← Back" });
     backBtn.style.padding = "6px 12px";
     backBtn.style.cursor = "pointer";
     backBtn.disabled = this.currentStep === 0;
@@ -959,7 +959,7 @@ class TutorialModal extends Modal {
       }
     };
 
-    const exitBtn = leftGroup.createEl("button", { text: "Esci" });
+    const exitBtn = leftGroup.createEl("button", { text: "Exit" });
     exitBtn.style.padding = "6px 12px";
     exitBtn.style.cursor = "pointer";
     exitBtn.onclick = () => this.close();
@@ -967,7 +967,7 @@ class TutorialModal extends Modal {
     const rightGroup = navRow.createEl("div");
     const isLast = this.currentStep === TUTORIAL_STEPS.length - 1;
     const nextBtn = rightGroup.createEl("button", {
-      text: isLast ? "Termina" : "Avanti →",
+      text: isLast ? "Finish" : "Next →",
     });
     nextBtn.style.padding = "6px 14px";
     nextBtn.style.cursor = "pointer";
@@ -1004,14 +1004,14 @@ class AntinomiaSettingTab extends PluginSettingTab {
     disclaimer.style.cssText =
       "background:rgba(220,53,69,0.08); border-left:3px solid #dc3545; " +
       "padding:10px 12px; margin:8px 0 16px 0; border-radius:4px; font-size:0.88em;";
-    disclaimer.createEl("strong", { text: "⚠ Uso previsto" });
+    disclaimer.createEl("strong", { text: "⚠ Intended use" });
     const dp = disclaimer.createEl("p");
     dp.style.margin = "6px 0 0 0";
     dp.setText(
-      "Antinomia e' una pratica riflessiva personale, non un sistema di supporto decisionale. Non usarla per decidere in situazioni reali (lavoro, salute, finanza, relazioni). Le coppie del Hunter sono spunti, non verita': l'AI puo' allucinare. Ogni uso diverso e' improprio."
+      "Antinomia is a personal reflective practice, not a decision-support system. Do not use it to decide in real situations (work, health, finance, relationships). Hunter pairs are prompts, not truths: the AI can hallucinate. Any other use is improper."
     );
     containerEl.createEl("p", {
-      text: "Backend AI configurabili come profili. Puoi avere piu' profili (es. LM Studio locale + Anthropic Cloud) e switchare quale e' attivo, con override opzionale per il Hunter.",
+      text: "AI backends are configurable as profiles. You can have multiple profiles (e.g. LM Studio local + Anthropic Cloud) and switch which one is active, with optional override for the Hunter.",
     });
 
     // ---- Recommended companion plugin notice ----
@@ -1025,33 +1025,33 @@ class AntinomiaSettingTab extends PluginSettingTab {
     const recTitle = recBox.createEl("div");
     recTitle.style.fontWeight = "bold";
     recTitle.style.marginBottom = "4px";
-    recTitle.setText("Plugin consigliato: Front Matter Title");
+    recTitle.setText("Recommended plugin: Front Matter Title");
     const recText = recBox.createEl("div");
     recText.style.fontSize = "0.85em";
     recText.style.opacity = "0.85";
     recText.setText(
-      "Le note Antinomia hanno basename con timestamp per stabilita' degli ID. Per vedere il titolo umano anche nel File Explorer, installa 'Front Matter Title' dalla community e configuralo per leggere la proprieta' 'titolo'."
+      "Antinomia notes have timestamp basenames for ID stability. To see the human title also in the File Explorer, install 'Front Matter Title' from the community and configure it to read the 'title' property."
     );
 
     new Setting(containerEl)
-      .setName("Cartella allegati (PDF, immagini, audio)")
+      .setName("Attachments folder (PDF, images, audio)")
       .setDesc(
-        "Crea la cartella 'attachments/' e la imposta come default Obsidian per nuovi allegati. Tiene la cartella 'notes/' (le note Antinomia) pulita da file binari."
+        "Creates the 'attachments/' folder and sets it as Obsidian's default for new attachments. Keeps the 'notes/' folder (Antinomia notes) clean of binary files."
       )
       .addButton((b) =>
         b
-          .setButtonText("Configura attachments/")
+          .setButtonText("Configure attachments/")
           .onClick(() => void this.plugin.setupAttachmentsFolder())
       );
 
     new Setting(containerEl)
-      .setName("Nome di questo vault Antinomia")
+      .setName("Antinomia vault name")
       .setDesc(
-        "Etichetta umana mostrata in cima alle sidebar (es. 'Brain filosofia', 'Pensiero lavoro'). Lascia vuoto per non mostrarla."
+        "Human label shown at the top of sidebars (e.g. 'Philosophy brain', 'Work thinking'). Leave empty to hide."
       )
       .addText((text) =>
         text
-          .setPlaceholder("(opzionale)")
+          .setPlaceholder("(optional)")
           .setValue(this.plugin.settings.vaultDisplayName)
           .onChange(async (value) => {
             this.plugin.settings.vaultDisplayName = value.trim();
@@ -1060,9 +1060,9 @@ class AntinomiaSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Apri Dashboard all'avvio")
+      .setName("Open Dashboard at startup")
       .setDesc(
-        "Quando Obsidian si avvia, mostra automaticamente la Dashboard Antinomia nella sidebar destra (se non e' gia' aperta)."
+        "When Obsidian starts, automatically show the Antinomia Dashboard in the right sidebar (if not already open)."
       )
       .addToggle((t) =>
         t
@@ -1074,9 +1074,9 @@ class AntinomiaSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Modalita' elevazione tensione → principio")
+      .setName("Tension → principle elevation mode")
       .setDesc(
-        "split (design C, raccomandato): crea principio nuovo + converte tensione in defeated, mostra arco rosso nel grafo. transform: cambia tipo in-place (legacy, no arco)."
+        "split (design C, recommended): creates a new principle + converts the tension into defeated, shows a red edge in the graph. transform: changes type in-place (legacy, no edge)."
       )
       .addDropdown((dd) => {
         dd.addOption("split", "split (design C, default)");
@@ -1089,18 +1089,18 @@ class AntinomiaSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Migra principi esistenti")
+      .setName("Migrate existing principles")
       .setDesc(
-        "Per ogni principio gia' nel vault che ha la sezione '## Origin (tension)' nel body, crea un defeated retroattivo. Esegui una sola volta dopo aver attivato split."
+        "For every principle already in the vault that has the '## Origin (tension)' section in its body, create a retroactive defeated. Run once after enabling split."
       )
       .addButton((b) =>
-        b.setButtonText("Esegui migrazione").onClick(() => void this.plugin.migrateExistingPrinciples())
+        b.setButtonText("Run migration").onClick(() => void this.plugin.migrateExistingPrinciples())
       );
 
     new Setting(containerEl)
-      .setName("Apri Grafo Antinomia all'avvio")
+      .setName("Open Antinomia Graph at startup")
       .setDesc(
-        "Quando Obsidian si avvia, apri anche il grafo custom Antinomia in un tab principale (se non e' gia' aperto)."
+        "When Obsidian starts, also open the custom Antinomia graph in a main tab (if not already open)."
       )
       .addToggle((t) =>
         t
@@ -1112,11 +1112,11 @@ class AntinomiaSettingTab extends PluginSettingTab {
       );
 
     // ------ Stile grafico del Graph View ------
-    containerEl.createEl("h3", { text: "Stile grafico Graph View" });
+    containerEl.createEl("h3", { text: "Graph View style" });
 
     new Setting(containerEl)
-      .setName("Stile preset")
-      .setDesc("Cambia palette del grafo. Custom = colori personalizzati sotto.")
+      .setName("Preset style")
+      .setDesc("Change graph palette. Custom = personalized colors below.")
       .addDropdown((dd) => {
         for (const k of Object.keys(GRAPH_STYLE_PRESETS)) dd.addOption(k, k);
         dd.addOption("custom", "custom");
@@ -1142,36 +1142,36 @@ class AntinomiaSettingTab extends PluginSettingTab {
             })
           );
       };
-      colorRow("tensione_aperta", "Tensioni aperte");
-      colorRow("tensione_risolta", "Tensioni risolte");
-      colorRow("tensione_elevata", "Tensioni elevate");
+      colorRow("tensione_aperta", "Open tensions");
+      colorRow("tensione_risolta", "Resolved tensions");
+      colorRow("tensione_elevata", "Elevated tensions");
       colorRow("substrate", "Substrate");
-      colorRow("principle", "Principi");
+      colorRow("principle", "Principles");
       colorRow("defeated", "Defeated");
-      colorRow("meta_note", "Meta nota");
-      colorRow("label", "Testo (label)");
-      // edge e background usano color picker generico ma supportano rgba; UI standard converte
-      colorRow("edge", "Linee (edge)");
-      colorRow("background", "Sfondo");
+      colorRow("meta_note", "Meta note");
+      colorRow("label", "Text (label)");
+      // edge and background use generic color picker but support rgba; standard UI converts
+      colorRow("edge", "Edges");
+      colorRow("background", "Background");
     }
 
     new Setting(containerEl)
       .setDesc(
-        "Riapri il tab Antinomia Graph dopo aver cambiato stile/colori per vederli applicati."
+        "Reopen the Antinomia Graph tab after changing style/colors to see them applied."
       );
 
-    containerEl.createEl("h3", { text: "Profili AI" });
+    containerEl.createEl("h3", { text: "AI Profiles" });
 
     // Info box su API costose vs locali gratuite
     const apiInfo = containerEl.createDiv();
     apiInfo.style.cssText =
       "background:rgba(13,110,253,0.08); border-left:3px solid #0d6efd; " +
       "padding:10px 12px; margin:4px 0 12px 0; border-radius:4px; font-size:0.86em;";
-    apiInfo.createEl("strong", { text: "ℹ Modelli AI: cloud vs locale" });
+    apiInfo.createEl("strong", { text: "ℹ AI models: cloud vs local" });
     const aiP = apiInfo.createEl("p");
     aiP.style.margin = "6px 0 0 0";
     aiP.setText(
-      "Antinomia usa modelli AI per le funzioni intelligenti (Hunter, propose IF/THEN, presupposti, classifica). Due opzioni:"
+      "Antinomia uses AI models for the intelligent features (Hunter, propose IF/THEN, presuppositions, classify). Two options:"
     );
     const ul = apiInfo.createEl("ul");
     ul.style.cssText = "margin:6px 0 0 0; padding-left:22px;";
@@ -1199,7 +1199,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
         })
       );
       row.addButton((b) =>
-        b.setButtonText("Modifica").onClick(() => {
+        b.setButtonText("Edit").onClick(() => {
           new ProfileEditModal(this.app, profile, (updated) => {
             if (!updated) return;
             const idx = this.plugin.settings.profiles.findIndex(
@@ -1256,8 +1256,8 @@ class AntinomiaSettingTab extends PluginSettingTab {
     );
 
     new Setting(containerEl)
-      .setName("Profilo attivo")
-      .setDesc("Usato di default per tutti i comandi AI.")
+      .setName("Active profile")
+      .setDesc("Default for all AI commands.")
       .addDropdown((dd) => {
         for (const p of this.plugin.settings.profiles) {
           dd.addOption(p.id, p.name);
@@ -1270,7 +1270,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Profilo per Hunter (override)")
+      .setName("Hunter profile (override)")
       .setDesc(
         "Lascia 'usa profilo attivo' per default. Override utile per usare un modello piu' grosso (es. Sonnet cloud) solo per il Hunter."
       )
@@ -1289,7 +1289,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
     containerEl.createEl("h3", { text: "Contradiction Hunter" });
 
     new Setting(containerEl)
-      .setName("Stile reasoning Hunter")
+      .setName("Hunter reasoning style")
       .setDesc(
         "Conciso: descrizioni brevi 2-3 frasi, niente pensiero esposto, ~3x piu' veloce. Esposto: il modello mostra il suo ragionamento (utile in fase di apprendimento o debug)."
       )
@@ -1305,8 +1305,8 @@ class AntinomiaSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Max note per scansione")
-      .setDesc("Limitato dal context window del modello.")
+      .setName("Max notes per scan")
+      .setDesc("Limited by the model's context window.")
       .addText((text) =>
         text
           .setPlaceholder("20")
@@ -1321,7 +1321,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Char max per nota nel prompt")
+      .setName("Max chars per note in prompt")
       .addText((text) =>
         text
           .setPlaceholder("800")
@@ -1349,40 +1349,40 @@ class AntinomiaSettingTab extends PluginSettingTab {
     );
 
     new Setting(containerEl)
-      .setName("Riapri welcome modal")
+      .setName("Reopen welcome modal")
       .setDesc(
         "Mostra subito il welcome con la spiegazione di Antinomia e i 5 layer. Non cambia lo stato dell'onboarding."
       )
       .addButton((b) =>
-        b.setButtonText("Apri").onClick(() => {
+        b.setButtonText("Open").onClick(() => {
           new WelcomeModal(this.app, this.plugin).open();
         })
       );
 
     new Setting(containerEl)
-      .setName("Apri guida iniziale (checklist)")
+      .setName("Open Getting Started guide (checklist)")
       .setDesc(
         "Sidebar laterale con i passi suggeriti per esplorare il sistema. Si aggiorna in automatico man mano che li completi."
       )
       .addButton((b) =>
-        b.setButtonText("Apri checklist").onClick(() => {
+        b.setButtonText("Open checklist").onClick(() => {
           void this.plugin.activateViewExternal(VIEW_TYPE_ONBOARDING);
         })
       );
 
     new Setting(containerEl)
-      .setName("Tutorial concetti chiave")
+      .setName("Key concepts tutorial")
       .setDesc(
         "Sequenza di 7 mini-schede che spiegano tensione, substrate, principio, defeated, presupposti, Hunter, grafo. Naviga con Indietro/Avanti."
       )
       .addButton((b) =>
-        b.setButtonText("Apri tutorial").onClick(() => {
+        b.setButtonText("Open tutorial").onClick(() => {
           new TutorialModal(this.app).open();
         })
       );
 
     new Setting(containerEl)
-      .setName("Suggerimento contestuale")
+      .setName("Contextual hint")
       .setDesc(
         "Mostra un suggerimento basato sullo stato attuale del vault (es. 'crea prima tensione' se vuoto, 'lancia Hunter' se hai materiale, ecc.)."
       )
@@ -1393,7 +1393,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Reset suggerimenti sidebar")
+      .setName("Reset sidebar tooltips")
       .setDesc(
         "Rimostra i banner suggerimento la prossima volta che apri Tensioni Aperte e Contradiction Hunter."
       )
@@ -1409,24 +1409,24 @@ class AntinomiaSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Vault di esempio")
+      .setName("Example vault")
       .setDesc(
         "Crea 21 note (3 tensioni + 15 substrate + 1 defeated + 1 principio Design C) + ESEMPIO-CHIAVE.md nella root con guida per beta tester. Le note contengono contraddizioni reali da scoprire col Hunter, oltre a rumore di controllo. Tutte marcate antinomia_example: true, cancellabili in un click."
       )
       .addButton((b) =>
-        b.setButtonText("Crea esempi").onClick(() => {
+        b.setButtonText("Create examples").onClick(() => {
           new ConfirmModal(
             this.app,
-            "Crea vault di esempio",
+            "Create example vault",
             "Verranno create 21 note demo (3 tensioni + 15 substrate + 1 defeated + 1 principio Design C) + ESEMPIO-CHIAVE.md nella root del vault. Tutte cancellabili in un click via 'Cancella esempi'.",
-            "Crea",
+            "Create",
             () => void this.plugin.createExampleNotes()
           ).open();
         })
       )
       .addButton((b) =>
         b
-          .setButtonText("Cancella esempi")
+          .setButtonText("Delete examples")
           .setWarning()
           .onClick(() => {
             const count = this.app.vault.getMarkdownFiles().filter((f) => {
@@ -1439,16 +1439,16 @@ class AntinomiaSettingTab extends PluginSettingTab {
             }
             new ConfirmModal(
               this.app,
-              "Cancella esempi",
+              "Delete examples",
               `Verranno cancellate ${count} note marcate antinomia_example: true.`,
-              "Cancella",
+              "Delete",
               () => void this.plugin.deleteExampleNotes()
             ).open();
           })
       );
 
     new Setting(containerEl)
-      .setName("Resetta onboarding")
+      .setName("Reset onboarding")
       .setDesc(
         "Mette onboardingCompleted = false. Il welcome modal verra' mostrato automaticamente al prossimo lancio di Obsidian."
       )
@@ -2293,7 +2293,7 @@ function renderTensionContext(parent: HTMLElement, rawContent: string): void {
   const header = box.createEl("div");
   header.style.fontWeight = "bold";
   header.style.marginBottom = "6px";
-  header.setText("Tensione di origine");
+  header.setText("Origin tension");
 
   const mkRow = (label: string, value: string) => {
     if (!value) return;
@@ -2438,7 +2438,7 @@ class ClassifyConfirmModal extends Modal {
   }
   onOpen(): void {
     const { contentEl } = this;
-    contentEl.createEl("h3", { text: "Classificazione proposta" });
+    contentEl.createEl("h3", { text: "Proposed classification" });
     contentEl.createEl("p", {
       text: `Tipo attuale: ${this.current || "(nessuno)"}`,
     });
@@ -2508,14 +2508,14 @@ class TitleEditModal extends Modal {
     }, 0);
     new Setting(contentEl)
       .addButton((b) =>
-        b.setButtonText("Annulla").onClick(() => {
+        b.setButtonText("Cancel").onClick(() => {
           this.onConfirm(null);
           this.close();
         })
       )
       .addButton((b) =>
         b
-          .setButtonText("Salva")
+          .setButtonText("Save")
           .setCta()
           .onClick(() => {
             this.onConfirm(currentValue.trim() || null);
@@ -2546,14 +2546,14 @@ class DefeatedReasonModal extends Modal {
   }
   onOpen(): void {
     const { contentEl } = this;
-    contentEl.createEl("h3", { text: "Archivia come defeated" });
+    contentEl.createEl("h3", { text: "Archive as defeated" });
     contentEl.createEl("p", { text: "Perche' e' stata sconfitta?" });
 
     let motivo = "false_positive";
     let sostituitaDa: string | null = null;
 
     // --- Motivo dropdown ---
-    new Setting(contentEl).setName("Motivo").addDropdown((dd) => {
+    new Setting(contentEl).setName("Motive").addDropdown((dd) => {
       dd.addOption("false_positive", "false_positive");
       dd.addOption("elevated", "elevated");
       dd.addOption("genuinely_defeated", "genuinely_defeated");
@@ -2579,7 +2579,7 @@ class DefeatedReasonModal extends Modal {
       if (motivo !== "elevated") return;
 
       new Setting(sostBlock)
-        .setName("Sostituita da quale principio")
+        .setName("Replaced by which principle")
         .setDesc(
           "Scegli il principio che ha preso il posto di questa nota. Si chiude cosi' il ciclo tensione -> defeated -> principio nel grafo."
         )
@@ -2617,7 +2617,7 @@ class DefeatedReasonModal extends Modal {
 
     new Setting(contentEl)
       .addButton((b) =>
-        b.setButtonText("Annulla").onClick(() => {
+        b.setButtonText("Cancel").onClick(() => {
           this.result = null;
           this.close();
         })
@@ -2756,7 +2756,7 @@ class ElevateToPrincipleModal extends Modal {
   }
   onOpen(): void {
     const { contentEl } = this;
-    contentEl.createEl("h3", { text: "Eleva a principio" });
+    contentEl.createEl("h3", { text: "Elevate to principle" });
     const intro = contentEl.createEl("p");
     intro.style.fontSize = "0.9em";
     intro.style.opacity = "0.8";
@@ -2871,7 +2871,7 @@ class ElevateToPrincipleModal extends Modal {
 
     new Setting(contentEl)
       .addButton((b) =>
-        b.setButtonText("Annulla").onClick(() => {
+        b.setButtonText("Cancel").onClick(() => {
           this.onSubmit(null, false);
           this.close();
         })
@@ -2917,7 +2917,7 @@ class FreeInputModal extends Modal {
   }
   onOpen(): void {
     const { contentEl } = this;
-    contentEl.createEl("h3", { text: "Inserimento libero" });
+    contentEl.createEl("h3", { text: "Free-form input" });
     const intro = contentEl.createEl("p");
     intro.style.fontSize = "0.9em";
     intro.style.opacity = "0.8";
@@ -2927,7 +2927,7 @@ class FreeInputModal extends Modal {
 
     let testo = this.prefillText;
 
-    const labelEl = contentEl.createEl("label", { text: "Testo grezzo" });
+    const labelEl = contentEl.createEl("label", { text: "Raw text" });
     labelEl.style.display = "block";
     labelEl.style.fontWeight = "bold";
     labelEl.style.marginTop = "10px";
@@ -2953,7 +2953,7 @@ class FreeInputModal extends Modal {
 
     new Setting(contentEl)
       .addButton((b) =>
-        b.setButtonText("Annulla").onClick(() => {
+        b.setButtonText("Cancel").onClick(() => {
           this.close();
         })
       )
@@ -2998,7 +2998,7 @@ class NewTensionModal extends Modal {
   }
   onOpen(): void {
     const { contentEl } = this;
-    contentEl.createEl("h3", { text: "Nuova tensione" });
+    contentEl.createEl("h3", { text: "New tension" });
     const intro = contentEl.createEl("p");
     intro.style.fontSize = "0.9em";
     intro.style.opacity = "0.8";
@@ -3102,7 +3102,7 @@ class NewTensionModal extends Modal {
 
     new Setting(contentEl)
       .addButton((b) =>
-        b.setButtonText("Annulla").onClick(() => {
+        b.setButtonText("Cancel").onClick(() => {
           this.onSubmit(null, false);
           this.close();
         })
@@ -3115,7 +3115,7 @@ class NewTensionModal extends Modal {
       )
       .addButton((b) =>
         b
-          .setButtonText("Crea")
+          .setButtonText("Create")
           .setCta()
           .onClick(() => {
             this.onSubmit({ titolo, statementA, statementB }, false);
@@ -3145,7 +3145,7 @@ class NewSubstrateModal extends Modal {
   }
   onOpen(): void {
     const { contentEl } = this;
-    contentEl.createEl("h3", { text: "Nuovo substrate" });
+    contentEl.createEl("h3", { text: "New substrate" });
     const intro = contentEl.createEl("p");
     intro.style.fontSize = "0.9em";
     intro.style.opacity = "0.8";
@@ -3182,7 +3182,7 @@ class NewSubstrateModal extends Modal {
     });
 
     // ---- "Proponi titolo (AI)" button ----
-    const aiBtn = contentEl.createEl("button", { text: "Proponi titolo (AI)" });
+    const aiBtn = contentEl.createEl("button", { text: "Propose title (AI)" });
     aiBtn.style.marginTop = "6px";
     aiBtn.style.fontSize = "0.85em";
     aiBtn.style.padding = "3px 10px";
@@ -3224,7 +3224,7 @@ class NewSubstrateModal extends Modal {
 
     new Setting(contentEl)
       .addButton((b) =>
-        b.setButtonText("Annulla").onClick(() => {
+        b.setButtonText("Cancel").onClick(() => {
           this.onSubmit(null, false);
           this.close();
         })
@@ -3237,7 +3237,7 @@ class NewSubstrateModal extends Modal {
       )
       .addButton((b) =>
         b
-          .setButtonText("Crea")
+          .setButtonText("Create")
           .setCta()
           .onClick(() => {
             this.onSubmit({ titolo, contenuto }, false);
@@ -3431,7 +3431,7 @@ class MapPresuppostiModal extends Modal {
 
     new Setting(contentEl)
       .addButton((b) =>
-        b.setButtonText("Annulla").onClick(() => {
+        b.setButtonText("Cancel").onClick(() => {
           this.onSubmit(null);
           this.close();
         })
@@ -3543,7 +3543,7 @@ function renderAntinomiaNav(
     );
     m.addSeparator();
     m.addItem((i) =>
-      i.setTitle("Esegui Hunter ora").setIcon("play")
+      i.setTitle("Run Hunter now").setIcon("play")
         .onClick(() => void plugin.runHunter())
     );
     m.addItem((i) =>
@@ -3662,7 +3662,7 @@ function renderAntinomiaNav(
       }
     }
   });
-  settingsBtn.title = "Apri impostazioni Antinomia";
+  settingsBtn.title = "Open Antinomia settings";
 }
 
 class OpenTensionsView extends ItemView {
@@ -3697,7 +3697,7 @@ class OpenTensionsView extends ItemView {
     container.empty();
     renderAntinomiaNav(this.plugin, container as HTMLElement, this.leaf);
     renderVaultLabel(container, this.plugin.settings.vaultDisplayName);
-    container.createEl("h4", { text: "Tensioni aperte" });
+    container.createEl("h4", { text: "Open tensions" });
 
     // ---- First-time hint banner ----
     if (!this.plugin.settings.hintsTensionsShown) {
@@ -3731,12 +3731,12 @@ class OpenTensionsView extends ItemView {
     toolbar.style.marginBottom = "12px";
     toolbar.style.flexWrap = "wrap";
 
-    const newTBtn = toolbar.createEl("button", { text: "+ Nuova tensione" });
+    const newTBtn = toolbar.createEl("button", { text: "+ New tension" });
     newTBtn.style.padding = "4px 10px";
     newTBtn.style.fontSize = "0.85em";
     newTBtn.style.cursor = "pointer";
     newTBtn.style.fontWeight = "600";
-    newTBtn.title = "Crea una nuova tensione (modal guidato)";
+    newTBtn.title = "Create a new tension (guided modal)";
     newTBtn.onclick = () => {
       new NewTensionModal(this.app, this.plugin, (fields, skipped) => {
         if (fields === null && !skipped) return;
@@ -3745,11 +3745,11 @@ class OpenTensionsView extends ItemView {
       }).open();
     };
 
-    const newSBtn = toolbar.createEl("button", { text: "+ Nuovo substrate" });
+    const newSBtn = toolbar.createEl("button", { text: "+ New substrate" });
     newSBtn.style.padding = "4px 10px";
     newSBtn.style.fontSize = "0.85em";
     newSBtn.style.cursor = "pointer";
-    newSBtn.title = "Crea un nuovo substrate (modal guidato)";
+    newSBtn.title = "Create a new substrate (guided modal)";
     newSBtn.onclick = () => {
       new NewSubstrateModal(this.app, this.plugin, (fields, skipped) => {
         if (fields === null && !skipped) return;
@@ -3809,7 +3809,7 @@ class OpenTensionsView extends ItemView {
       return fm?.antinomia_type === TYPE.tension && fm?.status === "open";
     });
     if (open.length === 0) {
-      container.createEl("p", { text: "Nessuna tensione aperta. Crea la prima qui sopra." });
+      container.createEl("p", { text: "No open tensions. Create the first one above." });
       return;
     }
     for (const file of open) {
@@ -3984,7 +3984,7 @@ class HunterResultsView extends ItemView {
     const toolbar = container.createEl("div");
     toolbar.style.marginBottom = "8px";
     const runBtn = toolbar.createEl("button", {
-      text: isLoading ? "Hunter in corso..." : "Esegui Hunter",
+      text: isLoading ? "Hunter running..." : "Run Hunter",
     });
     runBtn.style.marginRight = "6px";
     runBtn.disabled = isLoading;
@@ -4037,7 +4037,7 @@ class HunterResultsView extends ItemView {
 
     if (!this.currentRun) {
       container.createEl("p", {
-        text: "Nessuna scansione ancora. Premi 'Esegui Hunter' o usa Ctrl+P.",
+        text: "No scan yet. Press 'Run Hunter' or use Ctrl+P.",
       });
       return;
     }
@@ -4063,7 +4063,7 @@ class HunterResultsView extends ItemView {
     const items = this.currentRun.result.contraddizioni;
     if (items.length === 0) {
       container.createEl("p", {
-        text: "Nessuna contraddizione rilevata in questo run.",
+        text: "No contradictions detected in this run.",
       });
       return;
     }
@@ -4251,7 +4251,7 @@ class DismissedPairsView extends ItemView {
     container.empty();
     renderAntinomiaNav(this.plugin, container as HTMLElement, this.leaf);
     renderVaultLabel(container, this.plugin.settings.vaultDisplayName);
-    container.createEl("h4", { text: "Falsi positivi del Hunter" });
+    container.createEl("h4", { text: "Hunter false positives" });
 
     const desc = container.createEl("p");
     desc.style.fontSize = "0.85em";
@@ -4286,7 +4286,7 @@ class DismissedPairsView extends ItemView {
 
     if (pairs.length === 0) {
       container.createEl("p", {
-        text: "Nessun falso positivo registrato.",
+        text: "No false positives recorded.",
       });
       return;
     }
@@ -4466,7 +4466,7 @@ class SubstrateListView extends ItemView {
 
     const toolbar = container.createEl("div");
     toolbar.style.marginBottom = "10px";
-    const newBtn = toolbar.createEl("button", { text: "+ Nuovo substrate" });
+    const newBtn = toolbar.createEl("button", { text: "+ New substrate" });
     newBtn.style.padding = "4px 10px";
     newBtn.style.fontSize = "0.85em";
     newBtn.style.cursor = "pointer";
@@ -4489,7 +4489,7 @@ class SubstrateListView extends ItemView {
 
     if (items.length === 0) {
       container.createEl("p", {
-        text: "Nessun substrate. Materiale grezzo (citazioni, fatti, appunti) che pu\u00f2 generare tensioni.",
+        text: "No substrate. Raw material (quotes, facts, notes) that can generate tensions.",
       });
       return;
     }
@@ -4533,7 +4533,7 @@ class PrinciplesListView extends ItemView {
     container.empty();
     renderAntinomiaNav(this.plugin, container as HTMLElement, this.leaf);
     renderVaultLabel(container, this.plugin.settings.vaultDisplayName);
-    container.createEl("h4", { text: "Principi (Truth Archive)" });
+    container.createEl("h4", { text: "Principles (Truth Archive)" });
 
     const desc = container.createEl("p");
     desc.style.fontSize = "0.85em";
@@ -4550,7 +4550,7 @@ class PrinciplesListView extends ItemView {
 
     if (items.length === 0) {
       container.createEl("p", {
-        text: "Nessun principio attivo. Eleva una tensione risolta per crearne uno.",
+        text: "No active principles. Elevate a resolved tension to create one.",
       });
       return;
     }
@@ -4619,7 +4619,7 @@ class DefeatedListView extends ItemView {
     items.sort((a, b) => b.stat.mtime - a.stat.mtime);
 
     if (items.length === 0) {
-      container.createEl("p", { text: "Nessuna convinzione defeated." });
+      container.createEl("p", { text: "No defeated beliefs." });
       return;
     }
     for (const file of items) {
@@ -4746,7 +4746,7 @@ class OnboardingChecklistView extends ItemView {
     container.empty();
     renderAntinomiaNav(this.plugin, container as HTMLElement, this.leaf);
     renderVaultLabel(container, this.plugin.settings.vaultDisplayName);
-    container.createEl("h4", { text: "Guida iniziale" });
+    container.createEl("h4", { text: "Getting Started" });
 
     const intro = container.createEl("p");
     intro.style.fontSize = "0.85em";
@@ -5083,11 +5083,11 @@ class DashboardView extends ItemView {
       count.style.fontWeight = "600";
       count.setText(`Coppie trovate: ${s.lastHunterRunCount}`);
     } else {
-      hunterInfo.setText("Hunter non ancora eseguito.");
+      hunterInfo.setText("Hunter not yet run.");
     }
 
     // ---- Active profile ----
-    container.createEl("h5", { text: "Profilo AI" });
+    container.createEl("h5", { text: "AI Profile" });
     const profInfo = container.createEl("div");
     profInfo.style.padding = "8px 10px";
     profInfo.style.background = "var(--background-secondary)";
@@ -5117,7 +5117,7 @@ class DashboardView extends ItemView {
       .slice(0, 5);
     if (recent.length === 0) {
       container.createEl("p", {
-        text: "Nessuna nota Antinomia ancora.",
+        text: "No Antinomia notes yet.",
       });
     } else {
       const list = container.createEl("ul");
@@ -5135,7 +5135,7 @@ class DashboardView extends ItemView {
     }
 
     // ---- Quick actions ----
-    container.createEl("h5", { text: "Azioni rapide" });
+    container.createEl("h5", { text: "Quick actions" });
     const actions = container.createEl("div");
     actions.style.display = "flex";
     actions.style.flexWrap = "wrap";
@@ -5245,7 +5245,7 @@ class AuditVaultView extends ItemView {
     container.empty();
     renderAntinomiaNav(this.plugin, container as HTMLElement, this.leaf);
     renderVaultLabel(container, this.plugin.settings.vaultDisplayName);
-    container.createEl("h4", { text: "Audit del vault" });
+    container.createEl("h4", { text: "Vault audit" });
 
     const desc = container.createEl("p");
     desc.style.fontSize = "0.85em";
@@ -5394,7 +5394,7 @@ class AuditVaultView extends ItemView {
     summary.style.marginBottom = "10px";
     if (totalIssues === 0) {
       summary.style.color = "var(--text-success, var(--text-accent))";
-      summary.setText("✅ Nessuna issue trovata. Vault in salute.");
+      summary.setText("✅ No issues found. Vault is healthy.");
       return;
     }
     summary.setText(`${totalIssues} issue totali in ${sections.filter((s) => s.issues.length > 0).length} categorie.`);
@@ -5472,7 +5472,7 @@ class UnclassifiedNotesView extends ItemView {
     container.empty();
     renderAntinomiaNav(this.plugin, container as HTMLElement, this.leaf);
     renderVaultLabel(container, this.plugin.settings.vaultDisplayName);
-    container.createEl("h4", { text: "Note non classificate" });
+    container.createEl("h4", { text: "Unclassified notes" });
 
     const desc = container.createEl("p");
     desc.style.fontSize = "0.85em";
@@ -5793,7 +5793,7 @@ class AntinomiaGraphView extends ItemView {
     const fitBtn = toolbar.createEl("button", { text: "Fit" });
     fitBtn.onclick = () => this.cy?.fit(undefined, 40);
 
-    const resetBtn = toolbar.createEl("button", { text: "Reset filtri" });
+    const resetBtn = toolbar.createEl("button", { text: "Reset filters" });
     resetBtn.onclick = () => {
       this.filters = { ...DEFAULT_GRAPH_FILTERS };
       this.render();
@@ -6137,7 +6137,7 @@ class AntinomiaGraphView extends ItemView {
       msg.style.textAlign = "center";
       msg.style.opacity = "0.6";
       msg.setText(
-        "Nessuna nota corrisponde ai filtri attivi. Attiva piu' layer in alto."
+        "No note matches active filters. Enable more layers above."
       );
       return;
     }
@@ -7277,9 +7277,9 @@ export default class AntinomiaPlugin extends Plugin {
       callback: () => {
         new ConfirmModal(
           this.app,
-          "Crea vault di esempio",
+          "Create example vault",
           "Verranno create 21 note demo + ESEMPIO-CHIAVE.md per i beta tester. Tutte marcate antinomia_example: true, cancellabili in 1 click col comando 'cancella esempi'.",
-          "Crea",
+          "Create",
           () => void this.createExampleNotes()
         ).open();
       },
@@ -7298,9 +7298,9 @@ export default class AntinomiaPlugin extends Plugin {
         }
         new ConfirmModal(
           this.app,
-          "Cancella esempi",
+          "Delete examples",
           `Verranno cancellate ${count} note marcate antinomia_example: true. Vanno nel cestino di Obsidian (recuperabili).`,
-          "Cancella",
+          "Delete",
           () => void this.deleteExampleNotes()
         ).open();
       },
@@ -7929,7 +7929,7 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
         const modal = new Modal(this.app);
         modal.onOpen = () => {
           const c = modal.contentEl;
-          c.createEl("h3", { text: "Substrate da YouTube" });
+          c.createEl("h3", { text: "Substrate from YouTube" });
           const p = c.createEl("p");
           p.style.fontSize = "0.88em";
           p.style.opacity = "0.8";
@@ -7958,7 +7958,7 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
           }, 0);
           new Setting(c)
             .addButton((b) =>
-              b.setButtonText("Annulla").onClick(() => {
+              b.setButtonText("Cancel").onClick(() => {
                 modal.close();
                 resolve(null);
               })
@@ -8009,7 +8009,7 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
     const fallbackModal = new Modal(this.app);
     fallbackModal.onOpen = () => {
       const c = fallbackModal.contentEl;
-      c.createEl("h3", { text: "Fetch automatico fallito" });
+      c.createEl("h3", { text: "Automatic fetch failed" });
       const p = c.createEl("p");
       p.style.fontSize = "0.9em";
       p.style.lineHeight = "1.5";
@@ -8030,7 +8030,7 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
       });
 
       new Setting(c)
-        .setName("Apri servizio esterno")
+        .setName("Open external service")
         .addButton((b) =>
           b
             .setButtonText("Apri youtubetotranscript.com")
@@ -8070,7 +8070,7 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
 
       new Setting(c)
         .addButton((b) =>
-          b.setButtonText("Annulla").onClick(() => fallbackModal.close())
+          b.setButtonText("Cancel").onClick(() => fallbackModal.close())
         )
         .addButton((b) =>
           b
