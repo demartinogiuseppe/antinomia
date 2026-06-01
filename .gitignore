@@ -17,6 +17,14 @@ TestVaultDisordinato/.obsidian/plugins/antinomia/data.json
 TestVaultDisordinato/.obsidian/workspace*
 TestVaultDisordinato/.obsidian/cache
 
+# Note timestamp generate runtime durante test (T-YYYYMMDD-..., S-YYYYMMDD-...)
+# Lasciano stato del repo pulito senza note ephemeral. Le note ESEMPIO-* del vault
+# di esempio NON sono toccate da questi pattern.
+TestVaultDisordinato/notes/T-2*.md
+TestVaultDisordinato/notes/S-2*.md
+TestVault/notes/T-2*.md
+TestVault/notes/S-2*.md
+
 # OS
 .DS_Store
 Thumbs.db
