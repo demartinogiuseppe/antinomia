@@ -1,8 +1,8 @@
-# Antinomia v1.1 — Beta tester installation guide
+# Antinomia v1.2 — Beta tester installation guide
 
 Thanks for trying Antinomia. This file walks you from install to first use. Estimated time: **10 minutes** (5 of which are downloading the local AI model).
 
-> ⚠️ **The plugin UI and AI prompts are in Italian.** An English UI is on the V2 roadmap. The frontmatter schema (field names) is also in Italian by design.
+> ⚠️ **Breaking change from v1.1.x**: the frontmatter schema is now fully English (`antinomia_type`, `status: open`, `links`, etc.). Vaults built with v1.1.x will NOT be read. Start a fresh vault.
 
 ---
 
@@ -26,7 +26,7 @@ Thanks for trying Antinomia. This file walks you from install to first use. Esti
 
 ## Step 2 — Install the Antinomia plugin
 
-1. **Unzip** the `antinomia-v1.1.0.zip` you received. You'll get an `antinomia/` folder containing `main.js`, `manifest.json` (and possibly `styles.css`).
+1. **Unzip** the `antinomia-v1.2.0.zip` you received. You'll get an `antinomia/` folder containing `main.js`, `manifest.json` (and possibly `styles.css`).
 2. Open the **vault folder** on your filesystem (e.g. `Documents/AntinomiaTest/`). If you don't know where it is, in Obsidian: Settings → About → "Open vault location" or via the icon under the vault name.
 3. Navigate to `<vault>/.obsidian/plugins/`. If the `plugins` folder doesn't exist, create it.
 4. **Copy the unzipped `antinomia/` folder** into `<vault>/.obsidian/plugins/`. The final structure must be:
@@ -49,7 +49,7 @@ Without this plugin, the File Explorer shows technical basenames like `T-2026053
 1. Settings → **Community plugins** → **Browse**
 2. Search for **Front Matter Title** (author: Snezhig)
 3. Install → Enable
-4. Settings → **Front Matter Title** (community plugin section) → "Common main template" → enter the word `titolo`
+4. Settings → **Front Matter Title** (community plugin section) → "Common main template" → enter the word `title`
 5. Save
 
 Now you'll see human titles everywhere (File Explorer, tabs, wikilinks).
@@ -66,8 +66,8 @@ Antinomia uses AI models for Hunter, propose IF/THEN, map presuppositions, class
 2. Launch LM Studio
 3. **Discover** or **Search** section → look for `qwen3-14b-claude-4.5-opus-high-reasoning-distill` (or another Qwen 14B / 9B if you have less VRAM). Download (~6-9 GB).
 4. **Local Server** or **Developer** section → load the model → start the server (default `http://localhost:1234`)
-5. In Obsidian: Settings → **Antinomia** → **Profili AI** section → edit the Default profile (or add a new one)
-6. **Backend preset** → "LM Studio (locale)" (or "LM Studio OpenAI-compat" if you prefer OpenAI format)
+5. In Obsidian: Settings → **Antinomia** → **AI Profiles** section → edit the Default profile (or add a new one)
+6. **Backend preset** → "LM Studio (local)" (or "LM Studio OpenAI-compat" if you prefer OpenAI format)
 7. API key: leave it as `lmstudio` (placeholder; LM Studio doesn't verify it)
 8. Click **Test** → it should respond "pong" or equivalent
 
@@ -78,7 +78,7 @@ Antinomia uses AI models for Hunter, propose IF/THEN, map presuppositions, class
    - OpenAI: [platform.openai.com](https://platform.openai.com) (GPT)
    - Groq: [console.groq.com](https://console.groq.com) (Llama 3.3, super fast)
    - OpenRouter: [openrouter.ai](https://openrouter.ai) (gateway to 100+ models)
-2. Settings → Antinomia → Profili AI → edit → matching Backend preset
+2. Settings → Antinomia → AI Profiles → edit → matching Backend preset
 3. Paste the key → Test
 
 > ⚠️ Cloud APIs have **per-token costs**. If you're cost-sensitive, use LM Studio locally.
@@ -90,7 +90,7 @@ Antinomia uses AI models for Hunter, propose IF/THEN, map presuppositions, class
 Now the interesting part: see what Antinomia does with a pre-built note set.
 
 1. Settings → **Antinomia** → scroll down to **Onboarding**
-2. Click the **"Crea vault di esempio"** button (create example vault)
+2. Click the **"Create examples"** button
 3. Confirm the warning modal
 4. **21 notes** are created (3 tensions + 15 substrate + 1 defeated + 1 Design C principle) inside `notes/` + an `EXAMPLE-KEY.md` file at the vault root
 
@@ -105,26 +105,26 @@ Now the interesting part: see what Antinomia does with a pre-built note set.
    - 🧭 Principles
    - 🗄 Defeated archive
 
-3. **Open the Antinomia Graph** (auto-opened at plugin startup, or via nav menu → 🕸 Grafo). You'll see:
+3. **Open the Antinomia Graph** (auto-opened at plugin startup, or via nav menu → 🕸 Graph). You'll see:
    - 21 colored nodes by layer (orange = open tensions, grey = substrate, green = principle, red = defeated)
    - 1 **red edge** between the defeated and the principle of the Design C example (`EXAMPLE-D-quantity-quality` → `EXAMPLE-P-quantity-quality`)
    - Toggle checkboxes at the top to filter by layer (animated fade-in/out)
    - Drag the dots, spin the wheel to zoom (1.6×/step animated 320 ms), use the vertical slider
 
 4. **Run the Hunter**:
-   - `Ctrl+P` → "**Antinomia: cerca contraddizioni (Hunter)**"
+   - `Ctrl+P` → "**Antinomia: find contradictions (Hunter)**"
    - Wait for completion (with LM Studio 14B on 18 notes: ~2 minutes)
    - Compare the output against the **KEY**. Expected: it finds CN2, CN3, CN4 (substrate-substrate test), CN5. CN1 is the hardest case for small local models.
    - If you want to stop the Hunter before completion: click the "⛔ Stop Hunter" button in the results sidebar.
 
 5. **Hunter on a single note** (focus mode):
-   - Global nav menu → **🔍 Hunter ▾** → **"Hunter su una nota (focus)"**
-   - A picker opens → choose e.g. "Compro sempre il piu' economico"
+   - Global nav menu → **🔍 Hunter ▾** → **"Hunter on a note (focus)"**
+   - A picker opens → choose e.g. "I always buy the cheapest"
    - The Hunter scans only pairs involving that specific note
 
 6. **Try the other AI features**:
-   - Open a tension → Open Tensions sidebar → **"Presupposti"** button → "Proponi presupposti (AI)" → AI suggests them
-   - Open a tension → **"↑ Eleva"** button → IF/THEN/GREY form → "Proponi IF/THEN (AI)" → a new principle is created + the original tension becomes a defeated (Design C)
+   - Open a tension → Open Tensions sidebar → **"Presuppositions"** button → "Propose presuppositions (AI)" → AI suggests them
+   - Open a tension → **"↑ Elevate"** button → IF/THEN/GREY form → "Propose IF/THEN (AI)" → a new principle is created + the original tension becomes a defeated (Design C)
 
 ---
 
@@ -132,9 +132,9 @@ Now the interesting part: see what Antinomia does with a pre-built note set.
 
 When you understand how it works and want to start your real vault:
 
-1. Settings → Antinomia → **Onboarding** → **"Cancella esempi"** button (delete examples)
+1. Settings → Antinomia → **Onboarding** → **"Delete examples"** button
 2. Confirm → all `EXAMPLE-*` notes + the `EXAMPLE-KEY.md` go into the Obsidian trash (recoverable from trash if you change your mind)
-3. The vault is clean. Start with: `Ctrl+P` → "Antinomia: nuova tensione" or via nav menu → ➕ Crea
+3. The vault is clean. Start with: `Ctrl+P` → "Antinomia: new tension" or via nav menu → ➕ Create
 
 ---
 
