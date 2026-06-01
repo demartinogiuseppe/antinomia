@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.2.0 (June 1, 2026) — Full English release
+
+Antinomia is now fully localized in English. All user-facing strings, AI prompts, documentation, and example content have been translated. The frontmatter schema has been renamed from Italian to English field names. This is a **breaking change** for vaults built with v1.1.x: their Italian frontmatter (`tensione`, `stato: aperta`, `collegamenti`, etc.) is no longer recognized. No migration utility is provided — start a fresh vault.
+
+### Localization (all phases A–E)
+
+- **Docs** (A): README, CHANGELOG, CITATION.cff, BETA-INSTALL, plugin/README, manifest description.
+- **Schema** (B): values `tensione/principio/meta_nota` → `tension/principle/meta_note`. Status `aperta/risolta/elevata` → `open/resolved/elevated`. Motive `falso_positivo/sconfitta_genuina` → `false_positive/genuinely_defeated`. Field names: `antinomia_tipo/stato/collegamenti/fonte/motivo/sostituita_da/origine_tensione/lingua_originale/data_modifica/titolo/lingua_base/data_creazione/origine` → `antinomia_type/status/links/source/motive/replaced_by/origin_tension/original_language/modified_date/title/base_language/creation_date/origin`. Body markers `## Origine`/`> Deriva da`/`> Sostituita da`/`> Vedi anche` → `## Origin`/`> Derived from`/`> Replaced by`/`> See also`.
+- **UI strings** (C): ~600 strings across command palette, Notice messages, Settings labels and descriptions, modal titles and forms (Elevate, Free input, New tension, New substrate, Map presuppositions, Archive defeated, Profile editor), sidebar views (Open Tensions, Hunter Results, Substrate, Principles, Defeated, Dashboard, Audit, False Positives, Unclassified Notes, Getting Started), Welcome modal + 7-card Tutorial + GuidanceModal.
+- **AI prompts** (D): all 6 system prompts translated (CLASSIFY, TITLE, PRESUPPOSTI, FREE_INPUT, PRINCIPLE, HUNTER). The HUNTER_SYSTEM (the largest, with few-shot examples and rules) was translated with care preserving structure and intent. JSON shape kept compatible (field names `nota_a/nota_b/descrizione/confidence` + values `alta/media/bassa` stay as internal contract to avoid breaking the parser).
+- **Example vault** (E): the 21-note example vault generator (3 tensions + 15 substrate + 1 defeated + 1 Design C principle) and `EXAMPLE-KEY.md` (formerly `ESEMPIO-CHIAVE.md`) rewritten in English. Basename prefix `ESEMPIO-` → `EXAMPLE-`.
+
+### Breaking changes
+
+- Vaults built with v1.1.x will not be read: the plugin looks for `antinomia_type` (was `antinomia_tipo`), `status: open` (was `stato: aperta`), etc.
+- The Italian schema was a design decision in v1.x. v1.2 makes English the default and only option. UI is no longer Italian.
+- `isDesktopOnly: true` (unchanged, kept).
+
+---
+
 ## v1.1.0 (June 1, 2026) — First public beta release via BRAT
 
 ### Framing
