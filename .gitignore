@@ -45,8 +45,13 @@ ps_log.txt
 *.7z
 
 # Script one-shot di migrazione tra fasi (transienti di questa sessione)
-# package-release.ps1 NON e' coperto da questo pattern (e' uno strumento stabile, tracked).
+# package-release.ps1 NON e' coperto da questi pattern (e' uno strumento stabile, tracked).
 fase*-*.ps1
+audit-*.ps1
+cleanup-*.ps1
+onboarding-*.ps1
+release-v*.ps1
+reorganize-*.ps1
 
 # Artefatti di release (vanno solo su GitHub Release, non nel repo)
 releases/
