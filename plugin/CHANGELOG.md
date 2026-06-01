@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.2.1 (June 1, 2026) — Welcome modal CTA for example vault
+
+Small onboarding UX improvement, no functional changes.
+
+- **Welcome modal** now shows a highlighted CTA box "🚀 Want to explore Antinomia quickly?" between the initial tip and the action buttons. Clicking the "Create example vault" button generates the 21 demo notes + `EXAMPLE-KEY.md` and closes the welcome.
+- The CTA appears only when no example notes exist in the vault (checked via `antinomia_example: true` frontmatter), so it disappears after one click or for users who already explored.
+
+Before v1.2.1, the example vault was only discoverable through Settings → Antinomia → Onboarding → Create examples. New users opening the Welcome modal had no fast path to a working playground.
+
+---
+
 ## v1.2.0 (June 1, 2026) — Full English release
 
 Antinomia is now fully localized in English. All user-facing strings, AI prompts, documentation, and example content have been translated. The frontmatter schema has been renamed from Italian to English field names. This is a **breaking change** for vaults built with v1.1.x: their Italian frontmatter (`tensione`, `stato: aperta`, `collegamenti`, etc.) is no longer recognized. No migration utility is provided — start a fresh vault.
