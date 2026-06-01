@@ -2547,7 +2547,7 @@ class DefeatedReasonModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     contentEl.createEl("h3", { text: "Archive as defeated" });
-    contentEl.createEl("p", { text: "Perche' e' stata sconfitta?" });
+    contentEl.createEl("p", { text: "Why was it defeated?" });
 
     let motivo = "false_positive";
     let sostituitaDa: string | null = null;
@@ -2581,13 +2581,13 @@ class DefeatedReasonModal extends Modal {
       new Setting(sostBlock)
         .setName("Replaced by which principle")
         .setDesc(
-          "Scegli il principio che ha preso il posto di questa nota. Si chiude cosi' il ciclo tensione -> defeated -> principio nel grafo."
+          "Pick the principle that replaced this note. This closes the tension -> defeated -> principle cycle in the graph."
         )
         .addButton((b) => {
           b.setButtonText(
             sostituitaDa
-              ? `Cambia (attuale: ${sostituitaDa})`
-              : "Scegli principio..."
+              ? `Change (current: ${sostituitaDa})`
+              : "Pick principle..."
           ).onClick(() => {
             new NotePickerModal(
               this.app,
@@ -2600,16 +2600,16 @@ class DefeatedReasonModal extends Modal {
                 const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
                 return fm?.antinomia_type === TYPE.principle;
               },
-              "Cerca un principio..."
+              "Search for a principle..."
             ).open();
           });
         });
 
       if (sostituitaDa) {
-        labelEl.setText(`Sostituita da: [[${sostituitaDa}]]`);
+        labelEl.setText(`Replaced by: [[${sostituitaDa}]]`);
       } else {
         labelEl.setText(
-          "(Nessun principio selezionato — puoi salvare comunque, replaced_by resta vuoto.)"
+          "(No principle selected — you can still save, replaced_by stays empty.)"
         );
       }
     };
@@ -2624,7 +2624,7 @@ class DefeatedReasonModal extends Modal {
       )
       .addButton((b) =>
         b
-          .setButtonText("Archivia")
+          .setButtonText("Archive")
           .setCta()
           .onClick(() => {
             this.result = { motivo, replaced_by: sostituitaDa };
@@ -2655,19 +2655,19 @@ function tensionTemplate(fields: TensionFields = {}): string {
   return `---
 antinomia_type: ${TYPE.tension}
 ${titoloLine}
-status: aperta
-lingua_base: italiano
-data_creazione: ${date}
+status: open
+base_language: english
+creation_date: ${date}
 modified_date: ${date}
-origine: input_utente
+origin: user_input
 links: []
 ---
 - **A (base):** ${a}
-- **A (originale):**
+- **A (original):**
 - **B (base):** ${b}
-- **B (originale):**
-- **Presupposizioni A:**
-- **Presupposizioni B:**
+- **B (original):**
+- **Presuppositions A:**
+- **Presuppositions B:**
 `;
 }
 
@@ -2684,13 +2684,13 @@ function substrateTemplate(fields: SubstrateFields = {}): string {
   return `---
 antinomia_type: ${TYPE.substrate}
 ${titoloLine}
-lingua_base: italiano
-original_language: italiano
-source: input_utente
-data: ${date}
+base_language: english
+original_language: english
+source: user_input
+date: ${date}
 ---
-- **Contenuto (base):** ${c}
-- **Originale:**
+- **Content (base):** ${c}
+- **Original:**
 `;
 }
 
@@ -2716,12 +2716,12 @@ function principleBodyTemplate(fields: PrincipleFields = {}): string {
 
   const lineA =
     ifA || thenA
-      ? `IF ${ifA || "[condizione A]"} -> ${thenA || "[esito X]"}`
-      : "IF [condizione A] -> [esito X]";
+      ? `IF ${ifA || "[condition A]"} -> ${thenA || "[outcome X]"}`
+      : "IF [condition A] -> [outcome X]";
   const lineB =
     ifB || thenB
-      ? `IF ${ifB || "[condizione B]"} -> ${thenB || "[esito Y]"}`
-      : "IF [condizione B] -> [esito Y]";
+      ? `IF ${ifB || "[condition B]"} -> ${thenB || "[outcome Y]"}`
+      : "IF [condition B] -> [outcome Y]";
 
   return `- **${lineA}**
 - **${lineB}**
@@ -2761,7 +2761,7 @@ class ElevateToPrincipleModal extends Modal {
     intro.style.fontSize = "0.9em";
     intro.style.opacity = "0.8";
     intro.setText(
-      `Stai trasformando la tensione "${humanTitle(this.app, this.file)}" in un principio operativo. Compila i campi sotto: diventeranno il nuovo body. Il testo originale della tensione verra' conservato sotto la sezione "## Origin (tension)".`
+      `You're transforming the tension "${humanTitle(this.app, this.file)}" into an operational principle. Fill the fields below: they will become the new body. The original tension text will be preserved under the "## Origin (tension)" section.`
     );
 
     // Show the tension content inline (scrollable) so the user can re-read
@@ -2809,48 +2809,48 @@ class ElevateToPrincipleModal extends Modal {
       return i;
     };
 
-    mkLabel("IF — condizione A");
-    mkHint("La condizione/contesto in cui vale l'esito A.");
+    mkLabel("IF — condition A");
+    mkHint("The condition/context where outcome A applies.");
     const ifAInput = mkInput((v) => (ifA = v));
 
-    mkLabel("THEN — esito A");
-    mkHint("La regola/azione/conclusione che vale nella condizione A.");
+    mkLabel("THEN — outcome A");
+    mkHint("The rule/action/conclusion that applies under condition A.");
     const thenAInput = mkInput((v) => (thenA = v));
 
-    mkLabel("IF — condizione B");
-    mkHint("La condizione/contesto opposto (o complementare) ad A.");
+    mkLabel("IF — condition B");
+    mkHint("The opposite (or complementary) condition/context to A.");
     const ifBInput = mkInput((v) => (ifB = v));
 
-    mkLabel("THEN — esito B");
-    mkHint("La regola/azione/conclusione che vale nella condizione B.");
+    mkLabel("THEN — outcome B");
+    mkHint("The rule/action/conclusion that applies under condition B.");
     const thenBInput = mkInput((v) => (thenB = v));
 
     mkLabel("GREY ZONE");
     mkHint(
-      "Casi limite, ambigui, dove A e B si toccano. Lascia vuoto se non ti viene niente subito."
+      "Edge cases, ambiguous, where A and B touch. Leave blank if nothing comes to mind right away."
     );
     const greyTextarea = mkTextarea("60px", (v) => (greyZone = v));
 
-    // ---- "Proponi IF/THEN (AI)" button ----
+    // ---- "Propose IF/THEN (AI)" button ----
     const aiBtn = contentEl.createEl("button", {
-      text: "Proponi IF/THEN (AI)",
+      text: "Propose IF/THEN (AI)",
     });
     aiBtn.style.marginTop = "10px";
     aiBtn.style.fontSize = "0.85em";
     aiBtn.style.padding = "4px 12px";
     aiBtn.style.cursor = "pointer";
     aiBtn.title =
-      "Chiede al modello AI di proporre i 5 campi IF/THEN/GREY leggendo il testo della tensione.";
+      "Asks the AI model to propose the 5 IF/THEN/GREY fields by reading the tension's text.";
     aiBtn.onclick = async (e) => {
       e.preventDefault();
       const proposed = await withLoadingButton(
         aiBtn,
-        "⏳ Generando...",
+        "⏳ Generating...",
         async () => {
           const raw = await this.app.vault.read(this.file);
           const body = stripFrontmatter(raw).trim();
           const content =
-            "Sto elevando questa tensione Antinomia a principio operativo IF/THEN/GREY. Ecco il testo della tensione:\n\n" +
+            "I'm elevating this Antinomia tension into an operational IF/THEN/GREY principle. Here is the tension text:\n\n" +
             body;
           return await this.plugin.proposeIfThenFromContent(content);
         }
@@ -2877,14 +2877,14 @@ class ElevateToPrincipleModal extends Modal {
         })
       )
       .addButton((b) =>
-        b.setButtonText("Salta e usa template vuoto").onClick(() => {
+        b.setButtonText("Skip and use empty template").onClick(() => {
           this.onSubmit(null, true);
           this.close();
         })
       )
       .addButton((b) =>
         b
-          .setButtonText("Eleva")
+          .setButtonText("Elevate")
           .setCta()
           .onClick(() => {
             this.onSubmit({ ifA, thenA, ifB, thenB, greyZone }, false);
@@ -2922,7 +2922,7 @@ class FreeInputModal extends Modal {
     intro.style.fontSize = "0.9em";
     intro.style.opacity = "0.8";
     intro.setText(
-      "Scrivi quello che hai in mente, senza preoccuparti del tipo. L'AI capisce se e' una tensione o un substrate, estrae i campi e apre il modal corrispondente pre-compilato. Puoi sempre raffinare prima di salvare."
+      "Write what you have in mind, without worrying about the type. The AI figures out if it's a tension or substrate, extracts the fields, and opens the matching modal pre-filled. You can always refine before saving."
     );
 
     let testo = this.prefillText;
@@ -2936,7 +2936,7 @@ class FreeInputModal extends Modal {
     hint.style.fontSize = "0.8em";
     hint.style.opacity = "0.6";
     hint.setText(
-      "Una citazione, un'osservazione, un dubbio, una contraddizione che vedi, un singolo pensiero. Qualunque cosa: l'AI capisce."
+      "A quote, an observation, a doubt, a contradiction you see, a single thought. Anything: the AI figures it out."
     );
 
     const textarea = contentEl.createEl("textarea");
@@ -3003,7 +3003,7 @@ class NewTensionModal extends Modal {
     intro.style.fontSize = "0.9em";
     intro.style.opacity = "0.8";
     intro.setText(
-      "Una tensione cattura una contraddizione tra due posizioni. Piu' sono incompatibili, piu' la tensione e' feconda. I presupposti li mapperai dopo, con calma."
+      "A tension captures a contradiction between two positions. The more incompatible, the more fertile. You'll map the presuppositions later, at your own pace."
     );
 
     let titolo = this.prefill.title ?? "";
@@ -3024,9 +3024,9 @@ class NewTensionModal extends Modal {
       return h;
     };
 
-    mkLabel("Titolo (opzionale)");
+    mkLabel("Title (optional)");
     mkHint(
-      "3-7 parole, neutro (es. 'Solitudine creativa', 'Decisione: istinto vs dati')"
+      "3-7 words, neutral (e.g. 'Creative solitude', 'Decision: instinct vs data')"
     );
     const titleInput = contentEl.createEl("input", { type: "text" });
     titleInput.style.width = "100%";
@@ -3041,14 +3041,14 @@ class NewTensionModal extends Modal {
     // Chiede al modello di proporre un titolo basandosi sui due statement
     // gia' digitati. Disabilitato se A e B sono entrambi vuoti.
     const aiBtn = contentEl.createEl("button", {
-      text: "Proponi titolo (AI)",
+      text: "Propose title (AI)",
     });
     aiBtn.style.marginTop = "6px";
     aiBtn.style.fontSize = "0.85em";
     aiBtn.style.padding = "3px 10px";
     aiBtn.style.cursor = "pointer";
     aiBtn.title =
-      "Chiede al modello AI configurato di proporre un titolo dai due statement compilati.";
+      "Asks the configured AI model to propose a title from the two filled statements.";
     aiBtn.onclick = async (e) => {
       e.preventDefault();
       const aTxt = statementA.trim();
@@ -3060,12 +3060,12 @@ class NewTensionModal extends Modal {
         return;
       }
       const content =
-        "Sto creando una nuova tensione Antinomia con questi due statement (i presupposti non sono ancora mappati). Proponi un titolo neutro per il tema della tensione.\n\n" +
-        `Statement A: ${aTxt || "(vuoto)"}\n\n` +
-        `Statement B: ${bTxt || "(vuoto)"}`;
+        "I'm creating a new Antinomia tension with these two statements (presuppositions are not yet mapped). Propose a neutral title for the tension's theme.\n\n" +
+        `Statement A: ${aTxt || "(empty)"}\n\n` +
+        `Statement B: ${bTxt || "(empty)"}`;
       const proposed = await withLoadingButton(
         aiBtn,
-        "⏳ Generando...",
+        "⏳ Generating...",
         () => this.plugin.proposeTitleFromContent(content)
       );
       if (proposed) {
@@ -3075,7 +3075,7 @@ class NewTensionModal extends Modal {
     };
 
     mkLabel("Statement A");
-    mkHint("La prima posizione, formulata in modo chiaro.");
+    mkHint("The first position, clearly formulated.");
     const aInput = contentEl.createEl("textarea");
     aInput.style.width = "100%";
     aInput.style.padding = "6px";
@@ -3088,7 +3088,7 @@ class NewTensionModal extends Modal {
 
     mkLabel("Statement B");
     mkHint(
-      "La posizione opposta. Deve essere semanticamente incompatibile con A."
+      "The opposing position. Must be semantically incompatible with A."
     );
     const bInput = contentEl.createEl("textarea");
     bInput.style.width = "100%";
@@ -3108,7 +3108,7 @@ class NewTensionModal extends Modal {
         })
       )
       .addButton((b) =>
-        b.setButtonText("Salta e apri nota vuota").onClick(() => {
+        b.setButtonText("Skip and open empty note").onClick(() => {
           this.onSubmit(null, true);
           this.close();
         })
@@ -3150,7 +3150,7 @@ class NewSubstrateModal extends Modal {
     intro.style.fontSize = "0.9em";
     intro.style.opacity = "0.8";
     intro.setText(
-      "Un substrate e' materiale grezzo: una citazione, un fatto, un appunto. La materia prima da cui possono emergere tensioni e principi."
+      "A substrate is raw material: a quote, a fact, a note. The raw stuff from which tensions and principles can emerge."
     );
 
     let titolo = this.prefill.title ?? "";
@@ -3170,8 +3170,8 @@ class NewSubstrateModal extends Modal {
       return h;
     };
 
-    mkLabel("Titolo (opzionale)");
-    mkHint("Etichetta breve (es. 'Cit. Kahneman su bias di conferma').");
+    mkLabel("Title (optional)");
+    mkHint("Short label (e.g. 'Kahneman quote on confirmation bias').");
     const titleInput = contentEl.createEl("input", { type: "text" });
     titleInput.style.width = "100%";
     titleInput.style.padding = "6px";
@@ -3188,7 +3188,7 @@ class NewSubstrateModal extends Modal {
     aiBtn.style.padding = "3px 10px";
     aiBtn.style.cursor = "pointer";
     aiBtn.title =
-      "Chiede al modello AI configurato di proporre un titolo dal contenuto compilato.";
+      "Asks the configured AI model to propose a title from the filled content.";
     aiBtn.onclick = async (e) => {
       e.preventDefault();
       const cTxt = contenuto.trim();
@@ -3197,11 +3197,11 @@ class NewSubstrateModal extends Modal {
         return;
       }
       const content =
-        "Sto creando un nuovo substrate Antinomia (materiale grezzo: citazione, fatto, appunto). Proponi un titolo neutro che identifichi l'oggetto, non lo riassuma.\n\n" +
-        `Contenuto: ${cTxt}`;
+        "I'm creating a new Antinomia substrate (raw material: quote, fact, note). Propose a neutral title that identifies the object, doesn't summarize it.\n\n" +
+        `Content: ${cTxt}`;
       const proposed = await withLoadingButton(
         aiBtn,
-        "⏳ Generando...",
+        "⏳ Generating...",
         () => this.plugin.proposeTitleFromContent(content)
       );
       if (proposed) {
@@ -3210,8 +3210,8 @@ class NewSubstrateModal extends Modal {
       }
     };
 
-    mkLabel("Contenuto");
-    mkHint("La citazione, il fatto, l'osservazione. Senza interpretarla.");
+    mkLabel("Content");
+    mkHint("The quote, the fact, the observation. Without interpreting it.");
     const cInput = contentEl.createEl("textarea");
     cInput.style.width = "100%";
     cInput.style.padding = "6px";
@@ -3230,7 +3230,7 @@ class NewSubstrateModal extends Modal {
         })
       )
       .addButton((b) =>
-        b.setButtonText("Salta e apri nota vuota").onClick(() => {
+        b.setButtonText("Skip and open empty note").onClick(() => {
           this.onSubmit(null, true);
           this.close();
         })
@@ -3267,7 +3267,7 @@ class PdfPickerModal extends FuzzySuggestModal<TFile> {
     super(app);
     this.pdfs = pdfs;
     this.onChoose = onChoose;
-    this.setPlaceholder("Cerca un PDF nel vault...");
+    this.setPlaceholder("Search a PDF in the vault...");
   }
   getItems(): TFile[] {
     return this.pdfs;
@@ -3295,7 +3295,7 @@ class NotePickerModal extends FuzzySuggestModal<TFile> {
     this.exclude = exclude;
     this.onChoose = onChoose;
     this.filterFn = filterFn;
-    this.setPlaceholder(placeholder ?? "Cerca una nota da collegare...");
+    this.setPlaceholder(placeholder ?? "Search a note to link...");
   }
   getItems(): TFile[] {
     let files = this.app.vault
@@ -3341,13 +3341,13 @@ class MapPresuppostiModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     contentEl.createEl("h3", {
-      text: `Mappa presupposti: ${humanTitle(this.app, this.file)}`,
+      text: `Map presuppositions: ${humanTitle(this.app, this.file)}`,
     });
     const intro = contentEl.createEl("p");
     intro.style.fontSize = "0.9em";
     intro.style.opacity = "0.8";
     intro.setText(
-      `Identifica le assunzioni epistemiche/metafisiche/valoriali che A e B danno per scontate. Mapparli rende esplicito perche' la tensione non si dissolve da sola.`
+      `Identify the epistemic/metaphysical/value assumptions that A and B take for granted. Mapping them makes explicit why the tension doesn't dissolve on its own.`
     );
 
     // Show the tension content inline so the user can re-read it while
@@ -3374,8 +3374,8 @@ class MapPresuppostiModal extends Modal {
       return h;
     };
 
-    mkLabel("Presupposizioni A");
-    mkHint("Le assunzioni di base che rendono il lato A possibile.");
+    mkLabel("Presuppositions A");
+    mkHint("The base assumptions that make side A possible.");
     const aTextarea = contentEl.createEl("textarea");
     aTextarea.style.width = "100%";
     aTextarea.style.padding = "6px";
@@ -3386,8 +3386,8 @@ class MapPresuppostiModal extends Modal {
       presupA = (e.target as HTMLTextAreaElement).value;
     });
 
-    mkLabel("Presupposizioni B");
-    mkHint("Le assunzioni di base che rendono il lato B possibile.");
+    mkLabel("Presuppositions B");
+    mkHint("The base assumptions that make side B possible.");
     const bTextarea = contentEl.createEl("textarea");
     bTextarea.style.width = "100%";
     bTextarea.style.padding = "6px";
@@ -3398,26 +3398,26 @@ class MapPresuppostiModal extends Modal {
       presupB = (e.target as HTMLTextAreaElement).value;
     });
 
-    // ---- "Proponi presupposti (AI)" button ----
+    // ---- "Propose presuppositions (AI)" button ----
     const aiBtn = contentEl.createEl("button", {
-      text: "Proponi presupposti (AI)",
+      text: "Propose presuppositions (AI)",
     });
     aiBtn.style.marginTop = "10px";
     aiBtn.style.fontSize = "0.85em";
     aiBtn.style.padding = "4px 12px";
     aiBtn.style.cursor = "pointer";
     aiBtn.title =
-      "Chiede al modello AI di proporre i due campi leggendo il testo della tensione.";
+      "Asks the AI model to propose the two fields by reading the tension's text.";
     aiBtn.onclick = async (e) => {
       e.preventDefault();
       const proposed = await withLoadingButton(
         aiBtn,
-        "⏳ Generando...",
+        "⏳ Generating...",
         async (signal) => {
           const raw = await this.app.vault.read(this.file);
           const body = stripFrontmatter(raw).trim();
           const content =
-            "Mappa i presupposti epistemici/valoriali della seguente tensione Antinomia:\n\n" +
+            "Map the epistemic/value presuppositions of the following Antinomia tension:\n\n" +
             body;
           return await this.plugin.proposePresuppostiFromContent(content, signal);
         }
@@ -3438,7 +3438,7 @@ class MapPresuppostiModal extends Modal {
       )
       .addButton((b) =>
         b
-          .setButtonText("Applica")
+          .setButtonText("Apply")
           .setCta()
           .onClick(() => {
             this.onSubmit({
@@ -5985,7 +5985,7 @@ class AntinomiaGraphView extends ItemView {
 
       // origin_tension: scalar "[[X]]"
       const origine = extractBasenameFromWikilink(fm.origin_tension);
-      if (origine) addEdge(f.basename, origine, "origine");
+      if (origine) addEdge(f.basename, origine, "origin");
 
       // replaced_by: scalar "[[X]]"
       const sost = extractBasenameFromWikilink(fm.replaced_by);
@@ -6210,7 +6210,7 @@ class AntinomiaGraphView extends ItemView {
           },
         },
         {
-          selector: 'edge[kind = "origine"]',
+          selector: 'edge[kind = "origin"]',
           style: {
             "line-color": "rgba(76,175,80,0.45)",
             width: 1.2,
@@ -8360,7 +8360,7 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
       fm.modified_date = today;
       fm.origin_tension = `[[${originBasename}]]`;
       delete fm.status;
-      delete fm.origine;
+      delete fm.origin;
     });
     const afterFm = await this.app.vault.read(file);
     const fmEnd = afterFm.indexOf("\n---", 3);
@@ -8595,7 +8595,7 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
           fm.motive = motivo;
           fm.modified_date = todayISO();
           delete fm.status;
-          delete fm.origine;
+          delete fm.origin;
           if (replaced_by) {
             fm.replaced_by = `[[${replaced_by}]]`;
           }
@@ -8631,9 +8631,9 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
         fm.antinomia_type = tipo;
         fm.modified_date = today;
         if (tipo === TYPE.tension && !fm.status) fm.status = "open";
-        if (!fm.lingua_base) fm.lingua_base = "italiano";
-        if (tipo === TYPE.tension && !fm.data_creazione)
-          fm.data_creazione = today;
+        if (!fm.base_language) fm.base_language = "italiano";
+        if (tipo === TYPE.tension && !fm.creation_date)
+          fm.creation_date = today;
         if (
           (tipo === TYPE.substrate ||
             tipo === TYPE.principle ||
