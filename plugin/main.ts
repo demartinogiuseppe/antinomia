@@ -508,6 +508,36 @@ class WelcomeModal extends Modal {
       "Don't aim for perfection right away. Dump in raw material (substrate) and poorly-formed tensions. The system improves your formulations over time — the Hunter shows you things you hadn't seen, and mapping presuppositions forces you to make explicit what you take for granted. Antinomia is not a tool to fill up; it is a practice."
     );
 
+    // ---- CTA: Create example vault (only if not already created) ----
+    const exampleAlreadyExists = this.app.vault.getMarkdownFiles().some((f) => {
+      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      return fm?.antinomia_example === true;
+    });
+    if (!exampleAlreadyExists) {
+      const exBox = contentEl.createEl("div");
+      exBox.style.cssText =
+        "background:rgba(13,110,253,0.10); border-left:3px solid #0d6efd; " +
+        "padding:12px 14px; margin-top:20px; border-radius:4px;";
+      exBox.createEl("strong", { text: "🚀 Want to explore Antinomia quickly?" });
+      const exDesc = exBox.createEl("p");
+      exDesc.style.margin = "6px 0 10px 0";
+      exDesc.style.fontSize = "0.9em";
+      exDesc.setText(
+        "Generate the example vault: 21 demo notes (3 tensions + 15 substrate + 1 Design C principle + 1 defeated) with seeded contradictions ready for the Hunter to discover. The EXAMPLE-KEY.md note explains what's there and how to measure the Hunter. You can delete everything with one click anytime."
+      );
+      const exBtn = exBox.createEl("button", { text: "Create example vault" });
+      exBtn.style.cssText =
+        "padding:6px 14px; cursor:pointer; background:var(--interactive-accent); " +
+        "color:var(--text-on-accent); font-weight:600;";
+      exBtn.title = "Adds 21 demo notes + EXAMPLE-KEY.md. Removable in one click via Settings -> Antinomia -> Delete examples.";
+      exBtn.onclick = async () => {
+        this.plugin.settings.onboardingCompleted = true;
+        await this.plugin.saveSettings();
+        this.close();
+        await this.plugin.createExampleNotes();
+      };
+    }
+
     // ---- Action buttons ----
     const btnRow = contentEl.createEl("div");
     btnRow.style.display = "flex";
