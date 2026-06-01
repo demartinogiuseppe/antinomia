@@ -32,7 +32,7 @@
   "autoOpenDashboard": true,
   "autoOpenGraph": true,
   "elevationMode": "split",
-  "graphStyleName": "default",
+  "graphStyleName": "neon",
   "graphCustomColors": {
     "tensione_aperta": "#ff8c42",
     "tensione_risolta": "#fbc02d",

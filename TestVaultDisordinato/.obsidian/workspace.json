@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "08ddf7aaab30d0a3",
+        "id": "bd97019526728d87",
         "type": "tabs",
         "children": [
           {
-            "id": "10675b8709f5aaf2",
+            "id": "09f2d556963a6e9e",
             "type": "leaf",
             "state": {
               "type": "antinomia-graph",
@@ -16,19 +16,8 @@
               "icon": "git-fork",
               "title": "Antinomia Graph"
             }
-          },
-          {
-            "id": "7032becbffb38d77",
-            "type": "leaf",
-            "state": {
-              "type": "antinomia-audit",
-              "state": {},
-              "icon": "shield-alert",
-              "title": "Antinomia — audit"
-            }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -185,8 +174,8 @@
             "state": {
               "type": "antinomia-onboarding-checklist",
               "state": {},
-              "icon": "list-checks",
-              "title": "Antinomia — guida iniziale"
+              "icon": "lucide-ghost",
+              "title": "antinomia-onboarding-checklist"
             }
           },
           {
@@ -205,8 +194,8 @@
             "state": {
               "type": "antinomia-hunter-results",
               "state": {},
-              "icon": "search",
-              "title": "Antinomia — Contradiction Hunter"
+              "icon": "lucide-ghost",
+              "title": "antinomia-hunter-results"
             }
           },
           {
@@ -225,8 +214,8 @@
             "state": {
               "type": "antinomia-substrate-list",
               "state": {},
-              "icon": "layers",
-              "title": "Antinomia — substrate"
+              "icon": "lucide-ghost",
+              "title": "antinomia-substrate-list"
             }
           },
           {
@@ -235,12 +224,12 @@
             "state": {
               "type": "antinomia-dismissed-pairs",
               "state": {},
-              "icon": "list-x",
-              "title": "Antinomia — falsi positivi"
+              "icon": "lucide-ghost",
+              "title": "antinomia-dismissed-pairs"
             }
           }
         ],
-        "currentTab": 8
+        "currentTab": 9
       }
     ],
     "direction": "horizontal",
@@ -261,6 +250,13 @@
       "antinomia:Antinomia: Graph View": false
     }
   },
-  "active": "7032becbffb38d77",
-  "lastOpenFiles": []
+  "active": "09f2d556963a6e9e",
+  "lastOpenFiles": [
+    "notes/S-20260531-232644.md",
+    "notes/S-20260531-232642.md",
+    "notes/T-20260531-232641.md",
+    "notes/T-20260531-232640.md",
+    "notes/T-20260531-232639.md",
+    "test_vault_disordinato.md"
+  ]
 }
