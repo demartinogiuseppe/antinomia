@@ -1,7 +1,7 @@
 {
   "id": "antinomia",
   "name": "Antinomia",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "minAppVersion": "1.4.0",
   "description": "Personal Tension Management (PTM): the in-tension counterpart of PKM, focused on contradictions, tradeoffs, anomalies, and conflicts between goals. 5 layers managed via YAML frontmatter, AI-powered Contradiction Hunter, multi-backend AI (Anthropic, OpenAI, Groq, OpenRouter, LM Studio local, Ollama local). Full English UI and AI prompts.",
   "author": "Giuseppe De Martino",

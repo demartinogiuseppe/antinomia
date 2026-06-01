@@ -1,8 +1,20 @@
 # Changelog
 
-## v1.2.3 (June 1, 2026) — Auto-open Dashboard/Graph + graph filter freeze + Italian residues
+## v1.2.4 (June 2, 2026) — Graph visual overhaul (neon glow nodes + edges + labels) + bug fixes + Italian residues
 
-Bug fix release. No breaking changes, no schema changes.
+Visual overhaul of the Graph view plus a handful of bug fixes. No breaking changes, no schema changes.
+
+### Neon glow on nodes (per-color SVG halo)
+
+Every node is now rendered with a soft, color-matched gaussian halo around the visible disc, using an inline SVG with a `radialGradient` as the node's `background-image`. The halo uses a quadratic falloff (no Mach-band ring), centers correctly during zoom, and fades when the node is in the `.faded` state (hover on a non-connected node). Visual result: each pallino looks like a colored neon dot, exactly like the reference graph apps the user pointed to.
+
+### Per-color gaussian glow on edges (SVG overlay)
+
+Cytoscape's canvas renderer can't draw per-edge gaussian blur, so the Graph view now uses an SVG overlay on top of the Cytoscape canvases. Every edge is re-drawn there as three stacked `<path>` elements (outer halo with strong gaussian blur, inner halo with mild blur, sharp core), each painted with a `<linearGradient>` running from the source node's color to the target node's color. The result is a neon-edge that smoothly transitions colors from one endpoint to the other and glows correctly through its own halo. The original Cytoscape edges are kept in the graph (for the layout engine) but set to `visibility: hidden`. The SVG overlay also respects the Cytoscape `.faded` state so non-hover edges dim down when hovering a node.
+
+### Node labels rendered in the SVG overlay (always on top)
+
+Labels were previously painted by Cytoscape on the same canvas as the edges, which means after the edge-overlay change above they ended up *underneath* the glowing lines. They are now drawn as `<text>` elements in a second `<g>` of the SVG overlay (above the paths group), forced white (`#ffffff`) with a black semi-transparent stroke for legibility over any colored line. The hovered node's label keeps full opacity and bold weight; non-hover labels dim to ~0.3 opacity to match the Cytoscape `.faded` behavior on nodes.
 
 ### Auto-open Dashboard + Graph on startup (Bug A)
 
@@ -17,6 +29,21 @@ Fix: moved the auto-open block AFTER all `registerView()` calls in `onload()`. N
 Toggling a filter checkbox in the Graph toolbar (e.g. enabling "Principles") could freeze the graph: newly visible nodes were added at position (0,0) and the continuous physics could not separate them, making the graph appear stuck.
 
 Fix: the checkbox `onchange` handler now calls `applyLayoutToCy()` after `rebuildGraph()`, re-running the active layout (fcose by default) so newly visible nodes are spread out and animation resumes cleanly.
+
+### Suppressed Cytoscape's default grab/active overlay on nodes
+
+The dark square halo Cytoscape paints around a node while dragging it is now disabled (`overlay-opacity: 0`, `overlay-padding: 0`) — it conflicted with the neon glow aesthetic.
+
+### "neon" graph preset is now the default
+
+Fresh installs (no saved settings) now boot with `graphStyleName: "neon"` instead of `default`, so the neon glow nodes/edges look intended out of the box. Existing users keep their saved choice — they can switch via Settings → Antinomia → Graph style.
+
+### AI "propose title" robustness against verbose local models
+
+When using a local LLM (LM Studio with Qwen3 in particular), the model often replied with a reasoning paragraph (e.g. "The user asked me to…", "L'utente…") instead of the strict JSON the prompt requested, leaving the title input empty. Fixed on two fronts:
+
+- **Prompt rewritten** as a strict "JSON-only generator" with three few-shot input/output examples. Explicit ban on "I think", "Let me", "L'utente", etc.
+- **Title extraction made resilient**: the response parser now (in order) tries JSON; then looks for `"title": "..."` anywhere in the text; then `Title: ...` / `Titolo: ...` labeled lines; then any quoted substring of reasonable length; finally falls back to the first short line that doesn't look like reasoning. Every result is then capped at 7 words / 60 characters via a shared `sanitizeTitle()` helper.
 
 ### Italian residues cleanup (final sweep)
 

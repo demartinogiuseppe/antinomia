@@ -204,7 +204,7 @@ const DEFAULT_SETTINGS: AntinomiaSettings = {
   autoOpenDashboard: true,
   autoOpenGraph: true,
   elevationMode: "split",
-  graphStyleName: "default",
+  graphStyleName: "neon",
   graphCustomColors: {
     tensione_aperta: "#ff8c42",
     tensione_risolta: "#fbc02d",
@@ -2160,17 +2160,32 @@ interface ClassifyResult {
   motivazione: string;
 }
 
-const TITLE_SYSTEM = `Propose a short TITLE for a note.
+const TITLE_SYSTEM = `You are a title generator. You output ONE JSON object and NOTHING ELSE.
 
-Constraints:
-- MUST capture THE THEME (what it's about), NOT the first statement.
-- 3-7 words, max 60 characters.
-- English, no quotes or final punctuation.
-- NOT a summary of the position (e.g. "Isolation is better") — the note might have opposing positions. Use neutral terms (e.g. "Creative solitude").
-- For tensions, ideally "X vs Y" or "X (tension on Y)".
+ABSOLUTE RULES:
+- DO NOT explain your reasoning.
+- DO NOT say "The user asked...", "L'utente...", "I think...", "Let me...", "Here is...".
+- DO NOT write any text before or after the JSON.
+- Output starts with { and ends with }.
 
-Reply with ONLY valid JSON, no fence:
-{"title": "<your proposal>"}`;
+TITLE CONSTRAINTS:
+- MAXIMUM 7 words. MAXIMUM 60 characters.
+- English, neutral terms, no quotes, no final punctuation.
+- Capture THE THEME, not the position. For tensions use "X vs Y" form.
+
+EXAMPLE 1
+Input: I'm creating a tension. Statement A: I want to focus on my own work. Statement B: I want to be available to my team.
+Output: {"title": "Focus vs Availability"}
+
+EXAMPLE 2
+Input: I'm creating a tension. Statement A: We should ship fast. Statement B: We should test thoroughly.
+Output: {"title": "Speed vs Quality"}
+
+EXAMPLE 3
+Input: I'm creating a substrate from this YouTube video on cognitive biases.
+Output: {"title": "YouTube notes on cognitive biases"}
+
+Now produce the JSON for the user's input. JSON ONLY.`;
 
 interface TitleProposal {
   title: string;
@@ -5975,14 +5990,16 @@ class AntinomiaGraphView extends ItemView {
       // Tronca a 22 char per leggibilita'; full title resta nei tooltip
       const shortLabel =
         title.length > 22 ? title.slice(0, 20).trimEnd() + "..." : title;
+      const nodeColor = this.activeLayerColor(ck);
       nodes.push({
         data: {
           id: f.basename,
           label: shortLabel,
           fullTitle: title,
           layer: key,
-          color: this.activeLayerColor(ck),
+          color: nodeColor,
           shape: LAYER_SHAPES[ck] || "ellipse",
+          glow: this.glowSvgDataUri(nodeColor),
         },
       });
     }
@@ -5996,8 +6013,7 @@ class AntinomiaGraphView extends ItemView {
       const key = `${src}->${tgt}`;
       if (seenEdges.has(key)) return;
       seenEdges.add(key);
-      // ID semantico stabile (no sequenziale) cosi' il diff funziona
-      // tra rebuild consecutivi anche quando aggiungi/togli elementi.
+      // ID semantico stabile cosi' il diff funziona tra rebuild consecutivi.
       edges.push({
         data: { id: `e-${src}-${kind}->${tgt}`, source: src, target: tgt, kind },
       });
@@ -6076,6 +6092,240 @@ class AntinomiaGraphView extends ItemView {
     return (palette as any)[colorKey] || LAYER_COLORS[colorKey] || "#888";
   }
 
+  /**
+   * Build an inline SVG data URI that renders a solid colored disc with a
+   * soft radial-gradient halo around it (neon glow effect). The image is
+   * used as the node's background-image so each node carries its own
+   * per-color glow without external dependencies.
+   *
+   * The viewBox is 100x100; the inner disc has r=18 and the glow extends
+   * out to r=50. Combined with `background-clip: none` and a 300% bg width,
+   * the visible disc stays ~18px while the glow spreads ~27px beyond.
+   */
+  private glowSvgDataUri(color: string): string {
+    // Explicit width/height (not just viewBox) so Cytoscape rasterizes the
+    // SVG at a stable pixel size and the halo stays centered during zoom.
+    // Quadratic falloff (1-t)^2 with many stops, so the gradient blends
+    // smoothly into the background without creating a perceived dark ring
+    // (Mach band) where the alpha approaches zero.
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">' +
+      '<defs><radialGradient id="g" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">' +
+      `<stop offset="0%" stop-color="${color}" stop-opacity="1"/>` +
+      `<stop offset="15%" stop-color="${color}" stop-opacity="0.72"/>` +
+      `<stop offset="30%" stop-color="${color}" stop-opacity="0.49"/>` +
+      `<stop offset="45%" stop-color="${color}" stop-opacity="0.30"/>` +
+      `<stop offset="60%" stop-color="${color}" stop-opacity="0.16"/>` +
+      `<stop offset="75%" stop-color="${color}" stop-opacity="0.06"/>` +
+      `<stop offset="90%" stop-color="${color}" stop-opacity="0.01"/>` +
+      `<stop offset="100%" stop-color="${color}" stop-opacity="0"/>` +
+      '</radialGradient></defs>' +
+      '<circle cx="50" cy="50" r="50" fill="url(#g)"/>' +
+      `<circle cx="50" cy="50" r="14" fill="${color}"/>` +
+      '</svg>';
+    // Encode for use in a data URI. encodeURIComponent handles all special
+    // characters in hex colors and SVG markup.
+    return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+  }
+
+  /**
+   * Tracks the SVG overlay used to render principle-related edges with a
+   * real gaussian glow. The Cytoscape canvas can't draw per-color blur on
+   * edges, so we render them ourselves on top of the cy canvases.
+   */
+  private edgeGlowSvg: SVGSVGElement | null = null;
+
+  /**
+   * Create an absolutely-positioned SVG inside graphContainer that re-draws
+   * every edge with a linear gradient (source-color -> target-color) and a
+   * gaussian-blur halo, producing the neon "color-bleeding" look that the
+   * Cytoscape canvas renderer can't produce natively.
+   *
+   * The SVG sits over Cytoscape's canvases (pointer-events: none) and is
+   * kept in sync via `cy.on('render pan zoom position')`.
+   */
+  private setupEdgeGlowOverlay(): void {
+    if (!this.cy || !this.graphContainer) return;
+    const SVG_NS = "http://www.w3.org/2000/svg";
+
+    // Make sure the container is a positioning context so absolute SVG fits.
+    if (getComputedStyle(this.graphContainer).position === "static") {
+      this.graphContainer.style.position = "relative";
+    }
+
+    // (Re)create the overlay element
+    if (this.edgeGlowSvg && this.edgeGlowSvg.parentNode) {
+      this.edgeGlowSvg.parentNode.removeChild(this.edgeGlowSvg);
+    }
+    const svg = document.createElementNS(SVG_NS, "svg");
+    svg.style.position = "absolute";
+    svg.style.top = "0";
+    svg.style.left = "0";
+    svg.style.width = "100%";
+    svg.style.height = "100%";
+    svg.style.pointerEvents = "none";
+    svg.style.zIndex = "5";
+    // Two shared gaussian-blur filters (strong + mild). Per-edge color
+    // comes from the linearGradient we generate dynamically below.
+    const defs = document.createElementNS(SVG_NS, "defs");
+    defs.setAttribute("id", "ant-edge-defs");
+    const mkBlur = (id: string, stdDev: string): SVGFilterElement => {
+      const f = document.createElementNS(SVG_NS, "filter");
+      f.setAttribute("id", id);
+      f.setAttribute("x", "-100%");
+      f.setAttribute("y", "-100%");
+      f.setAttribute("width", "300%");
+      f.setAttribute("height", "300%");
+      const b = document.createElementNS(SVG_NS, "feGaussianBlur");
+      b.setAttribute("stdDeviation", stdDev);
+      f.appendChild(b);
+      return f;
+    };
+    defs.appendChild(mkBlur("ant-edge-blur-strong", "7"));
+    defs.appendChild(mkBlur("ant-edge-blur-mild", "2.5"));
+    svg.appendChild(defs);
+    // <g> for edge paths (drawn first → behind labels)
+    const g = document.createElementNS(SVG_NS, "g");
+    g.setAttribute("id", "ant-edge-paths");
+    svg.appendChild(g);
+    // <g> for node labels (drawn after → on top of paths)
+    const gLabels = document.createElementNS(SVG_NS, "g");
+    gLabels.setAttribute("id", "ant-node-labels");
+    svg.appendChild(gLabels);
+
+    this.graphContainer.appendChild(svg);
+    this.edgeGlowSvg = svg;
+
+    const update = (): void => {
+      if (!this.cy || !this.edgeGlowSvg) return;
+      const defsEl = this.edgeGlowSvg.querySelector("#ant-edge-defs");
+      const group = this.edgeGlowSvg.querySelector("#ant-edge-paths");
+      if (!defsEl || !group) return;
+      // Resize SVG to match container
+      const w = this.graphContainer!.clientWidth;
+      const h = this.graphContainer!.clientHeight;
+      this.edgeGlowSvg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+      // Clear existing per-edge gradients and paths
+      Array.from(defsEl.querySelectorAll("linearGradient")).forEach((el) =>
+        el.remove()
+      );
+      while (group.firstChild) group.removeChild(group.firstChild);
+      // Re-draw every edge with src->tgt linear gradient
+      let i = 0;
+      this.cy.edges().forEach((edge: any) => {
+        const sp = edge.source().renderedPosition();
+        const tp = edge.target().renderedPosition();
+        if (!sp || !tp) return;
+        const srcColor =
+          edge.source().data("color") || "#9e9e9e";
+        const tgtColor =
+          edge.target().data("color") || "#9e9e9e";
+        // When the cy graph sets the .faded class on edges (hover on a
+        // non-connected node), dim the SVG paths so they visually match
+        // the cy fade behavior on nodes.
+        const fadeFactor = edge.hasClass("faded") ? 0.08 : 1;
+        const gradId = `ant-grad-${i++}`;
+        // Linear gradient running along the edge line
+        const grad = document.createElementNS(SVG_NS, "linearGradient");
+        grad.setAttribute("id", gradId);
+        grad.setAttribute("gradientUnits", "userSpaceOnUse");
+        grad.setAttribute("x1", String(sp.x));
+        grad.setAttribute("y1", String(sp.y));
+        grad.setAttribute("x2", String(tp.x));
+        grad.setAttribute("y2", String(tp.y));
+        const stop1 = document.createElementNS(SVG_NS, "stop");
+        stop1.setAttribute("offset", "0%");
+        stop1.setAttribute("stop-color", srcColor);
+        const stop2 = document.createElementNS(SVG_NS, "stop");
+        stop2.setAttribute("offset", "100%");
+        stop2.setAttribute("stop-color", tgtColor);
+        grad.appendChild(stop1);
+        grad.appendChild(stop2);
+        defsEl.appendChild(grad);
+
+        const d = `M ${sp.x} ${sp.y} L ${tp.x} ${tp.y}`;
+        // Strong outer halo (large blur, semi-transparent)
+        const haloOuter = document.createElementNS(SVG_NS, "path");
+        haloOuter.setAttribute("d", d);
+        haloOuter.setAttribute("stroke", `url(#${gradId})`);
+        haloOuter.setAttribute("stroke-width", "10");
+        haloOuter.setAttribute("stroke-linecap", "round");
+        haloOuter.setAttribute("fill", "none");
+        haloOuter.setAttribute("opacity", String(0.55 * fadeFactor));
+        haloOuter.setAttribute("filter", "url(#ant-edge-blur-strong)");
+        group.appendChild(haloOuter);
+        // Inner halo (small blur, brighter)
+        const haloInner = document.createElementNS(SVG_NS, "path");
+        haloInner.setAttribute("d", d);
+        haloInner.setAttribute("stroke", `url(#${gradId})`);
+        haloInner.setAttribute("stroke-width", "4");
+        haloInner.setAttribute("stroke-linecap", "round");
+        haloInner.setAttribute("fill", "none");
+        haloInner.setAttribute("opacity", String(0.75 * fadeFactor));
+        haloInner.setAttribute("filter", "url(#ant-edge-blur-mild)");
+        group.appendChild(haloInner);
+        // Core (sharp, opaque)
+        const core = document.createElementNS(SVG_NS, "path");
+        core.setAttribute("d", d);
+        core.setAttribute("stroke", `url(#${gradId})`);
+        core.setAttribute("stroke-width", "1.4");
+        core.setAttribute("stroke-linecap", "round");
+        core.setAttribute("fill", "none");
+        core.setAttribute("opacity", String(1 * fadeFactor));
+        group.appendChild(core);
+      });
+
+      // ---- Pass 2: node labels on TOP of edge paths ----
+      const labelsGroup = this.edgeGlowSvg.querySelector("#ant-node-labels");
+      if (!labelsGroup) return;
+      while (labelsGroup.firstChild) labelsGroup.removeChild(labelsGroup.firstChild);
+      // Labels are forced white so they stay legible on the dark canvas
+      // regardless of the active Obsidian theme.
+      const labelColor = "#ffffff";
+      const zoom = this.cy.zoom();
+      // Skip rendering if the label would be too small to read (matches the
+      // min-zoomed-font-size: 8 we used on the cy style).
+      const minReadable = zoom * 10 >= 8;
+      if (!minReadable) return;
+      this.cy.nodes().forEach((node: any) => {
+        const label = node.data("label");
+        if (!label) return;
+        const pos = node.renderedPosition();
+        if (!pos) return;
+        // Bottom of the node disc in screen pixels (node is 54 graph-units)
+        const halfHeight = 27 * zoom;
+        const textY = pos.y + halfHeight + 4 + 9; // +text-margin-y +font-ascender
+        const isFaded = node.hasClass("faded");
+        const isHighlight = node.hasClass("highlight");
+        // The hovered/neighbor node stays at full opacity; others dim.
+        const opacity = isFaded ? 0.3 : isHighlight ? 1 : 1;
+        const text = document.createElementNS(SVG_NS, "text");
+        text.setAttribute("x", String(pos.x));
+        text.setAttribute("y", String(textY));
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("font-size", "10");
+        text.setAttribute(
+          "font-family",
+          "var(--font-text), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+        );
+        text.setAttribute("font-weight", isHighlight ? "600" : "400");
+        text.setAttribute("fill", labelColor);
+        text.setAttribute("opacity", String(opacity));
+        text.setAttribute("paint-order", "stroke");
+        text.setAttribute("stroke", "rgba(0,0,0,0.55)");
+        text.setAttribute("stroke-width", "3");
+        text.setAttribute("stroke-linejoin", "round");
+        text.textContent = label;
+        labelsGroup.appendChild(text);
+      });
+    };
+
+    // Keep the overlay in sync with Cytoscape's viewport and node positions
+    this.cy.on("render pan zoom position", update);
+    // First draw
+    window.setTimeout(update, 50);
+  }
+
   private layerAngleFor(layer: string): number {
     const A: Record<string, number> = {
       tensione_aperta: -Math.PI / 2,
@@ -6114,6 +6364,7 @@ class AntinomiaGraphView extends ItemView {
             layer: el.data.layer,
             label: el.data.label,
             fullTitle: el.data.fullTitle,
+            glow: el.data.glow,
           });
         }
       }
@@ -6211,50 +6462,70 @@ class AntinomiaGraphView extends ItemView {
         {
           selector: "node",
           style: {
-            "background-color": "data(color)",
+            // The whole node (visible disc + glow halo) is rendered by the
+            // SVG background-image. The Cytoscape node is sized to match
+            // the FULL halo (54x54) so the gradient stays uniform on every
+            // side; edges are pulled inward via target-distance-from-node
+            // so they appear to connect to the inner disc, not the halo.
+            // Cytoscape ignores the alpha channel of background-color in
+            // some builds, so we use background-opacity: 0 explicitly to
+            // suppress the node fill — only the SVG glow image is visible.
+            "background-color": "#000000",
+            "background-opacity": 0,
+            "background-image": "data(glow)",
+            "background-fit": "contain",
+            // Suppress the default Cytoscape grab/active overlay (a dark
+            // square halo that appears when dragging a node).
+            "overlay-opacity": 0,
+            "overlay-padding": 0,
             shape: "ellipse",
-            label: "data(label)",
+            // Labels are rendered by the SVG overlay (above the canvases),
+            // not by Cytoscape — otherwise they paint on the same canvas
+            // as edges and end up underneath the SVG paths.
+            label: "",
+            "text-opacity": 0,
             color: TEXT_MUTED,
             "font-size": "10px",
             "font-weight": 400,
             "text-valign": "bottom",
             "text-halign": "center",
-            "text-margin-y": 6,
+            "text-margin-y": 4,
             "text-wrap": "ellipsis",
             "text-max-width": "120px",
             "min-zoomed-font-size": 8,
-            width: 18,
-            height: 18,
+            width: 54,
+            height: 54,
             "border-width": 0,
+            "background-image-opacity": 1,
             "transition-property":
-              "opacity, text-opacity, background-color, border-color, border-width",
+              "opacity, text-opacity, background-image-opacity, border-color, border-width",
             "transition-duration": 250,
             "transition-timing-function": "ease-out",
           },
         },
+        // Faded nodes: dim the halo too so it doesn't bleed
+        {
+          selector: "node.faded",
+          style: {
+            "background-image-opacity": 0.25,
+          },
+        },
+        // All edges are kept in the graph (for the layout engine and
+        // hit-testing) but invisible on the Cytoscape canvas. The SVG
+        // overlay (see setupEdgeGlowOverlay) re-draws every edge with a
+        // linear gradient running source-color -> target-color, plus a
+        // gaussian-blur halo for the neon look. `visibility: hidden` is
+        // stronger than `opacity: 0` and is respected in all cy states
+        // (highlight, selected, active, faded).
         {
           selector: "edge",
           style: {
             width: 0.8,
             "line-color": C.edge,
             "curve-style": "bezier",
-            "transition-property": "opacity, line-color, width",
-            "transition-duration": 250,
-            "transition-timing-function": "ease-out",
-          },
-        },
-        {
-          selector: 'edge[kind = "origin"]',
-          style: {
-            "line-color": "rgba(76,175,80,0.45)",
-            width: 1.2,
-          },
-        },
-        {
-          selector: 'edge[kind = "sostituita"]',
-          style: {
-            "line-color": "rgba(229,57,53,0.45)",
-            width: 1.2,
+            "source-distance-from-node": -16,
+            "target-distance-from-node": -16,
+            visibility: "hidden",
           },
         },
         {
@@ -6288,6 +6559,24 @@ class AntinomiaGraphView extends ItemView {
           style: {
             width: 1.8,
             "line-color": ACCENT,
+            visibility: "hidden",
+          },
+        },
+        // Hide edges in EVERY cy state — the SVG overlay is the only
+        // renderer of edges in this graph view.
+        {
+          selector: "edge:selected, edge:active, edge.faded",
+          style: {
+            visibility: "hidden",
+          },
+        },
+        // Suppress Cytoscape's default grab/active overlay on nodes too —
+        // it's the dark square halo that shows up when dragging.
+        {
+          selector: "node:active, node:grabbing, node:selected",
+          style: {
+            "overlay-opacity": 0,
+            "overlay-padding": 0,
           },
         },
       ],
@@ -6297,6 +6586,14 @@ class AntinomiaGraphView extends ItemView {
       maxZoom: 8,
       zoom: 1.0,
     });
+
+    // SVG overlay for principle-related edges. Cytoscape edges are flat
+    // rectangles with hard caps; to get a real per-color gaussian glow we
+    // hide those edges (opacity 0 in the cy style block above) and re-draw
+    // them as <path> elements inside an absolutely-positioned SVG that sits
+    // on top of the Cytoscape canvases. Each path is wrapped in an SVG
+    // <filter> with <feGaussianBlur>, which gives a true gradient halo.
+    this.setupEdgeGlowOverlay();
 
     // Custom wheel handler: ogni step della rotella raddoppia/dimezza lo zoom,
     // centrato sulla posizione del cursore (zoom-to-pointer).
@@ -8878,13 +9175,86 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
         messages: [{ role: "user", content }],
         maxTokens: 200,
       });
+      // Hard-cap any title at 7 words / 60 chars, regardless of source.
+      // Some local models (esp. Qwen3 in LM Studio) ignore the prompt
+      // constraints and return paragraphs.
+      const sanitizeTitle = (raw: string): string => {
+        let t = raw.trim();
+        // Strip surrounding quotes/backticks
+        t = t.replace(/^["'`]+|["'`]+$/g, "").trim();
+        // If multi-sentence, keep only the first sentence
+        const m = t.match(/^[^.!?\n]+/);
+        if (m) t = m[0].trim();
+        // Cap at 7 words
+        const words = t.split(/\s+/);
+        if (words.length > 7) t = words.slice(0, 7).join(" ");
+        // Cap at 60 chars (word-boundary if possible)
+        if (t.length > 60) {
+          const cut = t.slice(0, 60);
+          const lastSpace = cut.lastIndexOf(" ");
+          t = lastSpace > 30 ? cut.slice(0, lastSpace) : cut;
+        }
+        // Strip trailing punctuation/quotes
+        t = t.replace(/[.,;:\-—_"'`]+$/, "").trim();
+        return t;
+      };
+
       const parsed = extractJson<TitleProposal>(result.text);
-      if (!parsed || typeof parsed.title !== "string") {
-        new Notice("AI: risposta titolo non parseable.");
-        console.error("[Antinomia] proposeTitleFromContent unparseable:", result.text);
-        return null;
+      if (parsed && typeof parsed.title === "string" && parsed.title.trim()) {
+        return sanitizeTitle(parsed.title);
       }
-      return parsed.title.trim();
+      // Fallback: LM Studio sometimes replies with the title as plain text
+      // or as a reasoning paragraph instead of JSON. Strip thinking blocks
+      // and code fences, then look for a quoted/labeled title in the text.
+      const cleaned = result.text
+        .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
+        .replace(/<think>[\s\S]*?<\/think>/gi, "")
+        .replace(/```[a-zA-Z]*\n?|```/g, "")
+        .trim();
+      // Pattern 1: look for `"title": "..."` anywhere in the response
+      const jsonLike = cleaned.match(/["']title["']\s*:\s*["']([^"']+)["']/i);
+      if (jsonLike) {
+        const title = sanitizeTitle(jsonLike[1]);
+        if (title.length > 0) return title;
+      }
+      // Pattern 2: look for `Title: ...` or `Titolo: ...` line
+      const labeled = cleaned.match(
+        /(?:^|\n)\s*(?:title|titolo|proposed title|titolo proposto)\s*[:\-—]\s*(.+?)(?:\n|$)/i
+      );
+      if (labeled) {
+        const title = sanitizeTitle(labeled[1]);
+        if (title.length > 0) return title;
+      }
+      // Pattern 3: look for a quoted string of reasonable length anywhere
+      const quoted = cleaned.match(/["“]([^"”\n]{4,80})["”]/);
+      if (quoted) {
+        const title = sanitizeTitle(quoted[1]);
+        if (title.length > 0) return title;
+      }
+      // Pattern 4: skip reasoning lines (heuristic) and take the first short
+      // line that looks like a title (not a sentence about the user/AI)
+      const skipPatterns =
+        /^(l'utente|the user|i (think|believe|will|need|should)|let me|here(?:'s| is)|ecco|allora|sto|so |okay|the goal|my task|to (propose|generate|create)|reasoning:)/i;
+      const lines = cleaned
+        .split("\n")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0 && !skipPatterns.test(s));
+      const candidate =
+        lines.find((s) => s.length <= 80 && s.split(/\s+/).length <= 10) ||
+        lines[0];
+      if (candidate) {
+        const stripped = candidate
+          .replace(/^(title|titolo)[:\s\-—]+/i, "")
+          .trim();
+        const title = sanitizeTitle(stripped);
+        if (title.length > 0) return title;
+      }
+      new Notice("AI: risposta titolo non parseable.");
+      console.error(
+        "[Antinomia] proposeTitleFromContent unparseable:",
+        result.text
+      );
+      return null;
     } catch (e) {
       new Notice(`AI errore title: ${(e as Error).message}`);
       return null;
