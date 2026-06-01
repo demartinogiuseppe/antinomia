@@ -239,11 +239,11 @@ const BACKEND_PRESETS: BackendPreset[] = [
   },
   {
     id: "lmstudio",
-    label: "LM Studio (locale)",
+    label: "LM Studio (local)",
     baseUrl: "http://localhost:1234",
     defaultModel: "qwen/qwen3.5-9b",
     defaultKey: "lmstudio",
-    helpKey: "LM Studio ignora la chiave ma il plugin la richiede.",
+    helpKey: "LM Studio ignores the key but the plugin requires it.",
   },
 ];
 
@@ -287,7 +287,7 @@ class ProfileEditModal extends Modal {
       .setDesc("Pre-fills base URL + suggested model.")
       .addDropdown((dd) => {
         for (const p of BACKEND_PRESETS) dd.addOption(p.id, p.label);
-        dd.addOption("custom", "Custom / altro");
+        dd.addOption("custom", "Custom / other");
         dd.setValue(detectBackend(profile.baseUrl));
         dd.onChange((presetId) => {
           const preset = BACKEND_PRESETS.find((p) => p.id === presetId);
@@ -304,7 +304,7 @@ class ProfileEditModal extends Modal {
 
     new Setting(contentEl).setName("Name").addText((text) =>
       text
-        .setPlaceholder("Es. Sonnet Cloud, Qwen 14B locale, ...")
+        .setPlaceholder("E.g. Sonnet Cloud, Qwen 14B local, ...")
         .setValue(profile.name)
         .onChange((v) => (profile.name = v))
     );
@@ -320,7 +320,7 @@ class ProfileEditModal extends Modal {
 
     new Setting(contentEl).setName("API key").addText((text) =>
       text
-        .setPlaceholder("sk-ant-... oppure lmstudio")
+        .setPlaceholder("sk-ant-... or lmstudio")
         .setValue(profile.apiKey)
         .onChange((v) => (profile.apiKey = v.trim()))
     );
@@ -341,7 +341,7 @@ class ProfileEditModal extends Modal {
       .setDesc("Free-form string (overrides dropdown). Empty = use dropdown.")
       .addText((text) =>
         text
-          .setPlaceholder("nome-modello-esatto")
+          .setPlaceholder("exact-model-name")
           .setValue(profile.model)
           .onChange((v) => {
             const t = v.trim();
