@@ -84,15 +84,19 @@ if (Test-Path $stylesSrc) {
 
 Write-Host "Staging pronto: $pluginStaging"
 
-# --- 4) Crea cartella 'releases' se non esiste ---
-$releasesDir = Join-Path $projectRoot "releases"
-if (-not (Test-Path $releasesDir)) {
-    New-Item -ItemType Directory -Path $releasesDir | Out-Null
+# --- 4) Crea cartella 'releases/vX.X.X/' per questa versione ---
+$releasesRoot = Join-Path $projectRoot "releases"
+if (-not (Test-Path $releasesRoot)) {
+    New-Item -ItemType Directory -Path $releasesRoot | Out-Null
+}
+$versionDir = Join-Path $releasesRoot "v$version"
+if (-not (Test-Path $versionDir)) {
+    New-Item -ItemType Directory -Path $versionDir | Out-Null
 }
 
-# --- 5) Comprimi in zip ---
+# --- 5) Comprimi in zip dentro releases/vX.X.X/ ---
 $zipName = "antinomia-v$version.zip"
-$zipPath = Join-Path $releasesDir $zipName
+$zipPath = Join-Path $versionDir $zipName
 if (Test-Path $zipPath) {
     Write-Host "Sovrascrivo zip esistente: $zipName" -ForegroundColor Yellow
     Remove-Item $zipPath
@@ -108,13 +112,22 @@ Write-Host "Zip creato: $zipPath" -ForegroundColor Green
 Write-Host "Dimensione: $([math]::Round($zipSize/1KB, 1)) KB"
 Write-Host ""
 
-# --- 6) Copia anche BETA-INSTALL.md accanto al zip per facilita' upload ---
+# --- 6) Copia BETA-INSTALL.md + 3 asset BRAT in releases/vX.X.X/ ---
 $betaInstallSrc = Join-Path $projectRoot "BETA-INSTALL.md"
 if (Test-Path $betaInstallSrc) {
-    $betaInstallDst = Join-Path $releasesDir "BETA-INSTALL-v$version.md"
+    $betaInstallDst = Join-Path $versionDir "BETA-INSTALL-v$version.md"
     Copy-Item $betaInstallSrc $betaInstallDst -Force
     Write-Host "Istruzioni copiate: $betaInstallDst" -ForegroundColor Green
 }
+
+# Copia anche i 3 file BRAT-compliant per facilitare l'upload alla GitHub Release
+$mainJsSrc = Join-Path $projectRoot "TestVault\.obsidian\plugins\antinomia\main.js"
+$manifestSrc = Join-Path $projectRoot "plugin\manifest.json"
+$versionsSrc = Join-Path $projectRoot "plugin\versions.json"
+if (Test-Path $mainJsSrc) { Copy-Item $mainJsSrc $versionDir -Force }
+if (Test-Path $manifestSrc) { Copy-Item $manifestSrc $versionDir -Force }
+if (Test-Path $versionsSrc) { Copy-Item $versionsSrc $versionDir -Force }
+Write-Host "Asset BRAT copiati in: $versionDir" -ForegroundColor Green
 
 # --- 7) Pulisci la cartella temporanea ---
 Remove-Item -Recurse -Force $tempDir

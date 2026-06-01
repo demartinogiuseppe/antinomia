@@ -7772,6 +7772,11 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
       `Examples created: ${created} notes (18 messy + 2 Design C + 1 KEY). Removable via 'delete examples'.`
     );
     await this.activateView(VIEW_TYPE_OPEN_TENSIONS);
+
+    // Force a relayout of any open Graph view: a batch of 20+ new nodes added
+    // at (0,0) collapses into a single cluster otherwise. Small delay gives
+    // Obsidian's metadataCache time to process the newly created notes.
+    setTimeout(() => this.refreshOpenGraphViews(), 300);
   }
 
   /**
