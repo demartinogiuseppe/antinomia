@@ -15,7 +15,7 @@ Thanks for trying Antinomia. This file walks you from install to first use. Esti
 
 ## Step 1 — Prepare a dedicated vault for testing
 
-> ⚠️ **Don't install Antinomia in your main vault on the first try.** Antinomia creates demo notes (prefix `ESEMPIO-`) + an `ESEMPIO-CHIAVE.md` file at the vault root. If you delete the wrong file by mistake, they could mix with your real notes.
+> ⚠️ **Don't install Antinomia in your main vault on the first try.** Antinomia creates demo notes (prefix `EXAMPLE-`) + an `EXAMPLE-KEY.md` file at the vault root. If you delete the wrong file by mistake, they could mix with your real notes.
 
 1. Open Obsidian
 2. Click the vault icon at the bottom left → **Open another vault** → **Create new vault**
@@ -92,11 +92,11 @@ Now the interesting part: see what Antinomia does with a pre-built note set.
 1. Settings → **Antinomia** → scroll down to **Onboarding**
 2. Click the **"Crea vault di esempio"** button (create example vault)
 3. Confirm the warning modal
-4. **21 notes** are created (3 tensions + 15 substrate + 1 defeated + 1 Design C principle) inside `notes/` + an `ESEMPIO-CHIAVE.md` file at the vault root
+4. **21 notes** are created (3 tensions + 15 substrate + 1 defeated + 1 Design C principle) inside `notes/` + an `EXAMPLE-KEY.md` file at the vault root
 
 ### What to do now (5-10 minutes)
 
-1. **Open `ESEMPIO-CHIAVE.md`** (at the vault root, top file in the File Explorer). It contains the guide to the seeded contradictions (CN1-CN5).
+1. **Open `EXAMPLE-KEY.md`** (at the vault root, top file in the File Explorer). It contains the guide to the seeded contradictions (CN1-CN5).
 
 2. **Explore the Antinomia sidebars** (ribbon icons on the left or via the nav menu at the top of every view):
    - 📊 Dashboard (right sidebar)
@@ -107,7 +107,7 @@ Now the interesting part: see what Antinomia does with a pre-built note set.
 
 3. **Open the Antinomia Graph** (auto-opened at plugin startup, or via nav menu → 🕸 Grafo). You'll see:
    - 21 colored nodes by layer (orange = open tensions, grey = substrate, green = principle, red = defeated)
-   - 1 **red edge** between the defeated and the principle of the Design C example (`ESEMPIO-D-quantita-qualita` → `ESEMPIO-P-quantita-qualita`)
+   - 1 **red edge** between the defeated and the principle of the Design C example (`EXAMPLE-D-quantity-quality` → `EXAMPLE-P-quantity-quality`)
    - Toggle checkboxes at the top to filter by layer (animated fade-in/out)
    - Drag the dots, spin the wheel to zoom (1.6×/step animated 320 ms), use the vertical slider
 
@@ -133,7 +133,7 @@ Now the interesting part: see what Antinomia does with a pre-built note set.
 When you understand how it works and want to start your real vault:
 
 1. Settings → Antinomia → **Onboarding** → **"Cancella esempi"** button (delete examples)
-2. Confirm → all `ESEMPIO-*` notes + the `ESEMPIO-CHIAVE.md` go into the Obsidian trash (recoverable from trash if you change your mind)
+2. Confirm → all `EXAMPLE-*` notes + the `EXAMPLE-KEY.md` go into the Obsidian trash (recoverable from trash if you change your mind)
 3. The vault is clean. Start with: `Ctrl+P` → "Antinomia: nuova tensione" or via nav menu → ➕ Crea
 
 ---

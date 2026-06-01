@@ -7466,12 +7466,12 @@ export default class AntinomiaPlugin extends Plugin {
       presupB = ""
     ) => `---
 antinomia_type: ${TYPE.tension}
-title: ${yamlQuote(titolo)}
-status: aperta
-lingua_base: italiano
-data_creazione: ${today}
+title: ${yamlQuote(title)}
+status: open
+base_language: english
+creation_date: ${today}
 modified_date: ${today}
-origine: esempio
+origin: example
 antinomia_example: true
 links: []
 ---
@@ -7485,18 +7485,18 @@ links: []
 
     const substrateTpl = (title: string, contenuto: string) => `---
 antinomia_type: ${TYPE.substrate}
-title: ${yamlQuote(titolo)}
-lingua_base: italiano
-original_language: italiano
-source: esempio
-data: ${today}
+title: ${yamlQuote(title)}
+base_language: english
+original_language: english
+source: example
+date: ${today}
 antinomia_example: true
 ---
 - **Content (base):** ${contenuto}
 - **Original:**
 `;
 
-    // Template principio (Design C: file separato, origin_tension punta al defeated)
+    // Principle template (Design C: separate file, origin_tension points to defeated)
     const principleTpl = (
       title: string,
       ifA: string, thenA: string,
@@ -7505,8 +7505,8 @@ antinomia_example: true
       origineBasename: string
     ) => `---
 antinomia_type: ${TYPE.principle}
-title: ${yamlQuote(titolo)}
-data: ${today}
+title: ${yamlQuote(title)}
+date: ${today}
 modified_date: ${today}
 origin_tension: "[[${origineBasename}]]"
 antinomia_example: true
@@ -7528,19 +7528,19 @@ ${grey}
 
 > Derived from: [[${origineBasename}]]
 
-_(testo originale conservato nel defeated linkato)_
+_(original text preserved in the linked defeated)_
 `;
 
-    // Template defeated motivo=elevata (Design C: la tensione originale convertita in defeated)
+    // Defeated template motive=elevated (Design C: original tension converted into defeated)
     const defeatedTpl = (
       title: string,
       a: string, b: string,
       sostituitaDaBasename: string
     ) => `---
 antinomia_type: ${TYPE.defeated}
-title: ${yamlQuote(titolo)}
-motive: elevata
-data: ${today}
+title: ${yamlQuote(title)}
+motive: elevated
+date: ${today}
 modified_date: ${today}
 replaced_by: "[[${sostituitaDaBasename}]]"
 antinomia_example: true
@@ -7552,95 +7552,95 @@ links: []
 > Replaced by: [[${sostituitaDaBasename}]]
 `;
 
-    // 18 note del test_vault_disordinato + 2 Design C (P + D collegati).
-    // I basename usano prefisso ESEMPIO- per essere identificabili a vista.
-    const PRINC_ID = "ESEMPIO-P-quantita-qualita";
-    const DEF_ID = "ESEMPIO-D-quantita-qualita";
+    // 18 messy-vault notes + 2 Design C (P + D linked).
+    // Basenames use the EXAMPLE- prefix for easy visual identification.
+    const PRINC_ID = "EXAMPLE-P-quantity-quality";
+    const DEF_ID = "EXAMPLE-D-quantity-quality";
     type Item = { id: string; content: string };
     const items: Item[] = [
-      // ====== 3 tensioni dichiarate ======
-      { id: "ESEMPIO-T-02-remoto-vs-ufficio",
+      // ====== 3 declared tensions ======
+      { id: "EXAMPLE-T-02-remote-vs-office",
         content: tensionTpl(
-          "ESEMPIO - Lavoro remoto vs ufficio",
-          "Il lavoro da remoto mi rende piu' produttivo perche' nessuno mi interrompe.",
-          "In ufficio concludo molto di piu', il confronto diretto sblocca le cose."
+          "EXAMPLE - Remote work vs office",
+          "Remote work makes me more productive because no one interrupts me.",
+          "In the office I get much more done; direct exchange unblocks things."
         )},
-      { id: "ESEMPIO-T-08-esperienze-vs-beni",
+      { id: "EXAMPLE-T-08-experiences-vs-things",
         content: tensionTpl(
-          "ESEMPIO - Esperienze vs beni materiali",
-          "Spendere per esperienze (viaggi, corsi) vale piu' che accumulare beni materiali.",
-          "I beni durano, le esperienze svaniscono; investire in cose solide e' piu' saggio."
+          "EXAMPLE - Experiences vs material goods",
+          "Spending on experiences (travel, courses) is worth more than accumulating material goods.",
+          "Goods last, experiences fade; investing in solid things is wiser."
         )},
-      { id: "ESEMPIO-T-15-social-tempo-vs-brand",
+      { id: "EXAMPLE-T-15-social-time-vs-brand",
         content: tensionTpl(
-          "ESEMPIO - Social: perdita di tempo vs personal brand",
-          "I social media sono una perdita di tempo che andrebbe eliminata.",
-          "I social mi hanno fatto crescere professionalmente, sono un investimento sul mio personal brand."
+          "EXAMPLE - Social media: waste of time vs personal brand",
+          "Social media is a waste of time that should be eliminated.",
+          "Social media helped me grow professionally; it's an investment in my personal brand."
         )},
 
       // ====== 15 substrate ======
-      { id: "ESEMPIO-S-01-decisioni-pancia",
-        content: substrateTpl("ESEMPIO - Decisioni di pancia",
-          "Le decisioni importanti vanno prese di pancia, l'istinto raramente sbaglia.")},
-      { id: "ESEMPIO-S-03-decisioni-impulso-dati",
-        content: substrateTpl("ESEMPIO - Decisioni impulsive — dati",
-          "Cit. da un libro di management: i dati mostrano che le decisioni prese d'impulso hanno un tasso di errore tre volte superiore a quelle ponderate con analisi.")},
-      { id: "ESEMPIO-S-04-spesa",
-        content: substrateTpl("ESEMPIO - Nota operativa: spesa",
-          "Oggi ho comprato il latte e il pane. Devo ricordarmi di chiamare l'idraulico.")},
-      { id: "ESEMPIO-S-05-disciplina-batte-talento",
-        content: substrateTpl("ESEMPIO - Disciplina batte talento",
-          "La disciplina conta piu' del talento: chi si impegna con costanza supera sempre il predestinato pigro.")},
-      { id: "ESEMPIO-S-06-produttivita-risultati",
-        content: substrateTpl("ESEMPIO - Produttivita' = risultati",
-          "La produttivita' non si misura in ore ma in risultati. Stare di piu' alla scrivania non significa produrre di piu'.")},
-      { id: "ESEMPIO-S-07-talento-tutto",
-        content: substrateTpl("ESEMPIO - Talento e' tutto",
-          "Il talento e' tutto. Senza un dono naturale, per quanto ti impegni, resti mediocre nelle cose che contano.")},
-      { id: "ESEMPIO-S-09-preferenze",
-        content: substrateTpl("ESEMPIO - Preferenze neutre",
-          "Mi piace il caffe' la mattina. Il blu e' il mio colore preferito.")},
-      { id: "ESEMPIO-S-10-seneca",
-        content: substrateTpl("ESEMPIO - Cit. Seneca sul tempo",
-          "Cit. Seneca: non abbiamo poco tempo, ma ne sprechiamo molto. La vita e' abbastanza lunga se si sa usarla.")},
-      { id: "ESEMPIO-S-11-carpe-diem",
-        content: substrateTpl("ESEMPIO - Carpe diem",
-          "La vita e' troppo breve per pianificare a lungo termine, bisogna godersi l'attimo perche' non si sa cosa succede domani.")},
-      { id: "ESEMPIO-S-12-delega-crescita",
-        content: substrateTpl("ESEMPIO - Delega = crescita",
-          "Delegare e' la chiave della crescita: chi vuole fare tutto da solo non scala mai oltre se stesso.")},
-      { id: "ESEMPIO-S-13-fai-da-te",
-        content: substrateTpl("ESEMPIO - Fai da te per fare bene",
-          "Se vuoi una cosa fatta bene, falla da solo. Gli altri non hanno mai la tua stessa cura.")},
-      { id: "ESEMPIO-S-14-sonno",
-        content: substrateTpl("ESEMPIO - Nota operativa: sonno",
-          "Ho dormito male stanotte. Domani riunione alle 10.")},
-      { id: "ESEMPIO-S-16-risparmio-ossessivo",
-        content: substrateTpl("ESEMPIO - Risparmio ossessivo = falsa economia",
-          "Risparmiare ossessivamente su tutto e' una falsa economia: il tempo speso a inseguire lo sconto vale piu' dello sconto stesso.")},
-      { id: "ESEMPIO-S-17-compro-economico",
-        content: substrateTpl("ESEMPIO - Compro sempre il piu' economico",
-          "Compro sempre il prodotto piu' economico disponibile, a prescindere da tutto. Ogni centesimo risparmiato e' un centesimo guadagnato.")},
-      { id: "ESEMPIO-S-18-ai-cambia-tutto",
-        content: substrateTpl("ESEMPIO - AI cambiera' tutto",
-          "L'AI cambiera' tutto nei prossimi anni, e' la rivoluzione piu' grande dai tempi di internet.")},
+      { id: "EXAMPLE-S-01-gut-decisions",
+        content: substrateTpl("EXAMPLE - Gut decisions",
+          "Important decisions should be made by gut feeling; instinct rarely fails.")},
+      { id: "EXAMPLE-S-03-impulse-decisions-data",
+        content: substrateTpl("EXAMPLE - Impulse decisions — data",
+          "Quote from a management book: data shows that impulse decisions have an error rate three times higher than those weighed with analysis.")},
+      { id: "EXAMPLE-S-04-shopping",
+        content: substrateTpl("EXAMPLE - Operational note: shopping",
+          "Today I bought milk and bread. I need to remember to call the plumber.")},
+      { id: "EXAMPLE-S-05-discipline-beats-talent",
+        content: substrateTpl("EXAMPLE - Discipline beats talent",
+          "Discipline counts more than talent: those who commit consistently always surpass the lazy prodigy.")},
+      { id: "EXAMPLE-S-06-productivity-results",
+        content: substrateTpl("EXAMPLE - Productivity = results",
+          "Productivity is not measured in hours but in results. Spending more time at the desk doesn't mean producing more.")},
+      { id: "EXAMPLE-S-07-talent-is-everything",
+        content: substrateTpl("EXAMPLE - Talent is everything",
+          "Talent is everything. Without a natural gift, no matter how hard you try, you stay mediocre in the things that matter.")},
+      { id: "EXAMPLE-S-09-preferences",
+        content: substrateTpl("EXAMPLE - Neutral preferences",
+          "I like coffee in the morning. Blue is my favorite color.")},
+      { id: "EXAMPLE-S-10-seneca",
+        content: substrateTpl("EXAMPLE - Seneca quote on time",
+          "Seneca: we don't have too little time, we waste a lot. Life is long enough if you know how to use it.")},
+      { id: "EXAMPLE-S-11-carpe-diem",
+        content: substrateTpl("EXAMPLE - Carpe diem",
+          "Life is too short to plan for the long term; you have to enjoy the moment because you don't know what tomorrow brings.")},
+      { id: "EXAMPLE-S-12-delegate-grow",
+        content: substrateTpl("EXAMPLE - Delegate = growth",
+          "Delegating is the key to growth: those who want to do everything alone never scale beyond themselves.")},
+      { id: "EXAMPLE-S-13-do-it-yourself",
+        content: substrateTpl("EXAMPLE - Do it yourself to do it well",
+          "If you want something done well, do it yourself. Others never have your same care.")},
+      { id: "EXAMPLE-S-14-sleep",
+        content: substrateTpl("EXAMPLE - Operational note: sleep",
+          "Slept badly last night. Meeting tomorrow at 10.")},
+      { id: "EXAMPLE-S-16-frugal-false-economy",
+        content: substrateTpl("EXAMPLE - Obsessive saving = false economy",
+          "Saving obsessively on everything is a false economy: time spent chasing discounts is worth more than the discount itself.")},
+      { id: "EXAMPLE-S-17-buy-cheapest",
+        content: substrateTpl("EXAMPLE - I always buy the cheapest",
+          "I always buy the cheapest product available, regardless. Every penny saved is a penny earned.")},
+      { id: "EXAMPLE-S-18-ai-changes-everything",
+        content: substrateTpl("EXAMPLE - AI will change everything",
+          "AI will change everything in the coming years; it's the biggest revolution since the internet.")},
 
-      // ====== 2 note Design C: defeated <- principio (per mostrare arco rosso nel grafo) ======
+      // ====== 2 Design C notes: defeated <- principle (to show red edge in the graph) ======
       { id: DEF_ID,
         content: defeatedTpl(
-          "ESEMPIO - Quantita' vs qualita' (tensione originaria)",
-          "Per crescere serve produrre molto: piu' output, piu' iterazioni, piu' rapidita'.",
-          "La quantita' senza cura diluisce il risultato; meglio meno e fatto bene.",
+          "EXAMPLE - Quantity vs quality (original tension)",
+          "To grow you need to produce a lot: more output, more iterations, more speed.",
+          "Quantity without care dilutes the result; better less and done well.",
           PRINC_ID
         )},
       { id: PRINC_ID,
         content: principleTpl(
-          "ESEMPIO - Principio: quantita' o qualita' secondo il contesto",
-          "fase esplorativa, costi di produzione bassi, feedback rapido",
-          "preferisci volume: itera molto, scarta in fretta",
-          "fase di consolidamento, costi alti, conseguenze durature",
-          "preferisci cura: meno output ma di livello",
-          "Esiste una zona grigia quando esplorazione e consolidamento si sovrappongono (es. lavoro creativo professionale): in quel caso il criterio diventa il costo del singolo errore.",
+          "EXAMPLE - Principle: quantity or quality depending on context",
+          "exploratory phase, low production cost, fast feedback",
+          "prefer volume: iterate a lot, discard fast",
+          "consolidation phase, high cost, lasting consequences",
+          "prefer care: less output but high quality",
+          "There is a grey zone when exploration and consolidation overlap (e.g. professional creative work): in that case the criterion becomes the cost of a single error.",
           DEF_ID
         )},
     ];
@@ -7656,86 +7656,86 @@ links: []
       }
     }
 
-    // ====== ESEMPIO-CHIAVE.md nella ROOT del vault (NON in notes/) ======
+    // ====== EXAMPLE-KEY.md in the ROOT of the vault (NOT in notes/) ======
     const chiaveContent = `---
 antinomia_example: true
-title: "ESEMPIO — Chiave delle contraddizioni seminate"
+title: "EXAMPLE — Key to the seeded contradictions"
 ---
-# Chiave del vault di esempio
+# Example vault — key
 
-> Questo file accompagna le note ESEMPIO-* nel tuo vault. Spiega quali contraddizioni sono state seminate, cosa il Hunter dovrebbe trovare, e cosa rappresenta rumore di controllo.
+> This file accompanies the EXAMPLE-* notes in your vault. It explains which contradictions were seeded, what the Hunter should find, and what counts as control noise.
 >
-> Cancella questo file (e tutte le note ESEMPIO-*) con: Settings -> Antinomia -> "Cancella esempi" oppure comando palette "Antinomia: cancella esempi".
+> Delete this file (and all EXAMPLE-* notes) via: Settings -> Antinomia -> "Delete examples" or command palette "Antinomia: delete examples".
 
 ---
 
-## Contraddizioni REALI seminate (cosa il Hunter DOVREBBE trovare)
+## REAL contradictions seeded (what the Hunter SHOULD find)
 
-### CN1 — NETTA. Decisioni di pancia vs ponderate
-- **Decisioni di pancia** ↔ **Decisioni impulsive — dati**
-- Contraddizione frontale, quasi esplicita. Confidence attesa: **alta**.
+### CN1 — SHARP. Gut decisions vs deliberated
+- **Gut decisions** ↔ **Impulse decisions — data**
+- Frontal contradiction, almost explicit. Expected confidence: **alta**.
 
-### CN2 — NETTA. Talento vs disciplina
-- **Disciplina batte talento** ↔ **Talento e' tutto**
-- Opposizione diretta su quale fattore conta. Confidence attesa: **alta**.
+### CN2 — SHARP. Talent vs discipline
+- **Discipline beats talent** ↔ **Talent is everything**
+- Direct opposition on which factor counts. Expected confidence: **alta**.
 
-### CN3 — MEDIA. Fai da solo vs delega
-- **Delega = crescita** ↔ **Fai da te per fare bene**
-- Contraddizione chiara ma con registri diversi. Confidence attesa: **medio-alta**.
+### CN3 — MEDIUM. Do it yourself vs delegate
+- **Delegate = growth** ↔ **Do it yourself to do it well**
+- Clear contradiction but expressed in different registers. Expected confidence: **medium-high**.
 
-### CN4 — MEDIA, substrate↔substrate. Risparmio
-- **Risparmio ossessivo = falsa economia** ↔ **Compro sempre il piu' economico**
-- Test della scansione substrate↔substrate. Confidence attesa: **media**.
+### CN4 — MEDIUM, substrate↔substrate. Saving
+- **Obsessive saving = false economy** ↔ **I always buy the cheapest**
+- Test of substrate↔substrate scanning. Expected confidence: **media**.
 
-### CN5 — SOTTILE. Tempo: Seneca vs carpe diem
-- **Cit. Seneca sul tempo** ↔ **Carpe diem**
-- Contraddizione filosofica, meno lessicalmente evidente. Confidence attesa: **bassa-media**.
-
----
-
-## RUMORE — elementi che NON devono generare contraddizioni
-
-- **Nota operativa: spesa** (latte, pane, idraulico)
-- **Preferenze neutre** (caffe', colore blu)
-- **Nota operativa: sonno** (dormito male, riunione domani)
-- **AI cambiera' tutto** (opinione isolata, nessun opposto nel vault)
-
-Se il Hunter accoppia uno di questi con "contraddizione", e' un FALSO POSITIVO.
+### CN5 — SUBTLE. Time: Seneca vs carpe diem
+- **Seneca quote on time** ↔ **Carpe diem**
+- Philosophical contradiction, less lexically evident. Expected confidence: **low-medium**.
 
 ---
 
-## Tensioni gia' marcate come tali (NON le scopre il Hunter, sono gia' aperte)
+## NOISE — elements that should NOT generate contradictions
 
-- **Lavoro remoto vs ufficio**
-- **Esperienze vs beni materiali**
-- **Social: perdita di tempo vs personal brand**
+- **Operational note: shopping** (milk, bread, plumber)
+- **Neutral preferences** (coffee, blue color)
+- **Operational note: sleep** (slept badly, meeting tomorrow)
+- **AI will change everything** (isolated opinion, no opposite in the vault)
 
-NB: la "Produttivita' = risultati" tocca lo stesso tema di "Lavoro remoto vs ufficio". Il Hunter POTREBBE collegarle — connessione legittima debole, non un errore.
-
----
-
-## Esempio Design C (visibile nel grafo)
-
-- **Defeated**: ESEMPIO - Quantita' vs qualita' (tensione originaria)
-- **Principio**: ESEMPIO - Principio: quantita' o qualita' secondo il contesto
-
-Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated → replaced_by → principio). E' un esempio di tensione gia' elevata: il principio operativo nasce dalla risoluzione della tensione, il defeated conserva la storia.
+If the Hunter pairs any of these as "contradiction", it's a FALSE POSITIVE.
 
 ---
 
-## Come misurare il Hunter
+## Tensions already declared (NOT for the Hunter to discover — already open)
 
-- **Recall su CN1, CN2** (nette): se ne manca anche una, problema serio del modello.
-- **CN4 substrate↔substrate**: la trova? -> scansione completa funziona.
-- **CN5 sottile**: la trova? -> il modello ragiona bene; se la salta -> limite del modello, non del design.
-- **Falsi positivi sul rumore**: zero e' l'ideale.
-- **Ordinamento confidence**: le nette (CN1, CN2) dovrebbero stare sopra la sottile (CN5).
+- **Remote work vs office**
+- **Experiences vs material goods**
+- **Social media: waste of time vs personal brand**
+
+NB: "Productivity = results" touches the same theme as "Remote work vs office". The Hunter MIGHT link them — legitimate weak connection, not an error.
+
+---
+
+## Design C example (visible in the graph)
+
+- **Defeated**: EXAMPLE - Quantity vs quality (original tension)
+- **Principle**: EXAMPLE - Principle: quantity or quality depending on context
+
+Open the Antinomia Graph — you'll see the two nodes connected by a red edge (defeated → replaced_by → principle). This is an example of a tension already elevated: the operational principle emerges from resolving the tension, the defeated preserves the history.
+
+---
+
+## How to measure the Hunter
+
+- **Recall on CN1, CN2** (sharp): if even one is missed, serious model problem.
+- **CN4 substrate↔substrate**: does it find it? -> full scanning works.
+- **CN5 subtle**: does it find it? -> the model reasons well; if it skips it -> model limit, not design.
+- **False positives on noise**: zero is ideal.
+- **Confidence ordering**: the sharp ones (CN1, CN2) should rank above the subtle one (CN5).
 `;
     try {
-      await this.app.vault.create("ESEMPIO-CHIAVE.md", chiaveContent);
+      await this.app.vault.create("EXAMPLE-KEY.md", chiaveContent);
       created++;
     } catch (e) {
-      console.error("[Antinomia] example chiave create failed", e);
+      console.error("[Antinomia] example key create failed", e);
     }
 
     new Notice(
