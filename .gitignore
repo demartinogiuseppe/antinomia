@@ -7,12 +7,16 @@ plugin/backups/
 
 # Test vault (contains user data + plugin build copy)
 TestVault/.obsidian/plugins/antinomia/main.js
+TestVault/.obsidian/plugins/antinomia/manifest.json
+TestVault/.obsidian/plugins/antinomia/styles.css
 TestVault/.obsidian/plugins/antinomia/data.json
 TestVault/.obsidian/workspace*
 TestVault/.obsidian/cache
 
 # Test vault disordinato (vault separato per misurazione Hunter)
 TestVaultDisordinato/.obsidian/plugins/antinomia/main.js
+TestVaultDisordinato/.obsidian/plugins/antinomia/manifest.json
+TestVaultDisordinato/.obsidian/plugins/antinomia/styles.css
 TestVaultDisordinato/.obsidian/plugins/antinomia/data.json
 TestVaultDisordinato/.obsidian/workspace*
 TestVaultDisordinato/.obsidian/cache
