@@ -10,13 +10,9 @@ plugin/backups/
 # personali del vault non devono finire pubbliche.
 TestVault/
 
-# Test vault disordinato (vault separato per misurazione Hunter)
-TestVaultDisordinato/.obsidian/plugins/antinomia/main.js
-TestVaultDisordinato/.obsidian/plugins/antinomia/manifest.json
-TestVaultDisordinato/.obsidian/plugins/antinomia/styles.css
-TestVaultDisordinato/.obsidian/plugins/antinomia/data.json
-TestVaultDisordinato/.obsidian/workspace*
-TestVaultDisordinato/.obsidian/cache
+# Test vault disordinato (vecchio benchmark italiano, ora obsoleto in v1.2 full English).
+# Il vault esempio English e' generato dal plugin via Settings -> Onboarding -> Create examples.
+TestVaultDisordinato/
 
 # Note timestamp generate runtime durante test (T-YYYYMMDD-..., S-YYYYMMDD-...)
 # Lasciano stato del repo pulito senza note ephemeral. Le note ESEMPIO-* del vault
