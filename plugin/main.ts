@@ -1177,15 +1177,15 @@ class AntinomiaSettingTab extends PluginSettingTab {
     ul.style.cssText = "margin:6px 0 0 0; padding-left:22px;";
     const li1 = ul.createEl("li");
     li1.innerHTML =
-      "<strong>API cloud a pagamento</strong> (Anthropic Claude, OpenAI GPT, Groq, OpenRouter): qualita' top, costo per token consumato. Servono account + API key.";
+      "<strong>Paid cloud APIs</strong> (Anthropic Claude, OpenAI GPT, Groq, OpenRouter): top quality, per-token cost. Account + API key required.";
     const li2 = ul.createEl("li");
     li2.innerHTML =
-      "<strong>Modello locale gratuito</strong> (LM Studio, Ollama): privacy completa, zero costi, qualita' variabile. Servono ~10GB di RAM/VRAM e download iniziale del modello.";
+      "<strong>Free local models</strong> (LM Studio, Ollama): full privacy, zero cost, variable quality. Requires ~10GB of RAM/VRAM and an initial model download.";
     const aiP2 = apiInfo.createEl("p");
     aiP2.style.margin = "6px 0 0 0";
     aiP2.style.opacity = "0.85";
     aiP2.setText(
-      "Puoi configurare piu' profili e cambiarli a piacere (es. LM Studio per uso quotidiano, Claude solo per Hunter approfondito)."
+      "You can configure multiple profiles and switch them freely (e.g. LM Studio for daily use, Claude only for deep Hunter scans)."
     );
 
     // List existing profiles
@@ -1213,7 +1213,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
         })
       );
       row.addButton((b) => {
-        b.setButtonText("Elimina").onClick(async () => {
+        b.setButtonText("Delete").onClick(async () => {
           if (this.plugin.settings.profiles.length <= 1) {
             new Notice("You must have at least one profile.");
             return;
@@ -1236,7 +1236,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
 
     new Setting(containerEl).addButton((b) =>
       b
-        .setButtonText("+ Aggiungi profilo")
+        .setButtonText("+ Add profile")
         .setCta()
         .onClick(() => {
           const newProfile: Profile = {
@@ -1272,10 +1272,10 @@ class AntinomiaSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Hunter profile (override)")
       .setDesc(
-        "Lascia 'usa profilo attivo' per default. Override utile per usare un modello piu' grosso (es. Sonnet cloud) solo per il Hunter."
+        "Leave 'use active profile' as default. Override is useful to use a bigger model (e.g. Sonnet cloud) only for the Hunter."
       )
       .addDropdown((dd) => {
-        dd.addOption("", "(usa profilo attivo)");
+        dd.addOption("", "(use active profile)");
         for (const p of this.plugin.settings.profiles) {
           dd.addOption(p.id, p.name);
         }
@@ -1291,11 +1291,11 @@ class AntinomiaSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Hunter reasoning style")
       .setDesc(
-        "Conciso: descrizioni brevi 2-3 frasi, niente pensiero esposto, ~3x piu' veloce. Esposto: il modello mostra il suo ragionamento (utile in fase di apprendimento o debug)."
+        "Concise: short 2-3 sentence descriptions, no exposed reasoning, ~3x faster. Verbose: the model shows its reasoning (useful when learning or debugging)."
       )
       .addDropdown((dd) => {
-        dd.addOption("concise", "Conciso (consigliato)");
-        dd.addOption("verbose", "Esposto (per capire come ragiona)");
+        dd.addOption("concise", "Concise (recommended)");
+        dd.addOption("verbose", "Verbose (to see how it reasons)");
         dd.setValue(this.plugin.settings.hunterReasoningStyle);
         dd.onChange(async (value) => {
           this.plugin.settings.hunterReasoningStyle =
@@ -1339,19 +1339,19 @@ class AntinomiaSettingTab extends PluginSettingTab {
     containerEl.createEl("h3", { text: "Onboarding" });
 
     const statusText = this.plugin.settings.onboardingCompleted
-      ? "completato"
-      : "non ancora completato";
+      ? "completed"
+      : "not yet completed";
     const statusEl = containerEl.createEl("p");
     statusEl.style.fontSize = "0.85em";
     statusEl.style.opacity = "0.7";
     statusEl.setText(
-      `Stato attuale: onboarding ${statusText}. Il welcome modal viene mostrato automaticamente al lancio se l'onboarding non e' completato.`
+      `Current status: onboarding ${statusText}. The welcome modal is shown automatically at launch if onboarding is not completed.`
     );
 
     new Setting(containerEl)
       .setName("Reopen welcome modal")
       .setDesc(
-        "Mostra subito il welcome con la spiegazione di Antinomia e i 5 layer. Non cambia lo stato dell'onboarding."
+        "Immediately show the welcome modal with the Antinomia explanation and the 5 layers. Does not change the onboarding status."
       )
       .addButton((b) =>
         b.setButtonText("Open").onClick(() => {
@@ -1362,7 +1362,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Open Getting Started guide (checklist)")
       .setDesc(
-        "Sidebar laterale con i passi suggeriti per esplorare il sistema. Si aggiorna in automatico man mano che li completi."
+        "Side sidebar with suggested steps to explore the system. Updates automatically as you complete them."
       )
       .addButton((b) =>
         b.setButtonText("Open checklist").onClick(() => {
@@ -1373,7 +1373,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Key concepts tutorial")
       .setDesc(
-        "Sequenza di 7 mini-schede che spiegano tensione, substrate, principio, defeated, presupposti, Hunter, grafo. Naviga con Indietro/Avanti."
+        "A sequence of 7 mini-cards explaining tension, substrate, principle, defeated, presuppositions, Hunter, graph. Navigate with Back/Next."
       )
       .addButton((b) =>
         b.setButtonText("Open tutorial").onClick(() => {
@@ -1384,10 +1384,10 @@ class AntinomiaSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Contextual hint")
       .setDesc(
-        "Mostra un suggerimento basato sullo stato attuale del vault (es. 'crea prima tensione' se vuoto, 'lancia Hunter' se hai materiale, ecc.)."
+        "Shows a hint based on the current vault state (e.g. 'create first tension' if empty, 'run Hunter' if you have material, etc.)."
       )
       .addButton((b) =>
-        b.setButtonText("Dimmi come procedere").onClick(() => {
+        b.setButtonText("Tell me what to do").onClick(() => {
           new GuidanceModal(this.app, this.plugin).open();
         })
       );
@@ -1395,10 +1395,10 @@ class AntinomiaSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Reset sidebar tooltips")
       .setDesc(
-        "Rimostra i banner suggerimento la prossima volta che apri Tensioni Aperte e Contradiction Hunter."
+        "Re-show the hint banners the next time you open Open Tensions and Contradiction Hunter."
       )
       .addButton((b) =>
-        b.setButtonText("Reset hint").onClick(async () => {
+        b.setButtonText("Reset hints").onClick(async () => {
           this.plugin.settings.hintsTensionsShown = false;
           this.plugin.settings.hintsHunterShown = false;
           await this.plugin.saveSettings();
@@ -1411,14 +1411,14 @@ class AntinomiaSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Example vault")
       .setDesc(
-        "Crea 21 note (3 tensioni + 15 substrate + 1 defeated + 1 principio Design C) + ESEMPIO-CHIAVE.md nella root con guida per beta tester. Le note contengono contraddizioni reali da scoprire col Hunter, oltre a rumore di controllo. Tutte marcate antinomia_example: true, cancellabili in un click."
+        "Creates 21 notes (3 tensions + 15 substrate + 1 defeated + 1 Design C principle) + ESEMPIO-CHIAVE.md in the root with a beta-tester guide. The notes contain real contradictions for the Hunter to discover, plus control noise. All marked antinomia_example: true, removable in one click."
       )
       .addButton((b) =>
         b.setButtonText("Create examples").onClick(() => {
           new ConfirmModal(
             this.app,
             "Create example vault",
-            "Verranno create 21 note demo (3 tensioni + 15 substrate + 1 defeated + 1 principio Design C) + ESEMPIO-CHIAVE.md nella root del vault. Tutte cancellabili in un click via 'Cancella esempi'.",
+            "21 demo notes will be created (3 tensions + 15 substrate + 1 defeated + 1 Design C principle) + ESEMPIO-CHIAVE.md at the vault root. All removable in one click via 'Delete examples'.",
             "Create",
             () => void this.plugin.createExampleNotes()
           ).open();
@@ -1440,7 +1440,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
             new ConfirmModal(
               this.app,
               "Delete examples",
-              `Verranno cancellate ${count} note marcate antinomia_example: true.`,
+              `${count} notes marked antinomia_example: true will be deleted.`,
               "Delete",
               () => void this.plugin.deleteExampleNotes()
             ).open();
@@ -1450,11 +1450,11 @@ class AntinomiaSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Reset onboarding")
       .setDesc(
-        "Mette onboardingCompleted = false. Il welcome modal verra' mostrato automaticamente al prossimo lancio di Obsidian."
+        "Sets onboardingCompleted = false. The welcome modal will be shown automatically on the next Obsidian launch."
       )
       .addButton((b) =>
         b
-          .setButtonText("Resetta")
+          .setButtonText("Reset")
           .setWarning()
           .onClick(async () => {
             this.plugin.settings.onboardingCompleted = false;
@@ -3675,7 +3675,7 @@ class OpenTensionsView extends ItemView {
     return VIEW_TYPE_OPEN_TENSIONS;
   }
   getDisplayText(): string {
-    return "Antinomia — tensioni aperte";
+    return "Antinomia — Open tensions";
   }
   getIcon(): string {
     return "git-pull-request";
@@ -3711,7 +3711,7 @@ class OpenTensionsView extends ItemView {
       const txt = hint.createEl("div");
       txt.style.marginBottom = "6px";
       txt.setText(
-        "Suggerimento: ogni tensione e' una card con bottoni rapidi (Titolo / Collega / Presupposti / ↑ Eleva / ✓ Risolta / × Defeated). Click sul titolo per aprire la nota. In cima alla sidebar i 4 bottoni di toolbar: '+ Tensione', '+ Substrate', '✨ Libero' (AI classifica), '🔍 Hunter'."
+        "Tip: each tension is a card with quick buttons (Title / Link / Presuppositions / ↑ Elevate / ✓ Resolved / × Defeated). Click the title to open the note. At the top of the sidebar, 4 toolbar buttons: '+ Tension', '+ Substrate', '✨ Free' (AI classifies), '🔍 Hunter'."
       );
       const dismissBtn = hint.createEl("button", { text: "Capito" });
       dismissBtn.style.padding = "2px 10px";
@@ -3764,14 +3764,14 @@ class OpenTensionsView extends ItemView {
     freeBtn.style.cursor = "pointer";
     freeBtn.style.fontWeight = "600";
     freeBtn.title =
-      "Inserimento libero: scrivi qualunque cosa, l'AI capisce se e' tensione o substrate";
+      "Free-form input: write anything, the AI figures out if it's a tension or substrate";
     freeBtn.onclick = () => this.plugin.openFreeInputModal();
 
     const clipBtn = toolbar.createEl("button", { text: "📋 Clipboard" });
     clipBtn.style.padding = "4px 10px";
     clipBtn.style.fontSize = "0.85em";
     clipBtn.style.cursor = "pointer";
-    clipBtn.title = "Apre 'Inserimento libero' con il testo della clipboard gia' incollato: l'AI classifica come tensione o substrate.";
+    clipBtn.title = "Opens 'Free-form input' with clipboard text already pasted: the AI classifies as tension or substrate.";
     clipBtn.onclick = () => void this.plugin.openFreeInputFromClipboard();
 
     const pdfBtn = toolbar.createEl("button", { text: "📎 PDF" });
@@ -3799,7 +3799,7 @@ class OpenTensionsView extends ItemView {
     hunterBtn.style.fontSize = "0.85em";
     hunterBtn.style.cursor = "pointer";
     hunterBtn.title =
-      "Lancia il Contradiction Hunter (scansiona tensioni aperte + substrate, identifica coppie contraddittorie)";
+      "Run the Contradiction Hunter (scans open tensions + substrate, identifies contradictory pairs)";
     hunterBtn.onclick = () => {
       void this.plugin.runHunter();
     };
@@ -3857,12 +3857,12 @@ class OpenTensionsView extends ItemView {
       mkBtn("Titolo", "Imposta o modifica il titolo della nota", () => {
         void this.plugin.setTitleOnActiveNote(file);
       });
-      mkBtn("Collega", "Collega questa tensione a un'altra nota", () => {
+      mkBtn("Link", "Link this tension to another note", () => {
         new NotePickerModal(this.plugin.app, file, (target) => {
           void this.plugin.linkActiveTo(file, target);
         }).open();
       });
-      mkBtn("Presupposti", "Mappa i presupposti A/B (con aiuto AI)", () => {
+      mkBtn("Presuppositions", "Map presuppositions A/B (AI-assisted)", () => {
         void this.plugin.openMapPresupposti(file);
       });
       const elBtn = mkBtn(
@@ -3874,7 +3874,7 @@ class OpenTensionsView extends ItemView {
       );
       elBtn.style.borderLeft = "2px solid var(--interactive-accent)";
 
-      mkBtn("✓ Risolta", "Marca questa tensione come risolta", () => {
+      mkBtn("✓ Resolved", "Mark this tension as resolved", () => {
         void this.plugin.markResolved(file);
       });
       mkBtn("× Defeated", "Archivia come defeated (apre modal motivo)", () => {
@@ -3966,7 +3966,7 @@ class HunterResultsView extends ItemView {
       const txt = hint.createEl("div");
       txt.style.marginBottom = "6px";
       txt.setText(
-        "Suggerimento: il Hunter scansiona tensioni aperte + substrate, e propone COPPIE contraddittorie. Non risolve. Confidence alta/media/bassa, ordinate per qualita'. × dismissa un falso positivo (persistente). Sotto ogni coppia, bottoni Eleva/Risolta/Defeated agiscono direttamente sulla nota di una delle due."
+        "Tip: the Hunter scans open tensions + substrate, and proposes contradictory PAIRS. It does not resolve. Confidence high/medium/low, sorted by quality. × dismisses a false positive (persistent). Below each pair, Elevate/Resolved/Defeated buttons act directly on one of the two notes."
       );
       const dismissBtn = hint.createEl("button", { text: "Capito" });
       dismissBtn.style.padding = "2px 10px";
@@ -4019,7 +4019,7 @@ class HunterResultsView extends ItemView {
       stopBtn.style.cursor = "pointer";
       stopBtn.style.fontSize = "0.85em";
       stopBtn.title =
-        "Ferma il Hunter in corso. (La richiesta HTTP non viene interrotta ma il risultato sara' scartato.)";
+        "Stop the running Hunter. (The HTTP request is not interrupted, but the result will be discarded.)";
       stopBtn.onclick = () => {
         this.plugin.abortHunter();
         this.setLoading(false);
@@ -4257,7 +4257,7 @@ class DismissedPairsView extends ItemView {
     desc.style.fontSize = "0.85em";
     desc.style.opacity = "0.7";
     desc.setText(
-      "Coppie marcate come falso positivo (via × nella sidebar Hunter). Non verranno piu' riproposte. Clicca 'Reincludi' per rimuovere il dismiss e farle riapparire ai prossimi run."
+      "Pairs marked as false positives (via × in the Hunter sidebar). They won't be proposed again. Click 'Re-include' to remove the dismissal and have them reappear in the next runs."
     );
 
     // Collect all dismissed pairs. Stored as `hunter_false_positives: [basename, ...]`
@@ -4752,7 +4752,7 @@ class OnboardingChecklistView extends ItemView {
     intro.style.fontSize = "0.85em";
     intro.style.opacity = "0.7";
     intro.setText(
-      "Step suggeriti per esplorare Antinomia. La spunta appare automaticamente quando li completi. Puoi chiudere questa sidebar in qualsiasi momento — la riapri da Impostazioni o dalla palette."
+      "Suggested steps to explore Antinomia. The checkmark appears automatically when you complete them. You can close this sidebar at any time — reopen it from Settings or the command palette."
     );
 
     interface Step {
@@ -4773,10 +4773,10 @@ class OnboardingChecklistView extends ItemView {
     const steps: Step[] = [
       {
         id: "tension",
-        label: "Crea la tua prima tensione",
-        desc: "Una contraddizione tra due posizioni A e B che ti pungola.",
+        label: "Create your first tension",
+        desc: "A contradiction between two positions A and B that bothers you.",
         done: tensions >= 1,
-        actionLabel: "Crea tensione",
+        actionLabel: "Create tension",
         action: () => {
           new NewTensionModal(this.app, this.plugin, (fields, skipped) => {
             if (fields === null && !skipped) return;
@@ -4789,10 +4789,10 @@ class OnboardingChecklistView extends ItemView {
       },
       {
         id: "substrate",
-        label: "Crea il tuo primo substrate",
-        desc: "Materiale grezzo: una citazione, un fatto, un appunto.",
+        label: "Create your first substrate",
+        desc: "Raw material: a quote, a fact, a note.",
         done: substrates >= 1,
-        actionLabel: "Crea substrate",
+        actionLabel: "Create substrate",
         action: () => {
           new NewSubstrateModal(this.app, this.plugin, (fields, skipped) => {
             if (fields === null && !skipped) return;
@@ -4805,18 +4805,18 @@ class OnboardingChecklistView extends ItemView {
       },
       {
         id: "free",
-        label: "Prova l'inserimento libero (✨ AI)",
-        desc: "Scrivi un pensiero qualsiasi: l'AI capisce se e' tensione o substrate ed estrae i campi.",
+        label: "Try free-form input (✨ AI)",
+        desc: "Write any thought: the AI figures out if it's a tension or substrate and extracts the fields.",
         done: s.hasUsedFreeInput,
-        actionLabel: "Apri",
+        actionLabel: "Open",
         action: () => this.plugin.openFreeInputModal(),
       },
       {
         id: "presupposti",
-        label: "Mappa i presupposti di una tensione",
-        desc: "Rendi espliciti gli assunti epistemici/valoriali che A e B danno per scontato.",
+        label: "Map the presuppositions of a tension",
+        desc: "Make explicit the epistemic/value assumptions that A and B take for granted.",
         done: hasPresup,
-        actionLabel: "Mappa",
+        actionLabel: "Map",
         action: () => {
           const file = this.firstFileByType(TYPE.tension);
           if (!file) {
@@ -4830,8 +4830,8 @@ class OnboardingChecklistView extends ItemView {
       },
       {
         id: "hunter",
-        label: "Lancia il tuo primo Hunter",
-        desc: "Scansiona il vault per trovare contraddizioni anche tra note non collegate.",
+        label: "Run your first Hunter",
+        desc: "Scan the vault to find contradictions even between notes you didn't link.",
         done: s.hasRunHunter,
         actionLabel: "Hunter",
         action: () => {
@@ -4847,10 +4847,10 @@ class OnboardingChecklistView extends ItemView {
       },
       {
         id: "elevate",
-        label: "Eleva una tensione a principio",
-        desc: "Trasforma una tensione in una regola operativa IF/THEN/GREY (anche l'AI puo' proporre).",
+        label: "Elevate a tension to a principle",
+        desc: "Turn a tension into an IF/THEN/GREY operational rule (the AI can propose it).",
         done: principles >= 1,
-        actionLabel: "Eleva",
+        actionLabel: "Elevate",
         action: () => {
           const file = this.firstFileByType(TYPE.tension);
           if (!file) {
@@ -4862,10 +4862,10 @@ class OnboardingChecklistView extends ItemView {
       },
       {
         id: "explore",
-        label: "Esplora le altre sidebar",
-        desc: "Apri 'lista substrate', 'lista principi' o 'lista defeated archive' per vedere il tuo vault per layer.",
+        label: "Explore the other sidebars",
+        desc: "Open 'list substrate', 'list principles' or 'list defeated archive' to see your vault by layer.",
         done: s.hasOpenedListSidebar,
-        actionLabel: "Apri liste",
+        actionLabel: "Open lists",
         action: () => {
           void this.plugin.activateViewExternal(VIEW_TYPE_SUBSTRATE_LIST);
         },
@@ -4929,7 +4929,7 @@ class OnboardingChecklistView extends ItemView {
       done.style.textAlign = "center";
       done.style.fontWeight = "600";
       done.setText(
-        "🎉 Hai completato l'onboarding! Da qui in poi e' lavoro vero."
+        "🎉 You've completed onboarding! From here on it's real work."
       );
     }
   }
@@ -4951,7 +4951,7 @@ class DashboardView extends ItemView {
     return VIEW_TYPE_DASHBOARD;
   }
   getDisplayText(): string {
-    return "Antinomia — dashboard";
+    return "Antinomia — Dashboard";
   }
   getIcon(): string {
     return "layout-dashboard";
@@ -5035,10 +5035,10 @@ class DashboardView extends ItemView {
     };
 
     counter(
-      "Tensioni aperte",
+      "Open tensions",
       openTensions.length,
       () => void this.plugin.activateViewExternal(VIEW_TYPE_OPEN_TENSIONS),
-      `${tensions.length} totali, ${resolvedTensions.length} risolte`
+      `${tensions.length} total, ${resolvedTensions.length} resolved`
     );
     counter(
       "Substrate",
@@ -5046,7 +5046,7 @@ class DashboardView extends ItemView {
       () => void this.plugin.activateViewExternal(VIEW_TYPE_SUBSTRATE_LIST)
     );
     counter(
-      "Principi",
+      "Principles",
       principles.length,
       () => void this.plugin.activateViewExternal(VIEW_TYPE_PRINCIPLES_LIST)
     );
@@ -5056,14 +5056,14 @@ class DashboardView extends ItemView {
       () => void this.plugin.activateViewExternal(VIEW_TYPE_DEFEATED_LIST)
     );
     if (meta.length > 0) {
-      counter("Meta-note", meta.length);
+      counter("Meta-notes", meta.length);
     }
     if (unclassified.length > 0) {
       counter(
-        "Non classificate",
+        "Unclassified",
         unclassified.length,
         () => void this.plugin.activateViewExternal(VIEW_TYPE_UNCLASSIFIED),
-        "da classificare"
+        "to classify"
       );
     }
 
@@ -5078,10 +5078,10 @@ class DashboardView extends ItemView {
     const s = this.plugin.settings;
     if (s.lastHunterRunISO) {
       const line = hunterInfo.createEl("div");
-      line.setText(`Ultimo run: ${s.lastHunterRunISO}`);
+      line.setText(`Last run: ${s.lastHunterRunISO}`);
       const count = hunterInfo.createEl("div");
       count.style.fontWeight = "600";
-      count.setText(`Coppie trovate: ${s.lastHunterRunCount}`);
+      count.setText(`Pairs found: ${s.lastHunterRunCount}`);
     } else {
       hunterInfo.setText("Hunter not yet run.");
     }
@@ -5096,18 +5096,18 @@ class DashboardView extends ItemView {
     profInfo.style.marginBottom = "14px";
     const activeP = this.plugin.activeProfile();
     profInfo.createEl("div", {
-      text: `Attivo: ${activeP.name} (${activeP.model})`,
+      text: `Active: ${activeP.name} (${activeP.model})`,
     });
     if (s.hunterProfileId) {
       const hp = s.profiles.find((p) => p.id === s.hunterProfileId);
       if (hp)
         profInfo.createEl("div", {
-          text: `Override Hunter: ${hp.name} (${hp.model})`,
+          text: `Hunter override: ${hp.name} (${hp.model})`,
         });
     }
 
     // ---- Recent activity ----
-    container.createEl("h5", { text: "Attivita' recente" });
+    container.createEl("h5", { text: "Recent activity" });
     const recent = [...files]
       .filter((f) => {
         const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
@@ -5154,8 +5154,8 @@ class DashboardView extends ItemView {
       }
       b.onclick = onclick;
     };
-    mkAct("✨ Libero", () => this.plugin.openFreeInputModal(), true);
-    mkAct("+ Tensione", () => {
+    mkAct("✨ Free", () => this.plugin.openFreeInputModal(), true);
+    mkAct("+ Tension", () => {
       new NewTensionModal(this.app, this.plugin, (fields, skipped) => {
         if (fields === null && !skipped) return;
         const content = fields ? tensionTemplate(fields) : tensionTemplate();
@@ -5170,13 +5170,13 @@ class DashboardView extends ItemView {
       }).open();
     });
     mkAct("🔍 Hunter", () => void this.plugin.runHunter());
-    mkAct("🕸 Grafo", () =>
+    mkAct("🕸 Graph", () =>
       void this.plugin.activateViewExternal(VIEW_TYPE_GRAPH)
     );
     mkAct("Audit", () =>
       void this.plugin.activateViewExternal(VIEW_TYPE_AUDIT)
     );
-    mkAct("Guida", () => new GuidanceModal(this.app, this.plugin).open());
+    mkAct("Guide", () => new GuidanceModal(this.app, this.plugin).open());
   }
 }
 
@@ -5198,7 +5198,7 @@ class AuditVaultView extends ItemView {
     return VIEW_TYPE_AUDIT;
   }
   getDisplayText(): string {
-    return "Antinomia — audit";
+    return "Antinomia — Audit";
   }
   getIcon(): string {
     return "shield-alert";
@@ -5251,7 +5251,7 @@ class AuditVaultView extends ItemView {
     desc.style.fontSize = "0.85em";
     desc.style.opacity = "0.7";
     desc.setText(
-      "Report di salute: note Antinomia incomplete o malformate. Clicca un'issue per aprire la nota e sistemarla."
+      "Health report: incomplete or malformed Antinomia notes. Click an issue to open the note and fix it."
     );
 
     const files = this.app.vault.getMarkdownFiles();
@@ -5353,38 +5353,38 @@ class AuditVaultView extends ItemView {
       suggestion: string;
     }> = [
       {
-        title: "Tensioni senza statement A",
+        title: "Tensions missing statement A",
         issues: cat.tensionMissingA,
-        suggestion: "Apri e compila il campo 'A (base):'.",
+        suggestion: "Open and fill the 'A (base):' field.",
       },
       {
-        title: "Tensioni senza statement B",
+        title: "Tensions missing statement B",
         issues: cat.tensionMissingB,
-        suggestion: "Apri e compila il campo 'B (base):'.",
+        suggestion: "Open and fill the 'B (base):' field.",
       },
       {
-        title: "Tensioni senza presupposti mappati",
+        title: "Tensions without mapped presuppositions",
         issues: cat.tensionNoPresupposti,
         suggestion:
-          "Usa il bottone 'Presupposti' sulla card della tensione (anche AI propone).",
+          "Use the 'Presuppositions' button on the tension card (the AI can propose them too).",
       },
       {
-        title: "Principi col template IF/THEN/GREY non compilato",
+        title: "Principles with uncompiled IF/THEN/GREY template",
         issues: cat.principleNoIfThen,
         suggestion:
-          "Il principio ha ancora '[condizione A]' / '[esito X]' come placeholder. Vai a compilarli.",
+          "The principle still has '[condition A]' / '[outcome X]' as placeholders. Go fill them in.",
       },
       {
-        title: "Defeated senza motivo",
+        title: "Defeated without motive",
         issues: cat.defeatedNoMotivo,
         suggestion:
-          "Apri la nota e aggiungi il campo 'motive:' nel frontmatter (falso_positivo / elevata / sconfitta_genuina).",
+          "Open the note and add the 'motive:' field in the frontmatter (false_positive / elevated / genuinely_defeated).",
       },
       {
-        title: "Note senza titolo umano",
+        title: "Notes without human title",
         issues: cat.noTitle,
         suggestion:
-          "Usa 'Antinomia: imposta titolo nota' o aggiungi 'title:' nel frontmatter.",
+          "Use 'Antinomia: set note title' or add 'title:' in the frontmatter.",
       },
     ];
 
@@ -5397,7 +5397,7 @@ class AuditVaultView extends ItemView {
       summary.setText("✅ No issues found. Vault is healthy.");
       return;
     }
-    summary.setText(`${totalIssues} issue totali in ${sections.filter((s) => s.issues.length > 0).length} categorie.`);
+    summary.setText(`${totalIssues} total issues across ${sections.filter((s) => s.issues.length > 0).length} categories.`);
 
     for (const sec of sections) {
       if (sec.issues.length === 0) continue;
@@ -5452,7 +5452,7 @@ class UnclassifiedNotesView extends ItemView {
     return VIEW_TYPE_UNCLASSIFIED;
   }
   getDisplayText(): string {
-    return "Antinomia — non classificate";
+    return "Antinomia — Unclassified";
   }
   getIcon(): string {
     return "help-circle";
