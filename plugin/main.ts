@@ -582,7 +582,7 @@ class WelcomeModal extends Modal {
         }
       ).open();
       new Notice(
-        "Questo e' un esempio. Modificalo se vuoi, oppure premi Annulla e creane uno tuo."
+        "This is an example. Edit it, or press Cancel to create your own."
       );
     };
   }
@@ -1215,7 +1215,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
       row.addButton((b) => {
         b.setButtonText("Elimina").onClick(async () => {
           if (this.plugin.settings.profiles.length <= 1) {
-            new Notice("Devi avere almeno un profilo.");
+            new Notice("You must have at least one profile.");
             return;
           }
           this.plugin.settings.profiles = this.plugin.settings.profiles.filter(
@@ -1241,7 +1241,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
         .onClick(() => {
           const newProfile: Profile = {
             id: `profile-${Date.now()}`,
-            name: "Nuovo profilo",
+            name: "New profile",
             baseUrl: "https://api.anthropic.com",
             apiKey: "",
             model: "claude-sonnet-4-6",
@@ -1403,7 +1403,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
           this.plugin.settings.hintsHunterShown = false;
           await this.plugin.saveSettings();
           new Notice(
-            "Suggerimenti sidebar resettati. Apparira' il banner la prossima volta che apri le sidebar."
+            "Sidebar tooltips reset. The banner will appear next time you open the sidebars."
           );
         })
       );
@@ -1411,7 +1411,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Vault di esempio")
       .setDesc(
-        "Crea 21 note (3 tensioni + 15 substrate + 1 defeated + 1 principio Design C) + ESEMPIO-CHIAVE.md nella root con guida per beta tester. Le note contengono contraddizioni reali da scoprire col Hunter, oltre a rumore di controllo. Tutte marcate antinomia_esempio: true, cancellabili in un click."
+        "Crea 21 note (3 tensioni + 15 substrate + 1 defeated + 1 principio Design C) + ESEMPIO-CHIAVE.md nella root con guida per beta tester. Le note contengono contraddizioni reali da scoprire col Hunter, oltre a rumore di controllo. Tutte marcate antinomia_example: true, cancellabili in un click."
       )
       .addButton((b) =>
         b.setButtonText("Crea esempi").onClick(() => {
@@ -1431,16 +1431,16 @@ class AntinomiaSettingTab extends PluginSettingTab {
           .onClick(() => {
             const count = this.app.vault.getMarkdownFiles().filter((f) => {
               const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-              return fm?.antinomia_esempio === true;
+              return fm?.antinomia_example === true;
             }).length;
             if (count === 0) {
-              new Notice("Nessuna nota di esempio nel vault.");
+              new Notice("No example notes in the vault.");
               return;
             }
             new ConfirmModal(
               this.app,
               "Cancella esempi",
-              `Verranno cancellate ${count} note marcate antinomia_esempio: true.`,
+              `Verranno cancellate ${count} note marcate antinomia_example: true.`,
               "Cancella",
               () => void this.plugin.deleteExampleNotes()
             ).open();
@@ -1460,7 +1460,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
             this.plugin.settings.onboardingCompleted = false;
             await this.plugin.saveSettings();
             new Notice(
-              "Onboarding resettato. Apparira' al prossimo lancio (o clicca 'Apri' qui sopra per vederlo adesso)."
+              "Onboarding reset. It will appear on next launch (or click 'Open' above to see it now)."
             );
             this.display();
           })
@@ -1720,7 +1720,7 @@ async function fetchYouTubeTranscript(
 ): Promise<{ text: string; lang: string; videoId: string } | null> {
   const videoId = extractYouTubeId(videoIdOrUrl);
   if (!videoId) {
-    new Notice("URL YouTube non riconosciuto.");
+    new Notice("YouTube URL not recognized.");
     return null;
   }
   let html = "";
@@ -1737,13 +1737,13 @@ async function fetchYouTubeTranscript(
       throw: false,
     });
     if (res.status < 200 || res.status >= 300) {
-      new Notice(`Errore fetch video (HTTP ${res.status}).`);
+      new Notice(`Video fetch error (HTTP ${res.status}).`);
       return null;
     }
     html = res.text;
   } catch (e) {
     console.error("[Antinomia] fetchYouTubeTranscript page fetch failed", e);
-    new Notice(`Errore rete: ${(e as Error).message}`);
+    new Notice(`Network error: ${(e as Error).message}`);
     return null;
   }
 
@@ -1751,7 +1751,7 @@ async function fetchYouTubeTranscript(
   const captionMatch = html.match(/"captionTracks":(\[.+?\])/);
   if (!captionMatch) {
     new Notice(
-      "Trascrizione non disponibile per questo video (nessun captionTrack)."
+      "Transcript not available for this video (no captionTrack)."
     );
     return null;
   }
@@ -1762,12 +1762,12 @@ async function fetchYouTubeTranscript(
     captionTracks = JSON.parse(raw);
   } catch (e) {
     console.error("[Antinomia] captionTracks parse failed", e, captionMatch[1]);
-    new Notice("Errore parsing captionTracks (formato YouTube cambiato).");
+    new Notice("Error parsing captionTracks (YouTube format changed).");
     return null;
   }
 
   if (!Array.isArray(captionTracks) || captionTracks.length === 0) {
-    new Notice("Nessuna trascrizione disponibile.");
+    new Notice("No transcript available.");
     return null;
   }
 
@@ -1795,7 +1795,7 @@ async function fetchYouTubeTranscript(
   console.log("[Antinomia] track baseUrl (decoded):", baseUrl);
   console.log("[Antinomia] track lang:", lang);
   if (!baseUrl) {
-    new Notice("Track senza baseUrl.");
+    new Notice("Track without baseUrl.");
     return null;
   }
 
@@ -1909,7 +1909,7 @@ async function fetchYouTubeTranscript(
 
   if (lines.length === 0) {
     new Notice(
-      "Trascrizione vuota o formato non riconosciuto in nessuno dei 3 tentativi (json3/srv3/xml). Vedi DevTools console per il raw."
+      "Empty transcript or unrecognized format across all 3 attempts (json3/srv3/xml). See DevTools console for raw data."
     );
     return null;
   }
@@ -2256,7 +2256,7 @@ async function withLoadingButton<T>(
   } catch (e) {
     cleanup();
     if ((e as Error).message === "ai_aborted" || controller.signal.aborted) {
-      new Notice("Generazione AI fermata.");
+      new Notice("AI generation stopped.");
       return null;
     }
     throw e;
@@ -2964,7 +2964,7 @@ class FreeInputModal extends Modal {
           .onClick(async () => {
             const t = testo.trim();
             if (!t) {
-              new Notice("Scrivi qualcosa prima di analizzare.");
+              new Notice("Write something before analyzing.");
               return;
             }
             const analysis = await withLoadingButton(
@@ -3055,7 +3055,7 @@ class NewTensionModal extends Modal {
       const bTxt = statementB.trim();
       if (!aTxt && !bTxt) {
         new Notice(
-          "Compila almeno uno tra Statement A e B prima di chiedere un titolo."
+          "Fill at least one of Statement A or B before requesting a title."
         );
         return;
       }
@@ -3193,7 +3193,7 @@ class NewSubstrateModal extends Modal {
       e.preventDefault();
       const cTxt = contenuto.trim();
       if (!cTxt) {
-        new Notice("Compila il contenuto prima di chiedere un titolo.");
+        new Notice("Fill the content before requesting a title.");
         return;
       }
       const content =
@@ -3565,7 +3565,7 @@ function renderAntinomiaNav(
           // Altrimenti apri picker filtrato
           const candidates = plugin.app.vault.getMarkdownFiles().filter(isCandidate);
           if (candidates.length === 0) {
-            new Notice("Nessuna tensione aperta o substrate nel vault.");
+            new Notice("No open tensions or substrate in the vault.");
             return;
           }
           const dummy = plugin.app.vault.getMarkdownFiles().find((f) => !isCandidate(f)) ?? candidates[0];
@@ -4821,7 +4821,7 @@ class OnboardingChecklistView extends ItemView {
           const file = this.firstFileByType(TYPE.tension);
           if (!file) {
             new Notice(
-              "Prima crea almeno una tensione (step 1)."
+              "First create at least one tension (step 1)."
             );
             return;
           }
@@ -4838,7 +4838,7 @@ class OnboardingChecklistView extends ItemView {
           const candidates = tensions + substrates;
           if (candidates < 2) {
             new Notice(
-              "Servono almeno 2 note tra tensioni aperte e substrate per il Hunter."
+              "At least 2 notes (open tensions + substrate) are needed for the Hunter."
             );
             return;
           }
@@ -4854,7 +4854,7 @@ class OnboardingChecklistView extends ItemView {
         action: () => {
           const file = this.firstFileByType(TYPE.tension);
           if (!file) {
-            new Notice("Prima crea almeno una tensione.");
+            new Notice("First create at least one tension.");
             return;
           }
           void this.plugin.openElevateModal(file);
@@ -6670,7 +6670,7 @@ export default class AntinomiaPlugin extends Plugin {
   async runHunter(focusFile?: TFile): Promise<void> {
     const profile = this.profileFor("hunter");
     if (!profile.apiKey) {
-      new Notice("API key mancante nel profilo Hunter (o nell'attivo). Impostazioni -> Antinomia.");
+      new Notice("API key missing in the Hunter profile (or active one). Settings -> Antinomia.");
       return;
     }
     if (!this.settings.hasRunHunter) {
@@ -6687,7 +6687,7 @@ export default class AntinomiaPlugin extends Plugin {
       if (isOpenTension || isSubstrate) candidates.push(f);
     }
     if (candidates.length < 2) {
-      new Notice(`Hunter: servono almeno 2 note. Trovate: ${candidates.length}.`);
+      new Notice(`Hunter: at least 2 notes needed. Found: ${candidates.length}.`);
       return;
     }
     candidates.sort((a, b) => b.stat.mtime - a.stat.mtime);
@@ -6767,10 +6767,10 @@ export default class AntinomiaPlugin extends Plugin {
       hunterView?.setLoading(false);
       this.hunterAbortController = null;
       if ((e as Error).message === "hunter_aborted") {
-        new Notice("Hunter fermato dall'utente.");
+        new Notice("Hunter stopped by user.");
         console.log("[Antinomia] hunter aborted by user");
       } else {
-        new Notice(`Hunter errore: ${(e as Error).message}`);
+        new Notice(`Hunter error: ${(e as Error).message}`);
         console.error("[Antinomia] hunter call failed", e);
       }
       return;
@@ -6782,7 +6782,7 @@ export default class AntinomiaPlugin extends Plugin {
     const parsed = extractJson<HunterResult>(result.text);
     if (!parsed || !Array.isArray(parsed.contraddizioni)) {
       console.error("[Antinomia] hunter unparseable:", result.text);
-      new Notice("Hunter: risposta non parseable. Vedi console.");
+      new Notice("Hunter: response not parseable. See console.");
       return;
     }
 
@@ -6851,7 +6851,7 @@ export default class AntinomiaPlugin extends Plugin {
     void this.saveSettings();
 
     hunterView?.setRun(run);
-    new Notice(`Hunter: ${filtered.length} coppie in ${(durationMs / 1000).toFixed(1)}s.`);
+    new Notice(`Hunter: ${filtered.length} pairs in ${(durationMs / 1000).toFixed(1)}s.`);
     console.log("[Antinomia] hunter run", meta);
   }
 
@@ -6963,7 +6963,7 @@ export default class AntinomiaPlugin extends Plugin {
     // ---- Creation (guided + bypass) ----
     this.addCommand({
       id: "new-tension",
-      name: "nuova tensione",
+      name: "new tension",
       callback: () => {
         new NewTensionModal(this.app, this, (fields, skipped) => {
           if (fields === null && !skipped) return; // cancelled
@@ -6974,12 +6974,12 @@ export default class AntinomiaPlugin extends Plugin {
     });
     this.addCommand({
       id: "new-tension-empty",
-      name: "nuova tensione (vuota, senza modal)",
+      name: "new tension (empty, no modal)",
       callback: () => this.createNote("T", tensionTemplate()),
     });
     this.addCommand({
       id: "new-substrate",
-      name: "nuovo substrate",
+      name: "new substrate",
       callback: () => {
         new NewSubstrateModal(this.app, this, (fields, skipped) => {
           if (fields === null && !skipped) return;
@@ -6992,44 +6992,44 @@ export default class AntinomiaPlugin extends Plugin {
     });
     this.addCommand({
       id: "new-substrate-empty",
-      name: "nuovo substrate (vuoto, senza modal)",
+      name: "new substrate (empty, no modal)",
       callback: () => this.createNote("S", substrateTemplate()),
     });
     this.addCommand({
       id: "free-input",
-      name: "inserimento libero (AI classifica)",
+      name: "free-form input (AI classifies)",
       callback: () => this.openFreeInputModal(),
     });
     this.addCommand({
       id: "free-input-from-clipboard",
-      name: "inserimento libero da clipboard (AI classifica)",
+      name: "free-form input from clipboard (AI classifies)",
       callback: () => void this.openFreeInputFromClipboard(),
     });
     this.addCommand({
       id: "substrate-from-pdf",
-      name: "substrate da PDF (linka un PDF del vault)",
+      name: "substrate from PDF (link a vault PDF)",
       callback: () => void this.openSubstrateFromPDF(),
     });
     this.addCommand({
       id: "substrate-from-youtube",
-      name: "substrate da YouTube (scarica trascrizione)",
+      name: "substrate from YouTube (fetch transcript)",
       callback: () => void this.openSubstrateFromYouTube(),
     });
     this.addCommand({
       id: "setup-attachments-folder",
-      name: "configura cartella allegati (attachments/)",
+      name: "configure attachments folder (attachments/)",
       callback: () => void this.setupAttachmentsFolder(),
     });
     this.addCommand({
       id: "list-open-tensions",
-      name: "lista tensioni aperte",
+      name: "list open tensions",
       callback: () => this.activateView(VIEW_TYPE_OPEN_TENSIONS),
     });
 
     // ---- Layer transitions ----
     this.addCommand({
       id: "elevate-to-principle",
-      name: "eleva tensione a principio",
+      name: "elevate tension to principle",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file) return false;
@@ -7041,7 +7041,7 @@ export default class AntinomiaPlugin extends Plugin {
     });
     this.addCommand({
       id: "mark-resolved",
-      name: "marca tensione come risolta",
+      name: "mark tension as resolved",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file) return false;
@@ -7054,7 +7054,7 @@ export default class AntinomiaPlugin extends Plugin {
     });
     this.addCommand({
       id: "archive-as-defeated",
-      name: "archivia come defeated",
+      name: "archive as defeated",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file) return false;
@@ -7074,7 +7074,7 @@ export default class AntinomiaPlugin extends Plugin {
     // ---- AI commands ----
     this.addCommand({
       id: "classify-active-note",
-      name: "classifica nota attiva (AI)",
+      name: "classify active note (AI)",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file || file.extension !== "md") return false;
@@ -7084,12 +7084,12 @@ export default class AntinomiaPlugin extends Plugin {
     });
     this.addCommand({
       id: "hunt-contradictions",
-      name: "cerca contraddizioni (Hunter)",
+      name: "find contradictions (Hunter)",
       callback: () => this.runHunter(),
     });
     this.addCommand({
       id: "hunt-contradictions-on-active",
-      name: "cerca contraddizioni che coinvolgono la nota attiva (Hunter focus)",
+      name: "find contradictions involving the active note (Hunter focus)",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file || file.extension !== "md") return false;
@@ -7104,17 +7104,17 @@ export default class AntinomiaPlugin extends Plugin {
     });
     this.addCommand({
       id: "list-dismissed-pairs",
-      name: "lista falsi positivi del Hunter",
+      name: "list Hunter false positives",
       callback: () => this.activateView(VIEW_TYPE_DISMISSED_PAIRS),
     });
     this.addCommand({
       id: "migrate-existing-principles",
-      name: "migra principi esistenti (genera defeated retroattivi)",
+      name: "migrate existing principles (generate retroactive defeated)",
       callback: () => void this.migrateExistingPrinciples(),
     });
     this.addCommand({
       id: "create-defeated-for-orphan-principle",
-      name: "crea defeated origine per principio orfano",
+      name: "create origin defeated for orphan principle",
       callback: () => {
         const all = this.app.vault.getMarkdownFiles();
         const orphans = all.filter((f) => {
@@ -7131,7 +7131,7 @@ export default class AntinomiaPlugin extends Plugin {
           return refFm?.antinomia_type !== TYPE.defeated;
         });
         if (orphans.length === 0) {
-          new Notice("Nessun principio orfano nel vault.");
+          new Notice("No orphan principles in the vault.");
           return;
         }
         const dummy = all.find((f) => {
@@ -7148,7 +7148,7 @@ export default class AntinomiaPlugin extends Plugin {
     });
     this.addCommand({
       id: "merge-defeated",
-      name: "unisci due defeated in uno (caso B)",
+      name: "merge two defeated into one (case B)",
       callback: () => {
         const all = this.app.vault.getMarkdownFiles();
         const defs = all.filter((f) => {
@@ -7156,7 +7156,7 @@ export default class AntinomiaPlugin extends Plugin {
           return fm?.antinomia_type === TYPE.defeated;
         });
         if (defs.length < 2) {
-          new Notice("Servono almeno 2 defeated nel vault.");
+          new Notice("At least 2 defeated notes needed in the vault.");
           return;
         }
         const dummy = all.find((f) => {
@@ -7184,49 +7184,49 @@ export default class AntinomiaPlugin extends Plugin {
     });
     this.addCommand({
       id: "open-graph",
-      name: "apri grafo Antinomia (custom)",
+      name: "open Antinomia Graph (custom)",
       callback: () => this.activateView(VIEW_TYPE_GRAPH, "tab"),
     });
     this.addCommand({
       id: "list-substrate",
-      name: "lista substrate",
+      name: "list substrate",
       callback: () => this.activateView(VIEW_TYPE_SUBSTRATE_LIST),
     });
     this.addCommand({
       id: "list-principles",
-      name: "lista principi",
+      name: "list principles",
       callback: () => this.activateView(VIEW_TYPE_PRINCIPLES_LIST),
     });
     this.addCommand({
       id: "list-defeated",
-      name: "lista defeated archive",
+      name: "list defeated archive",
       callback: () => this.activateView(VIEW_TYPE_DEFEATED_LIST),
     });
     this.addCommand({
       id: "show-onboarding-checklist",
-      name: "apri guida iniziale (checklist)",
+      name: "open Getting Started guide (checklist)",
       callback: () => this.activateView(VIEW_TYPE_ONBOARDING),
     });
     this.addCommand({
       id: "show-dashboard",
-      name: "apri dashboard",
+      name: "open Dashboard",
       callback: () => this.activateView(VIEW_TYPE_DASHBOARD),
     });
     this.addCommand({
       id: "show-audit",
-      name: "audit vault (report di salute)",
+      name: "vault audit (health report)",
       callback: () => this.activateView(VIEW_TYPE_AUDIT),
     });
     this.addCommand({
       id: "show-unclassified",
-      name: "importa vault esistente (note non classificate)",
+      name: "import existing vault (unclassified notes)",
       callback: () => this.activateView(VIEW_TYPE_UNCLASSIFIED),
     });
 
     // ---- Graph / collegamenti ----
     this.addCommand({
       id: "link-active-note-to",
-      name: "collega questa nota a...",
+      name: "link this note to...",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file || file.extension !== "md") return false;
@@ -7242,7 +7242,7 @@ export default class AntinomiaPlugin extends Plugin {
     // ---- Title management ----
     this.addCommand({
       id: "set-title",
-      name: "imposta titolo nota",
+      name: "set note title",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file || file.extension !== "md") return false;
@@ -7252,33 +7252,33 @@ export default class AntinomiaPlugin extends Plugin {
     });
     this.addCommand({
       id: "show-welcome",
-      name: "mostra welcome (riavvia onboarding)",
+      name: "show welcome (restart onboarding)",
       callback: () => {
         new WelcomeModal(this.app, this).open();
       },
     });
     this.addCommand({
       id: "show-tutorial",
-      name: "tutorial concetti chiave",
+      name: "key concepts tutorial",
       callback: () => {
         new TutorialModal(this.app).open();
       },
     });
     this.addCommand({
       id: "guidance-next-step",
-      name: "dimmi come procedere (suggerimento contestuale)",
+      name: "tell me what to do next (contextual hint)",
       callback: () => {
         new GuidanceModal(this.app, this).open();
       },
     });
     this.addCommand({
       id: "create-example-notes",
-      name: "crea vault di esempio (3 tensioni + 2 substrate)",
+      name: "create example vault (3 tensions + 2 substrate)",
       callback: () => {
         new ConfirmModal(
           this.app,
           "Crea vault di esempio",
-          "Verranno create 21 note demo + ESEMPIO-CHIAVE.md per i beta tester. Tutte marcate antinomia_esempio: true, cancellabili in 1 click col comando 'cancella esempi'.",
+          "Verranno create 21 note demo + ESEMPIO-CHIAVE.md per i beta tester. Tutte marcate antinomia_example: true, cancellabili in 1 click col comando 'cancella esempi'.",
           "Crea",
           () => void this.createExampleNotes()
         ).open();
@@ -7286,20 +7286,20 @@ export default class AntinomiaPlugin extends Plugin {
     });
     this.addCommand({
       id: "delete-example-notes",
-      name: "cancella esempi (note marcate antinomia_esempio)",
+      name: "delete examples (notes marked antinomia_example)",
       callback: () => {
         const count = this.app.vault.getMarkdownFiles().filter((f) => {
           const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-          return fm?.antinomia_esempio === true;
+          return fm?.antinomia_example === true;
         }).length;
         if (count === 0) {
-          new Notice("Nessuna nota di esempio nel vault.");
+          new Notice("No example notes in the vault.");
           return;
         }
         new ConfirmModal(
           this.app,
           "Cancella esempi",
-          `Verranno cancellate ${count} note marcate antinomia_esempio: true. Vanno nel cestino di Obsidian (recuperabili).`,
+          `Verranno cancellate ${count} note marcate antinomia_example: true. Vanno nel cestino di Obsidian (recuperabili).`,
           "Cancella",
           () => void this.deleteExampleNotes()
         ).open();
@@ -7307,7 +7307,7 @@ export default class AntinomiaPlugin extends Plugin {
     });
     this.addCommand({
       id: "propose-title-ai",
-      name: "proponi titolo (AI)",
+      name: "propose title (AI)",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file || file.extension !== "md") return false;
@@ -7318,7 +7318,7 @@ export default class AntinomiaPlugin extends Plugin {
 
     this.addCommand({
       id: "map-presupposti",
-      name: "mappa presupposti (AI)",
+      name: "map presuppositions (AI)",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file) return false;
@@ -7428,7 +7428,7 @@ export default class AntinomiaPlugin extends Plugin {
       ? this.settings.profiles.find((p) => p.id === profileId) ??
         this.activeProfile()
       : this.activeProfile();
-    new Notice(`Test ${profile.name} (${profile.baseUrl}) ...`);
+    new Notice(`Testing ${profile.name} (${profile.baseUrl}) ...`);
     try {
       const t0 = Date.now();
       const r = await callAI({
@@ -7442,7 +7442,7 @@ export default class AntinomiaPlugin extends Plugin {
       const ms = Date.now() - t0;
       new Notice(`OK (${ms}ms): ${r.text.trim().slice(0, 80)}`);
     } catch (e) {
-      new Notice(`Test fallito: ${(e as Error).message}`);
+      new Notice(`Test failed: ${(e as Error).message}`);
     }
   }
 
@@ -7451,7 +7451,7 @@ export default class AntinomiaPlugin extends Plugin {
    *   - 18 note (3 tensioni aperte + 15 substrate) tratte dal test_vault_disordinato
    *   - 2 note Design C: 1 principio P + 1 defeated D collegati (motive: elevata)
    *   - 1 ESEMPIO-CHIAVE.md nella root del vault (documentazione contraddizioni seminate)
-   * Tutte marcate `antinomia_esempio: true` per cancellazione one-click.
+   * Tutte marcate `antinomia_example: true` per cancellazione one-click.
    */
   async createExampleNotes(): Promise<void> {
     await ensureFolder(this.app, FOLDER.notes);
@@ -7472,7 +7472,7 @@ lingua_base: italiano
 data_creazione: ${today}
 modified_date: ${today}
 origine: esempio
-antinomia_esempio: true
+antinomia_example: true
 links: []
 ---
 - **A (base):** ${a}
@@ -7490,7 +7490,7 @@ lingua_base: italiano
 original_language: italiano
 source: esempio
 data: ${today}
-antinomia_esempio: true
+antinomia_example: true
 ---
 - **Contenuto (base):** ${contenuto}
 - **Originale:**
@@ -7509,7 +7509,7 @@ title: ${yamlQuote(titolo)}
 data: ${today}
 modified_date: ${today}
 origin_tension: "[[${origineBasename}]]"
-antinomia_esempio: true
+antinomia_example: true
 links: []
 ---
 ## IF / THEN
@@ -7543,7 +7543,7 @@ motive: elevata
 data: ${today}
 modified_date: ${today}
 replaced_by: "[[${sostituitaDaBasename}]]"
-antinomia_esempio: true
+antinomia_example: true
 links: []
 ---
 - **A (originale):** ${a}
@@ -7658,7 +7658,7 @@ links: []
 
     // ====== ESEMPIO-CHIAVE.md nella ROOT del vault (NON in notes/) ======
     const chiaveContent = `---
-antinomia_esempio: true
+antinomia_example: true
 title: "ESEMPIO — Chiave delle contraddizioni seminate"
 ---
 # Chiave del vault di esempio
@@ -7739,21 +7739,21 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
     }
 
     new Notice(
-      `Esempi creati: ${created} note (18 disordinato + 2 Design C + 1 CHIAVE). Cancellabili con 'cancella esempi'.`
+      `Examples created: ${created} notes (18 messy + 2 Design C + 1 KEY). Removable via 'delete examples'.`
     );
     await this.activateView(VIEW_TYPE_OPEN_TENSIONS);
   }
 
   /**
-   * Delete every note flagged with `antinomia_esempio: true` in frontmatter.
+   * Delete every note flagged with `antinomia_example: true` in frontmatter.
    */
   async deleteExampleNotes(): Promise<void> {
     const toDelete = this.app.vault.getMarkdownFiles().filter((f) => {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      return fm?.antinomia_esempio === true;
+      return fm?.antinomia_example === true;
     });
     if (toDelete.length === 0) {
-      new Notice("Nessuna nota di esempio trovata.");
+      new Notice("No example notes found.");
       return;
     }
     let deleted = 0;
@@ -7765,7 +7765,7 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
         console.error("[Antinomia] example delete failed", e);
       }
     }
-    new Notice(`Cancellate ${deleted} note di esempio.`);
+    new Notice(`Deleted ${deleted} example notes.`);
   }
 
   /**
@@ -7806,7 +7806,7 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
 
     if (!clip.trim()) {
       new Notice(
-        "Clipboard vuota o non leggibile. Apro il modal libero vuoto: puoi incollare manualmente (Ctrl+V)."
+        "Clipboard empty or unreadable. Opening empty free-form modal: you can paste manually (Ctrl+V)."
       );
       this.openFreeInputModal();
       return;
@@ -7826,7 +7826,7 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
     }
 
     new Notice(
-      `Letti ${clip.length} caratteri. L'AI classifichera' come tensione o substrate.`
+      `Read ${clip.length} characters. The AI will classify as tension or substrate.`
     );
 
     // Route through FreeInputModal so the AI decides tipo (tension/substrate)
@@ -7886,13 +7886,13 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
       const existing = this.app.vault.getAbstractFileByPath(folder);
       if (!existing) {
         await this.app.vault.createFolder(folder);
-        new Notice(`Cartella '${folder}/' creata.`);
+        new Notice(`Folder '${folder}/' created.`);
       } else {
-        new Notice(`Cartella '${folder}/' esiste gia'.`);
+        new Notice(`Folder '${folder}/' already exists.`);
       }
     } catch (e) {
       console.error("[Antinomia] createFolder attachments failed", e);
-      new Notice(`Errore creazione cartella: ${(e as Error).message}`);
+      new Notice(`Folder creation error: ${(e as Error).message}`);
       return;
     }
 
@@ -7902,17 +7902,17 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
       if (typeof vaultAny.setConfig === "function") {
         vaultAny.setConfig("attachmentFolderPath", folder);
         new Notice(
-          `Nuovi allegati salveranno in '${folder}/'. (Impostazione Obsidian aggiornata.)`
+          `New attachments will save to '${folder}/'. (Obsidian setting updated.)`
         );
       } else {
         new Notice(
-          `Cartella '${folder}/' pronta. Per renderla default, vai in Impostazioni Obsidian → File e collegamenti → 'Cartella predefinita per nuovi allegati' → seleziona '${folder}'.`
+          `Folder '${folder}/' ready. To make it the default, go to Obsidian Settings → Files and links → 'Default location for new attachments' → select '${folder}'.`
         );
       }
     } catch (e) {
       console.error("[Antinomia] setConfig attachmentFolderPath failed", e);
       new Notice(
-        `Cartella creata ma non sono riuscito a impostarla come default. Configurala manualmente in Impostazioni Obsidian → File e collegamenti.`
+        `Folder created but could not set as default. Configure manually in Obsidian Settings → Files and links.`
       );
     }
   }
@@ -7979,13 +7979,13 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
     const url = await askUrl();
     if (!url) return;
 
-    new Notice("Tentativo fetch automatico trascrizione YouTube...");
+    new Notice("Attempting automatic YouTube transcript fetch...");
     const result = await fetchYouTubeTranscript(url);
 
     if (result) {
       // Auto-fetch success
       new Notice(
-        `Trascrizione scaricata: ${result.text.length} caratteri (lingua: ${result.lang}).`
+        `Transcript downloaded: ${result.text.length} characters (language: ${result.lang}).`
       );
       const titoloSuggerito = `Video YouTube — ${result.videoId}`;
       const contenutoIniziale = `> Video: ${url}\n\n${result.text}`;
@@ -8079,7 +8079,7 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
             .onClick(() => {
               const txt = pasted.trim();
               if (!txt) {
-                new Notice("Incolla la trascrizione prima di salvare.");
+                new Notice("Paste the transcript before saving.");
                 return;
               }
               fallbackModal.close();
@@ -8120,14 +8120,14 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
     }
     const fm0 = this.app.metadataCache.getFileCache(file)?.frontmatter;
     if (fm0?.antinomia_type !== TYPE.tension) {
-      new Notice("Eleva: la nota attiva non e' una tensione.");
+      new Notice("Elevate: active note is not a tension.");
       return;
     }
     let rawElev = "";
     try {
       rawElev = await this.app.vault.read(file);
     } catch (e) {
-      new Notice(`Errore lettura: ${(e as Error).message}`);
+      new Notice(`Read error: ${(e as Error).message}`);
       return;
     }
     this.elevateModalOpen = true;
@@ -8202,7 +8202,7 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
     try {
       raw = await this.app.vault.read(file);
     } catch (e) {
-      new Notice(`Errore lettura: ${(e as Error).message}`);
+      new Notice(`Read error: ${(e as Error).message}`);
       return;
     }
     // Pre-fill: prima frontmatter, poi fallback al body "**Presupposizioni A:** ..."
