@@ -3,7 +3,7 @@
   "name": "Antinomia",
   "version": "1.1.0",
   "minAppVersion": "1.4.0",
-  "description": "Personal Knowledge Management basato sulla contraddizione come unita' fondamentale. 5 layer (tensione, substrate, principio, defeated, meta-nota) gestiti via frontmatter YAML, Contradiction Hunter AI per scoprire contraddizioni nascoste, backend AI configurabili (Anthropic, OpenAI, Groq, OpenRouter, LM Studio locale, Ollama locale).",
+  "description": "Personal Tension Management (PTM): il parallelo del PKM centrato su contraddizioni, tradeoff, anomalie e tensioni tra obiettivi. 5 layer (tensione, substrate, principio, defeated, meta-nota) gestiti via frontmatter YAML, Contradiction Hunter AI per scoprire contraddizioni nascoste, backend AI configurabili (Anthropic, OpenAI, Groq, OpenRouter, LM Studio locale, Ollama locale).",
   "author": "Giuseppe De Martino",
   "authorUrl": "https://github.com/demartinogiuseppe/antinomia",
   "isDesktopOnly": true

@@ -1,10 +1,10 @@
-# Antinomia V1
+# Antinomia
 
-Plugin Obsidian per Personal Knowledge Management basato sulla **contraddizione come unità fondamentale** del pensiero.
+Plugin Obsidian per **Personal Tension Management (PTM)** — il parallelo "in tensione" del Personal Knowledge Management.
 
-> "L'unità del pensiero non è la nota. È la contraddizione."
+> "Le note conservano. Le contraddizioni interrogano."
 
-Antinomia ribalta il paradigma classico del PKM: invece di organizzare informazioni in note, costruisci una mappa esplicita delle **tensioni** che strutturano come pensi. Le idee "pulite" emergono dopo, come principi operativi derivati dalla risoluzione di una tensione — non prima.
+Se il **PKM** organizza la conoscenza esplicita (*cosa so*), il **PTM** organizza dove qualcosa non torna (*dove qualcosa stride*): contraddizioni, tradeoff, anomalie, dubbi persistenti, segnali deboli, tensioni tra obiettivi. Le idee "pulite" emergono dopo, come principi operativi derivati dalla risoluzione di una tensione — non prima.
 
 ---
 

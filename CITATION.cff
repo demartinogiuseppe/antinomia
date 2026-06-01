@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+title: "Antinomia: un plugin Obsidian per Personal Tension Management"
+message: "Se usi Antinomia in un contesto accademico, citalo come segue."
+type: software
+authors:
+  - family-names: De Martino
+    given-names: Giuseppe
+repository-code: "https://github.com/demartinogiuseppe/antinomia"
+url: "https://github.com/demartinogiuseppe/antinomia"
+abstract: >
+  Antinomia è un sistema di Personal Tension Management (PTM), un
+  parallelo del Personal Knowledge Management centrato non sulla
+  conoscenza esplicita ma sulle tensioni cognitive — contraddizioni,
+  tradeoff, anomalie, dubbi persistenti, segnali deboli, conflitti
+  tra obiettivi. È distribuito come plugin per Obsidian e organizza
+  le note in cinque layer (tensione, substrate, principio, defeated,
+  meta-nota) gestiti via frontmatter YAML, con un Contradiction
+  Hunter AI per identificare contraddizioni nascoste tra note del
+  vault.
+keywords:
+  - personal tension management
+  - ptm
+  - personal knowledge management
+  - pkm
+  - obsidian
+  - contradiction
+  - dialectics
+  - epistemology
+  - note-taking
+license: MIT
+version: "1.1.0"
+date-released: "2026-06-01"
