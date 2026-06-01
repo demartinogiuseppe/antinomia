@@ -2114,74 +2114,74 @@ async function callAI(opts: {
 
 // ---------- prompts ----------
 
-const CLASSIFY_SYSTEM = `Sei l'analista di Antinomia. Classifica una nota in UNO dei tipi:
+const CLASSIFY_SYSTEM = `You are the Antinomia analyst. Classify a note as ONE of these types:
 
-1. **tensione** — contraddizione tra due posizioni A vs B
-2. **substrate** — materiale grezzo (citazione, fatto, appunto)
-3. **principio** — regola IF/THEN derivata da una tensione risolta
-4. **defeated** — convinzione sconfitta (archivio)
-5. **meta_nota** — riflessione sul rapporto utente-sistema
+1. **tension** — contradiction between two positions A vs B
+2. **substrate** — raw material (quote, fact, observation)
+3. **principle** — IF/THEN rule derived from a resolved tension
+4. **defeated** — defeated belief (archive)
+5. **meta_note** — reflection on the user-system relationship
 
-Rispondi SOLO con JSON valido, senza fence:
-{"tipo": "<uno dei 5>", "motivazione": "<1-2 frasi>"}`;
+Reply with ONLY valid JSON, no fence:
+{"tipo": "<one of the 5>", "motivazione": "<1-2 sentences>"}`;
 
 interface ClassifyResult {
   tipo: string;
   motivazione: string;
 }
 
-const TITLE_SYSTEM = `Proponi un TITOLO breve per una nota.
+const TITLE_SYSTEM = `Propose a short TITLE for a note.
 
-Vincoli:
-- DEVE catturare IL TEMA (di cosa parla), NON il primo statement.
-- 3-7 parole, max 60 caratteri.
-- Italiano, niente virgolette ne' punto finale.
-- NON sintesi della posizione (es. "L'isolamento e' meglio") — la nota potrebbe avere posizioni opposte. Usa termini neutri (es. "Solitudine creativa").
-- Per le tensioni, idealmente "X vs Y" o "X (tensione su Y)".
+Constraints:
+- MUST capture THE THEME (what it's about), NOT the first statement.
+- 3-7 words, max 60 characters.
+- English, no quotes or final punctuation.
+- NOT a summary of the position (e.g. "Isolation is better") — the note might have opposing positions. Use neutral terms (e.g. "Creative solitude").
+- For tensions, ideally "X vs Y" or "X (tension on Y)".
 
-Rispondi SOLO con JSON valido, senza fence:
-{"title": "<la tua proposta>"}`;
+Reply with ONLY valid JSON, no fence:
+{"title": "<your proposal>"}`;
 
 interface TitleProposal {
   title: string;
 }
 
-const PRESUPPOSTI_SYSTEM = `Sei l'assistente di Antinomia. Stai aiutando l'utente a mappare i PRESUPPOSTI di una tensione.
+const PRESUPPOSTI_SYSTEM = `You are the Antinomia assistant. You are helping the user map the PRESUPPOSITIONS of a tension.
 
-Una tensione ha statement A e statement B che si contraddicono. I PRESUPPOSTI sono le assunzioni epistemiche / metafisiche / di valore che A e B danno per scontate (spesso senza dirlo). Mapparli rende esplicito perche' A e B non possono convivere senza trade-off.
+A tension has statement A and statement B that contradict each other. PRESUPPOSITIONS are the epistemic / metaphysical / value assumptions that A and B take for granted (often unspoken). Mapping them makes explicit why A and B cannot coexist without trade-offs.
 
-Vincoli:
-- Italiano, conciso
-- NON riformulare A e B — descrivi le ASSUNZIONI di base che li rendono possibili
-- Esempi tipici di presupposto: "X e' l'autorita' epistemica primaria", "Y e' universale/contestuale", "Z e' separabile da W", "C e' un valore non negoziabile", "D e' misurabile/non misurabile"
-- Una tensione puo' avere 1 o piu' presupposti per lato. Lista compatta o frase singola.
-- Identifica i presupposti che, se cambiati, scioglierebbero la tensione.
+Constraints:
+- English, concise
+- DO NOT reformulate A and B — describe the BASE ASSUMPTIONS that make them possible
+- Typical presupposition examples: "X is the primary epistemic authority", "Y is universal/contextual", "Z is separable from W", "C is a non-negotiable value", "D is measurable/unmeasurable"
+- A tension can have 1 or more presuppositions per side. Compact list or single sentence.
+- Identify the presuppositions that, if changed, would dissolve the tension.
 
-Rispondi SOLO con JSON valido, senza commenti, senza fence markdown:
-{"presupposizioniA": "<presupposti del lato A>", "presupposizioniB": "<presupposti del lato B>"}`;
+Reply with ONLY valid JSON, no comments, no markdown fence:
+{"presupposizioniA": "<presuppositions of side A>", "presupposizioniB": "<presuppositions of side B>"}`;
 
 interface PresuppostiFields {
   presupposizioniA?: string;
   presupposizioniB?: string;
 }
 
-const FREE_INPUT_SYSTEM = `Sei l'analista di Antinomia. L'utente ti da' un input grezzo (puo' essere una citazione, un'osservazione, un dubbio, una contraddizione, un singolo pensiero) e tu devi:
+const FREE_INPUT_SYSTEM = `You are the Antinomia analyst. The user gives you a raw input (it can be a quote, an observation, a doubt, a contradiction, a single thought) and you must:
 
-1. Determinare se e' una TENSIONE o un SUBSTRATE.
-2. Estrarre i campi pertinenti.
-3. Proporre un titolo neutro (3-7 parole).
+1. Determine if it's a TENSION or a SUBSTRATE.
+2. Extract the relevant fields.
+3. Propose a neutral title (3-7 words).
 
-Criteri:
-- TENSIONE se l'input contiene o implica DUE posizioni in conflitto (anche solo abbozzate).
-- SUBSTRATE se l'input e' materiale grezzo singolo (citazione, fatto, osservazione, aneddoto).
+Criteria:
+- TENSION if the input contains or implies TWO conflicting positions (even just sketched).
+- SUBSTRATE if the input is a single raw material (quote, fact, observation, anecdote).
 
-Per TENSIONE: statementA/statementB devono essere affermazioni complete, semanticamente incompatibili.
-Per SUBSTRATE: contenuto preserva fedelmente l'input grezzo.
+For TENSION: statementA/statementB must be complete statements, semantically incompatible.
+For SUBSTRATE: contenuto faithfully preserves the raw input.
 
-Rispondi SOLO con JSON valido, senza fence:
+Reply with ONLY valid JSON, no fence:
 {"tipo": "tension" | "substrate", "title": "...", "statementA": "...", "statementB": "...", "contenuto": "..."}
 
-Per tensione lascia contenuto vuoto. Per substrate lascia statementA/statementB vuoti.`;
+For tension leave contenuto empty. For substrate leave statementA/statementB empty.`;
 
 interface FreeInputAnalysis {
   tipo: "tension" | "substrate";
@@ -2191,21 +2191,21 @@ interface FreeInputAnalysis {
   contenuto: string;
 }
 
-const PRINCIPLE_SYSTEM = `Sei l'assistente di Antinomia. Stai aiutando l'utente a trasformare una tensione (statement A vs statement B) in un principio operativo nella forma IF/THEN/GREY.
+const PRINCIPLE_SYSTEM = `You are the Antinomia assistant. You are helping the user transform a tension (statement A vs statement B) into an operational principle in IF/THEN/GREY form.
 
-Cosa devi produrre:
-- Identifica il CONTESTO in cui vince A e il CONTESTO in cui vince B (le due NON devono essere "A se vince A" — devono essere condizioni descrittive)
-- Per ciascuno, formula l'ESITO (regola/azione/conclusione)
-- GREY ZONE: casi limite dove A e B si toccano e la regola non basta. Puoi lasciare vuota se non viene niente di solido.
+What you must produce:
+- Identify the CONTEXT where A wins and the CONTEXT where B wins (the two MUST NOT be "A if A wins" — they must be descriptive conditions)
+- For each, formulate the OUTCOME (rule/action/conclusion)
+- GREY ZONE: edge cases where A and B touch and the rule isn't enough. You can leave it empty if nothing solid comes to mind.
 
-Vincoli:
-- Italiano, conciso
-- IF deve descrivere un contesto verificabile, non ripetere la tesi
-- THEN deve essere operativo (cosa fare/concludere), non astratto
-- Non risolvere la tensione "scegliendo un lato" — il principio deve assorbire entrambi i lati come casi
+Constraints:
+- English, concise
+- IF must describe a verifiable context, not repeat the thesis
+- THEN must be operational (what to do/conclude), not abstract
+- Do not resolve the tension by "picking a side" — the principle must absorb both sides as cases
 
-Rispondi SOLO con JSON valido, senza fence markdown:
-{"ifA": "<contesto in cui vale A>", "thenA": "<esito A>", "ifB": "<contesto in cui vale B>", "thenB": "<esito B>", "greyZone": "<casi limite, puo' essere stringa vuota>"}`;
+Reply with ONLY valid JSON, no markdown fence:
+{"ifA": "<context where A holds>", "thenA": "<outcome A>", "ifB": "<context where B holds>", "thenB": "<outcome B>", "greyZone": "<edge cases, can be empty string>"}`;
 
 /**
  * Wrap an async operation behind a button: disables it, ticks a live
@@ -2277,8 +2277,8 @@ function renderTensionContext(parent: HTMLElement, rawContent: string): void {
   const aOrig = extract(/-\s*\*\*A \(originale\):\*\*\s*([^\n]*)/);
   const bBase = extract(/-\s*\*\*B \(base\):\*\*\s*([^\n]*)/);
   const bOrig = extract(/-\s*\*\*B \(originale\):\*\*\s*([^\n]*)/);
-  const presupA = extract(/-\s*\*\*Presupposizioni A:\*\*\s*([^\n]*)/);
-  const presupB = extract(/-\s*\*\*Presupposizioni B:\*\*\s*([^\n]*)/);
+  const presupA = extract(/-\s*\*\*Presuppositions A:\*\*\s*([^\n]*)/);
+  const presupB = extract(/-\s*\*\*Presuppositions B:\*\*\s*([^\n]*)/);
 
   const box = parent.createEl("div");
   box.style.padding = "10px 12px";
@@ -2306,11 +2306,11 @@ function renderTensionContext(parent: HTMLElement, rawContent: string): void {
   };
 
   if (aBase) mkRow("A", aBase);
-  if (aOrig) mkRow("A (originale)", aOrig);
+  if (aOrig) mkRow("A (original)", aOrig);
   if (bBase) mkRow("B", bBase);
-  if (bOrig) mkRow("B (originale)", bOrig);
-  if (presupA) mkRow("Presupposizioni A", presupA);
-  if (presupB) mkRow("Presupposizioni B", presupB);
+  if (bOrig) mkRow("B (original)", bOrig);
+  if (presupA) mkRow("Presuppositions A", presupA);
+  if (presupB) mkRow("Presuppositions B", presupB);
 
   // If absolutely nothing was extracted, show the whole body as fallback
   if (!aBase && !bBase && !presupA && !presupB) {
@@ -2322,58 +2322,58 @@ function renderTensionContext(parent: HTMLElement, rawContent: string): void {
   }
 }
 
-const HUNTER_SYSTEM = `Sei il Contradiction Hunter di Antinomia.
+const HUNTER_SYSTEM = `You are the Antinomia Contradiction Hunter.
 
-IL TUO COMPITO: identificare COPPIE di note che si contraddicono.
+YOUR TASK: identify PAIRS of notes that contradict each other.
 
-COPPIE DA CONSIDERARE — ESAMINA TUTTE le combinazioni possibili tra le note inviate:
-- tensione ↔ tensione
-- tensione ↔ substrate
-- **substrate ↔ substrate** (frequentemente ignorate, ma ALTRETTANTO IMPORTANTI)
+PAIRS TO CONSIDER — EXAMINE ALL possible combinations among the submitted notes:
+- tension ↔ tension
+- tension ↔ substrate
+- **substrate ↔ substrate** (often overlooked, but EQUALLY IMPORTANT)
 
-Per N note ci sono N*(N-1)/2 coppie. Devi considerarle tutte prima di scartare quelle non contraddittorie.
-NON privilegiare le tensioni rispetto ai substrate solo perche' sono "piu' polari": i substrate spesso contengono presupposti che entrano in conflitto tra loro o con tensioni esistenti.
+For N notes there are N*(N-1)/2 pairs. You must consider all of them before discarding the non-contradictory ones.
+DO NOT privilege tensions over substrate just because they're "more polarized": substrate often contain presuppositions that conflict with each other or with existing tensions.
 
-CRUCIALE — NON devi:
-- Suggerire risoluzioni o sintesi
-- Spiegare come la contraddizione potrebbe essere risolta
-- Proporre principi che la supererebbero
-La risoluzione e' lavoro dell'utente. Tu IDENTIFICHI, lui RISOLVE.
+CRUCIAL — you MUST NOT:
+- Suggest resolutions or syntheses
+- Explain how the contradiction could be resolved
+- Propose principles that would overcome it
+Resolution is the user's work. You IDENTIFY, they RESOLVE.
 
-Vale come contraddizione:
-- Due note semanticamente incompatibili (A dice X, B dice non-X)
-- Due note i cui PRESUPPOSTI sono incompatibili (anche se i temi superficiali differiscono)
-- Una nota la cui pratica contraddice cio' che un'altra afferma
-- Due substrate che assumono presupposti epistemici/valoriali in conflitto
+What counts as a contradiction:
+- Two notes semantically incompatible (A says X, B says not-X)
+- Two notes whose PRESUPPOSITIONS are incompatible (even if the surface topics differ)
+- A note whose practice contradicts what another asserts
+- Two substrate that assume conflicting epistemic/value presuppositions
 
-NON vale:
-- Note su temi diversi non incompatibili
-- Differenze di tono/registro/lunghezza
-- Una nota piu' dettagliata di un'altra
-- Coppie deboli/forzate (se incerto, NON includere o usa confidence: bassa)
-- Connessioni TEMATICHE deboli (entrambe parlano di "tempo" ma in modi diversi non opposti)
-- Coppie dove devi INVENTARE un presupposto comune per giustificarle: non scrivere "una assume X mentre l'altra Y" se nessuna delle due dice quello esplicitamente
+What does NOT count:
+- Notes on different non-incompatible topics
+- Differences of tone/register/length
+- A note more detailed than another
+- Weak/forced pairs (if uncertain, DO NOT include or use confidence: bassa)
+- Weak THEMATIC connections (both talk about "time" but in different non-opposing ways)
+- Pairs where you have to INVENT a common presupposition to justify them: don't write "one assumes X while the other Y" if neither says that explicitly
 
-**PRECISIONE > RECALL**: meglio dire "nessuna contraddizione" che produrre coppie deboli. Lo scopo del Hunter e' farti vedere conflitti REALI, non darti l'illusione di profondita'.
+**PRECISION > RECALL**: better to say "no contradiction" than to produce weak pairs. The Hunter's purpose is to show you REAL conflicts, not to give you the illusion of depth.
 
-**ESEMPI DI CONTRADDIZIONI VALIDE (frontali, sullo STESSO criterio):**
-- A: "le decisioni di pancia sono affidabili, l'istinto raramente sbaglia" ↔ B: "i dati mostrano che le decisioni d'impulso hanno tasso di errore 3x superiore alle ponderate" → confidence alta, opposizione esplicita sullo stesso oggetto (qualita' delle decisioni intuitive).
-- A: "il talento e' tutto, senza dono naturale resti mediocre" ↔ B: "la disciplina conta piu' del talento, l'impegno supera il predestinato pigro" → confidence alta, opposizione su quale fattore determina il successo.
+**EXAMPLES OF VALID CONTRADICTIONS (frontal, on the SAME criterion):**
+- A: "gut decisions are reliable, instinct rarely fails" ↔ B: "data shows that impulse decisions have an error rate 3x higher than deliberated ones" → confidence alta, explicit opposition on the same object (quality of intuitive decisions).
+- A: "talent is everything, without natural gift you stay mediocre" ↔ B: "discipline matters more than talent, effort beats the lazy prodigy" → confidence alta, opposition on which factor determines success.
 
-**ESEMPI DA NON ACCOPPIARE:**
-- Una nota su "produttivita' in ufficio" e una su "risparmio economico": temi diversi, non contraddizione.
-- Una nota di promemoria operativo ("dormito male, riunione domani") con qualsiasi tensione: il promemoria non afferma una tesi.
-- Due note che entrambe menzionano il "tempo" ma una parla di productivity-time e l'altra di philosophy-of-time: tema vicino, sostanza diversa.
+**EXAMPLES NOT TO PAIR:**
+- A note on "office productivity" and one on "economic savings": different topics, not a contradiction.
+- An operational reminder ("slept badly, meeting tomorrow") with any tension: the reminder doesn't assert a thesis.
+- Two notes both mentioning "time" but one about productivity-time and the other about philosophy-of-time: close topic, different substance.
 
 Confidence:
-- "alta" — contraddizione chiara, sui presupposti o esplicita
-- "media" — esiste ma richiede interpretazione
-- "bassa" — sospetto debole
+- "alta" — clear contradiction, on presuppositions or explicit
+- "media" — exists but requires interpretation
+- "bassa" — weak suspicion
 
-Rispondi SOLO con JSON valido, senza fence:
-{"contraddizioni": [{"nota_a": "<basename>", "nota_b": "<basename>", "descrizione": "<2-3 frasi sul COSA, non sul COME risolvere>", "confidence": "alta|media|bassa"}]}
+Reply with ONLY valid JSON, no fence:
+{"contraddizioni": [{"nota_a": "<basename>", "nota_b": "<basename>", "descrizione": "<2-3 sentences on WHAT, not on HOW to resolve>", "confidence": "alta|media|bassa"}]}
 
-Se nessuna: {"contraddizioni": []}`;
+If none: {"contraddizioni": []}`;
 
 /**
  * Build the Hunter system prompt for a given style. "concise" appends a strict
@@ -2384,7 +2384,7 @@ function buildHunterSystem(style: "concise" | "verbose"): string {
   if (style === "verbose") return HUNTER_SYSTEM;
   return (
     HUNTER_SYSTEM +
-    `\n\nVincolo aggiuntivo: descrizione in 2-3 frasi MASSIMO, dritta al punto. NIENTE reasoning esposto, NIENTE frasi come "rivediamo", "consideriamo", "tuttavia, vediamo se", "sebbene... mentre...". Vai dritto alla conclusione finale sulla contraddizione.`
+    `\n\nAdditional constraint: descrizione in 2-3 sentences MAX, straight to the point. NO exposed reasoning, NO phrases like "let's review", "let's consider", "however, let's see if", "although... while...". Go straight to the final conclusion on the contradiction.`
   );
 }
 
@@ -4724,10 +4724,10 @@ class OnboardingChecklistView extends ItemView {
         tensions.map(async (f) => {
           try {
             const raw = await this.app.vault.cachedRead(f);
-            // Match "**Presupposizioni A:**" followed by non-empty content
+            // Match "**Presuppositions A:**" followed by non-empty content
             if (
-              /\*\*Presupposizioni A:\*\*\s+\S/.test(raw) ||
-              /\*\*Presupposizioni B:\*\*\s+\S/.test(raw)
+              /\*\*Presuppositions A:\*\*\s+\S/.test(raw) ||
+              /\*\*Presuppositions B:\*\*\s+\S/.test(raw)
             ) {
               if (!this.presuppostiDetected) {
                 this.presuppostiDetected = true;
@@ -5311,11 +5311,11 @@ class AuditVaultView extends ItemView {
         }
         const presupA = hasContentAfter(
           body,
-          /-\s*\*\*Presupposizioni A:\*\*\s*([^\n]*)/
+          /-\s*\*\*Presuppositions A:\*\*\s*([^\n]*)/
         );
         const presupB = hasContentAfter(
           body,
-          /-\s*\*\*Presupposizioni B:\*\*\s*([^\n]*)/
+          /-\s*\*\*Presuppositions B:\*\*\s*([^\n]*)/
         );
         if (!presupA && !presupB) {
           cat.tensionNoPresupposti.push({
@@ -7476,11 +7476,11 @@ antinomia_example: true
 links: []
 ---
 - **A (base):** ${a}
-- **A (originale):**
+- **A (original):**
 - **B (base):** ${b}
-- **B (originale):**
-- **Presupposizioni A:** ${presupA}
-- **Presupposizioni B:** ${presupB}
+- **B (original):**
+- **Presuppositions A:** ${presupA}
+- **Presuppositions B:** ${presupB}
 `;
 
     const substrateTpl = (title: string, contenuto: string) => `---
@@ -7492,8 +7492,8 @@ source: esempio
 data: ${today}
 antinomia_example: true
 ---
-- **Contenuto (base):** ${contenuto}
-- **Originale:**
+- **Content (base):** ${contenuto}
+- **Original:**
 `;
 
     // Template principio (Design C: file separato, origin_tension punta al defeated)
@@ -7546,8 +7546,8 @@ replaced_by: "[[${sostituitaDaBasename}]]"
 antinomia_example: true
 links: []
 ---
-- **A (originale):** ${a}
-- **B (originale):** ${b}
+- **A (original):** ${a}
+- **B (original):** ${b}
 
 > Replaced by: [[${sostituitaDaBasename}]]
 `;
@@ -8205,19 +8205,19 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
       new Notice(`Read error: ${(e as Error).message}`);
       return;
     }
-    // Pre-fill: prima frontmatter, poi fallback al body "**Presupposizioni A:** ..."
+    // Pre-fill: prima frontmatter, poi fallback al body "**Presuppositions A:** ..."
     let existingA: string =
       typeof fm?.presupposizioniA === "string" ? fm.presupposizioniA : "";
     let existingB: string =
       typeof fm?.presupposizioniB === "string" ? fm.presupposizioniB : "";
     if (!existingA) {
-      const m = raw.match(/\*\*Presupposizioni A:\*\*\s*([^\n]*)/);
+      const m = raw.match(/\*\*Presuppositions A:\*\*\s*([^\n]*)/);
       if (m && m[1].trim() && !m[1].includes("[da mappare]")) {
         existingA = m[1].trim();
       }
     }
     if (!existingB) {
-      const m = raw.match(/\*\*Presupposizioni B:\*\*\s*([^\n]*)/);
+      const m = raw.match(/\*\*Presuppositions B:\*\*\s*([^\n]*)/);
       if (m && m[1].trim() && !m[1].includes("[da mappare]")) {
         existingB = m[1].trim();
       }
@@ -8518,8 +8518,8 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
       `replaced_by: "[[${principleFile.basename}]]"\n` +
       "links: []\n" +
       "---\n\n" +
-      "**A (originale):** [da compilare]\n\n" +
-      "**B (originale):** [da compilare]\n\n" +
+      "**A (original):** [da compilare]\n\n" +
+      "**B (original):** [da compilare]\n\n" +
       "_(Defeated creato manualmente per agganciare un principio orfano al grafo. " +
       "Compila A/B con la tensione che ricordi essere all'origine di questo principio.)_\n\n" +
       `> Replaced by: [[${principleFile.basename}]]\n`;
@@ -8884,7 +8884,7 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
   }
 
   /**
-   * AI helper: propone Presupposizioni A/B per una tensione.
+   * AI helper: propone Presuppositions A/B per una tensione.
    */
   async proposePresuppostiFromContent(
     content: string,
@@ -8965,8 +8965,8 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
   }
 
   /**
-   * Applica i Presupposizioni A/B al body di una tensione. Sostituisce le righe
-   * "**Presupposizioni A:** ..." e "**Presupposizioni B:** ..." se presenti,
+   * Applica i Presuppositions A/B al body di una tensione. Sostituisce le righe
+   * "**Presuppositions A:** ..." e "**Presuppositions B:** ..." se presenti,
    * altrimenti le appende in fondo.
    */
   async applyPresupposti(file: TFile, fields: PresuppostiFields): Promise<void> {
@@ -8983,16 +8983,16 @@ Apri il Grafo Antinomia — vedi i due nodi collegati da arco rosso (defeated �
       const a = (fields.presupposizioniA || "").trim();
       const b = (fields.presupposizioniB || "").trim();
 
-      const reA = /\*\*Presupposizioni A:\*\*[^\n]*/;
-      const reB = /\*\*Presupposizioni B:\*\*[^\n]*/;
+      const reA = /\*\*Presuppositions A:\*\*[^\n]*/;
+      const reB = /\*\*Presuppositions B:\*\*[^\n]*/;
 
       if (a) {
-        if (reA.test(body)) body = body.replace(reA, `**Presupposizioni A:** ${a}`);
-        else body += `\n\n**Presupposizioni A:** ${a}`;
+        if (reA.test(body)) body = body.replace(reA, `**Presuppositions A:** ${a}`);
+        else body += `\n\n**Presuppositions A:** ${a}`;
       }
       if (b) {
-        if (reB.test(body)) body = body.replace(reB, `**Presupposizioni B:** ${b}`);
-        else body += `\n**Presupposizioni B:** ${b}`;
+        if (reB.test(body)) body = body.replace(reB, `**Presuppositions B:** ${b}`);
+        else body += `\n**Presuppositions B:** ${b}`;
       }
 
       await this.app.fileManager.processFrontMatter(file, (fm) => {
