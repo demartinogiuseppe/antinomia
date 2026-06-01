@@ -1,8 +1,8 @@
 # Antinomia
 
-> "Le note conservano. Le contraddizioni interrogano."
+> "Notes preserve. Contradictions interrogate."
 
-**Antinomia** è un plugin Obsidian per **Personal Tension Management (PTM)** — il parallelo "in tensione" del classico Personal Knowledge Management. Se il **PKM** organizza la conoscenza esplicita (*cosa so*), il **PTM** organizza dove qualcosa non torna (*dove qualcosa stride*): contraddizioni, tradeoff, anomalie, dubbi persistenti, segnali deboli, tensioni tra obiettivi. Le idee "pulite" emergono dopo, come principi operativi derivati dalla risoluzione di una tensione — non prima.
+**Antinomia** is an Obsidian plugin for **Personal Tension Management (PTM)** — the in-tension counterpart of Personal Knowledge Management. If **PKM** organizes explicit knowledge (*what I know*), **PTM** organizes where things don't fit (*where something jars*): contradictions, tradeoffs, anomalies, persistent doubts, weak signals, conflicts between goals. Clean ideas emerge later — as operational principles derived from resolving a tension, not before.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.1.0--beta-orange)](CHANGELOG.md)
@@ -12,64 +12,66 @@
 
 ## ⚠️ Status: research preview (v1.1.0 beta)
 
-Antinomia è in **fase di beta pubblica** distribuita via BRAT. Funzioni stabili, ma alcuni flussi (es. doppio modal Eleva in certi casi-limite) sono in osservazione. Apri una issue se incontri qualcosa di strano.
+Antinomia is in **public beta** distributed via BRAT. Features are stable, but a few edge-case flows (e.g., duplicate Eleva modal in certain conditions) are under observation. Please open an issue if you find anything odd.
 
-**Antinomia non è un sistema di supporto decisionale.** Le coppie che il Contradiction Hunter propone sono spunti per pensare, **non verità su cui basare decisioni reali** (lavoro, salute, finanza, relazioni). I modelli AI possono allucinare, semplificare, fraintendere. Usa Antinomia come una pratica riflessiva.
+**Antinomia is not a decision-support system.** The pairs the Contradiction Hunter proposes are prompts for thinking, **not truths on which to base real decisions** (work, health, finance, relationships). AI models can hallucinate, oversimplify, misinterpret. Use Antinomia as a reflective practice.
 
 ---
 
-## I 5 layer del sistema
+## The 5 layers
 
-Ogni nota ha un campo frontmatter `antinomia_tipo` che la colloca in uno dei 5 layer:
+Every Antinomia note has a frontmatter field `antinomia_tipo` that places it in one of five layers:
 
-| Tipo | Cos'è | Campi principali |
+| Type | What it is | Key fields |
 |---|---|---|
-| `tensione` | Contraddizione tra due posizioni A e B | `stato`, `collegamenti` |
-| `substrate` | Materiale grezzo (citazioni, fatti, osservazioni) | `fonte`, `lingua_originale` |
-| `principio` | Regola operativa IF/THEN derivata da una tensione | `origine_tensione` |
-| `defeated` | Convinzione sconfitta (memoria storica) | `motivo`, `sostituita_da` |
-| `meta_nota` | Riflessione sull'uso del sistema | `data` |
+| `tensione` | A contradiction between two positions A and B | `stato`, `collegamenti` |
+| `substrate` | Raw material (quotes, facts, observations) | `fonte`, `lingua_originale` |
+| `principio` | An operational IF/THEN rule derived from a tension | `origine_tensione` |
+| `defeated` | A defeated belief (historical memory) | `motivo`, `sostituita_da` |
+| `meta_nota` | Reflection on using the system | `data` |
 
-**Design invariant:** il layer di una nota è esclusivamente nel frontmatter. I file non si spostano mai tra cartelle quando cambia il layer.
+**Design invariant:** the layer of a note lives exclusively in its frontmatter. Files never move between folders when a layer changes.
 
----
-
-## Funzioni principali
-
-- **Creazione note**: modal guidati per tensioni e substrate + inserimento libero con classificazione AI.
-- **Transizioni di layer** (Eleva, Risolvi, Archivia) via frontmatter — i file non si muovono mai.
-- **Contradiction Hunter (AI)**: scansiona tensioni e substrate, identifica coppie contraddittorie con confidence. Vincolo: identifica, non risolve.
-- **Antinomia Graph View** custom (Cytoscape.js + fcose) con cluster per layer, animazioni zoom, 6 preset di tema.
-- **Multi-backend AI**: Anthropic Cloud, OpenAI, Groq, OpenRouter, LM Studio locale, Ollama locale. Profili multipli con override Hunter.
-- **Onboarding completo**: Welcome modal, tutorial 7 schede, vault d'esempio (21 note + CHIAVE), guida iniziale.
-
-Vedi [plugin/README.md](plugin/README.md) per il manuale tecnico completo dei comandi.
+> The schema field names are intentionally kept in Italian (the project originated in Italian and treats the schema as a stable contract). The plugin's UI strings and AI prompts are also in Italian. An English UI is on the V2 roadmap.
 
 ---
 
-## Installazione
+## Core features
 
-### Con BRAT (raccomandato)
+- **Note creation**: guided modals for tensions and substrate notes + free-form input with AI classification.
+- **Layer transitions** (Eleva, Risolvi, Archivia) happen via frontmatter — files never move.
+- **Contradiction Hunter (AI)**: scans open tensions and substrates, identifies contradictory pairs with a confidence rating. Constraint: it identifies, it does not resolve.
+- **Antinomia Graph View** (Cytoscape.js + fcose) with per-layer clusters, smooth zoom animations, 6 theme presets.
+- **Multi-backend AI**: Anthropic Cloud, OpenAI, Groq, OpenRouter, LM Studio local, Ollama local. Multiple profiles with a Hunter-specific override.
+- **Complete onboarding**: Welcome modal, 7-card tutorial, 21-note example vault (with KEY note for measuring the Hunter), getting-started checklist.
 
-[BRAT](https://github.com/TfTHacker/obsidian42-brat) (Beta Reviewers Auto-update Tool) è il modo più semplice per installare e aggiornare Antinomia da beta. Procedimento:
+See [plugin/README.md](plugin/README.md) for the full command reference (Italian).
 
-1. Installa **BRAT** dalla Community plugins di Obsidian
-2. Apri Settings → BRAT → **Add Beta plugin**
-3. Incolla l'URL di questo repo: `https://github.com/demartinogiuseppe/antinomia`
-4. Conferma → BRAT scarica l'ultima release
-5. Settings → Community plugins → abilita **Antinomia**
+---
 
-BRAT controllerà automaticamente i nuovi rilasci e proporrà gli aggiornamenti.
+## Installation
 
-### Da zip release (alternativa manuale)
+### With BRAT (recommended)
 
-1. Scarica `main.js`, `manifest.json` (e `styles.css` se presente) dall'ultima [release](https://github.com/demartinogiuseppe/antinomia/releases)
-2. Copia in `<TUO_VAULT>/.obsidian/plugins/antinomia/`
-3. Settings → Community plugins → reload → abilita Antinomia
+[BRAT](https://github.com/TfTHacker/obsidian42-brat) (Beta Reviewers Auto-update Tool) is the easiest way to install and stay updated with Antinomia beta releases:
 
-Vedi anche [BETA-INSTALL.md](BETA-INSTALL.md) per la guida estesa ai beta tester (vault dedicato, Front Matter Title, configurazione AI, vault di esempio).
+1. Install **BRAT** from Obsidian Community plugins
+2. Open Settings → BRAT → **Add Beta plugin**
+3. Paste this repo URL: `https://github.com/demartinogiuseppe/antinomia`
+4. Confirm → BRAT fetches the latest release
+5. Settings → Community plugins → enable **Antinomia**
 
-### Build da sorgente
+BRAT will automatically check for new releases and prompt you to update.
+
+### From release zip (manual alternative)
+
+1. Download `main.js`, `manifest.json` (and `styles.css` if present) from the latest [release](https://github.com/demartinogiuseppe/antinomia/releases)
+2. Copy them into `<YOUR_VAULT>/.obsidian/plugins/antinomia/`
+3. Settings → Community plugins → reload → enable Antinomia
+
+See [BETA-INSTALL.md](BETA-INSTALL.md) for the extended beta-tester guide (dedicated vault, Front Matter Title, AI configuration, example vault).
+
+### Build from source
 
 ```bash
 cd plugin
@@ -77,54 +79,54 @@ npm install
 npm run build
 ```
 
-Produce `main.js` + `manifest.json` in `../TestVault/.obsidian/plugins/antinomia/`. Per uso reale, copia quei file nel vault target.
+This produces `main.js` + `manifest.json` in `../TestVault/.obsidian/plugins/antinomia/`. For real-world use, copy those files into the target vault.
 
 ---
 
-## Prerequisiti
+## Prerequisites
 
 - **Obsidian** 1.4+
-- **Front Matter Title** plugin community (raccomandato) — mostra i titoli umani al posto dei basename timestamp (`T-20260601-...`) nel File Explorer. Antinomia lo segnala se manca.
-- **Almeno un backend AI** per le funzioni Hunter / Proponi / Mappa presupposti:
-  - **Locale gratuito**: [LM Studio](https://lmstudio.ai) con un modello caricato (es. Qwen3 14B distill)
-  - **Cloud a pagamento**: API key Anthropic / OpenAI / Groq / OpenRouter
+- **Front Matter Title** community plugin (recommended) — shows human titles instead of timestamp basenames (`T-20260601-...`) in the File Explorer. Antinomia flags this if missing.
+- **At least one AI backend** for Hunter / Propose / Map presuppositions:
+  - **Free local**: [LM Studio](https://lmstudio.ai) with a loaded model (e.g., Qwen3 14B distill)
+  - **Paid cloud**: Anthropic / OpenAI / Groq / OpenRouter API key
 
-> ⚠️ **API cloud = costi per token consumato**. Se sei sensibile ai costi, usa LM Studio o Ollama in locale (gratuito, privacy, modelli da scaricare una volta).
-
----
-
-## Filosofia
-
-Antinomia non è un tool da riempire. È una pratica. Il vault cresce man mano che incontri contraddizioni nel tuo pensiero (substrate). Le tensioni emergono dal materiale, non vengono progettate. Il Hunter ti mostra contraddizioni che non avevi visto — non per risolverle al posto tuo, ma per **costringerti a pensarle**.
-
-Quando capisci una tensione abbastanza da formularla come principio operativo (IF/THEN/GREY), la elevi. Quando una convinzione si dimostra falsa, va nel Defeated archive come memoria di cosa NON era vero. Il grafo che emerge è la mappa della tua storia epistemica.
+> ⚠️ **Cloud APIs incur per-token cost.** If you're cost-sensitive, use LM Studio or Ollama locally (free, private, models downloaded once).
 
 ---
 
-## Citazione
+## Philosophy
 
-Se usi Antinomia in un contesto accademico o scrivi a riguardo, citalo come:
+Antinomia is not a tool to fill up. It is a practice. The vault grows as you encounter contradictions in your own thinking (substrate). Tensions emerge from the material — they are not designed. The Hunter shows you contradictions you hadn't seen — not to resolve them for you, but to **force you to think them through**.
 
-> De Martino, G. (2026). *Antinomia: un plugin Obsidian per Personal Knowledge Management basato sulla contraddizione* (versione 1.1.0) [Software]. https://github.com/demartinogiuseppe/antinomia
-
-Vedi anche [CITATION.cff](CITATION.cff) per il formato strutturato.
-
-Un DOI Zenodo sarà associato alle release future per riferimenti accademici stabili.
+When you understand a tension well enough to formulate it as an operational principle (IF/THEN/GREY ZONE), you elevate it. When a belief proves false, it goes into the Defeated archive as a memory of what was not true. The graph that emerges is the map of your epistemic history.
 
 ---
 
-## Riferimenti culturali
+## Citation
 
-Hegel (dialettica), David Bohm (dialogo che sospende la difesa), Karl Popper (falsificabilità), Thomas Kuhn (rivoluzioni scientifiche emergono dalle anomalie), Friedrich Hayek (ordine spontaneo, conoscenza locale).
+If you use Antinomia in an academic context or write about it, please cite as:
+
+> De Martino, G. (2026). *Antinomia: an Obsidian plugin for Personal Tension Management* (version 1.1.0) [Software]. https://github.com/demartinogiuseppe/antinomia
+
+See [CITATION.cff](CITATION.cff) for the structured format.
+
+A Zenodo DOI will be associated with future releases for stable academic references.
 
 ---
 
-## Licenza
+## Intellectual references
+
+Hegel (dialectics), David Bohm (dialogue that suspends defense), Karl Popper (falsifiability), Thomas Kuhn (scientific revolutions emerge from anomalies), Friedrich Hayek (spontaneous order, local knowledge).
+
+---
+
+## License
 
 [MIT](LICENSE). © 2026 Giuseppe De Martino.
 
 ---
 
-## Autore
+## Author
 
-Giuseppe De Martino. Per discussioni, idee, segnalazioni: apri una [issue](https://github.com/demartinogiuseppe/antinomia/issues) su GitHub.
+Giuseppe De Martino. For discussions, ideas, bug reports: open an [issue](https://github.com/demartinogiuseppe/antinomia/issues) on GitHub.

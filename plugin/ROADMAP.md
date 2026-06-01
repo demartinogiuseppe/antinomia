@@ -26,9 +26,17 @@
 - **Manifesto pubblico Antinomia** — testo lungo che spiega perché la contraddizione e' l'unita' fondamentale del pensiero.
 - **Antinomia Format Spec v1** — documento separato che definisce lo schema frontmatter come standard aperto, indipendente dal plugin. Obiettivo: chiunque possa scrivere un parser/import/export compatibile.
 
+### Localizzazione UI
+- **English UI** — tradurre in inglese tutte le stringhe della UI del plugin (modal, sidebar, notice, command palette names, settings labels, prompt AI). **Promessa pubblica nel README v1.1.0** ("An English UI is on the V2 roadmap"). Implica:
+  - Estrarre tutte le stringhe da `main.ts` in un dizionario.
+  - Sistema i18n base (chiave -> traduzione) con switch lingua nelle Settings.
+  - Tradurre i prompt AI (system + user templates) — attenzione, i prompt influenzano la qualita' del modello, traduzione cura.
+  - Localizzare anche il vault di esempio (English version) o lasciare Italian default + English alternativo.
+- **Schema frontmatter localization (decisione aperta)** — i nomi dei campi (`tensione`, `substrate`, `principio`, `defeated`, `meta_nota`) restano in italiano come scelta di design del v1.x; valutare in V2 se aggiungere alias inglesi (`tension`, `substrate`, `principle`, `defeated`, `meta_note`) o lasciare l'italiano come standard del Format Spec.
+
 ### Distribuzione
 - Submission al community store di Obsidian.
-- Sito statico antinomia.dev con docs + esempi.
+- Sito statico (decisione aperta sul dominio) con docs + esempi.
 
 ## V2 (Epistemic Network)
 

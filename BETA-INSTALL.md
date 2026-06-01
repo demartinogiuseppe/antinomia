@@ -1,163 +1,165 @@
-# Antinomia V1.1 — Installazione per beta tester
+# Antinomia v1.1 — Beta tester installation guide
 
-Grazie per provare Antinomia. Questo file ti guida dall'installazione al primo uso. Tempo stimato: **10 minuti** (di cui 5 sono il download del modello AI locale).
+Thanks for trying Antinomia. This file walks you from install to first use. Estimated time: **10 minutes** (5 of which are downloading the local AI model).
 
----
-
-## Prerequisiti
-
-- **Obsidian** versione 1.4 o superiore (download da [obsidian.md](https://obsidian.md))
-- (Opzionale ma consigliato) **LM Studio** se vuoi usare un modello AI locale gratuito — vedi Step 4
+> ⚠️ **The plugin UI and AI prompts are in Italian.** An English UI is on the V2 roadmap. The frontmatter schema (field names) is also in Italian by design.
 
 ---
 
-## Step 1 — Prepara un vault dedicato per il test
+## Prerequisites
 
-> ⚠️ **Non installare Antinomia nel tuo vault principale alla prima prova.** Antinomia crea note marcate (prefisso `ESEMPIO-`) per la demo + un file `ESEMPIO-CHIAVE.md` nella root. Se sbagli a cancellare, si mischiano alle tue note vere.
-
-1. Apri Obsidian
-2. Click sull'icona del vault in basso a sinistra → **Open another vault** → **Create new vault**
-3. Nome: `AntinomiaTest` (o quello che preferisci)
-4. Conferma → si apre un vault vuoto
+- **Obsidian** version 1.4 or later (download from [obsidian.md](https://obsidian.md))
+- (Optional but recommended) **LM Studio** if you want to use a free local AI model — see Step 4
 
 ---
 
-## Step 2 — Installa il plugin Antinomia
+## Step 1 — Prepare a dedicated vault for testing
 
-1. **Scompatta** il file `antinomia-v1.1.0.zip` che hai ricevuto. Otterrai una cartella `antinomia/` con dentro `main.js`, `manifest.json` (ed eventualmente `styles.css`).
-2. Apri la **cartella del vault** sul filesystem (es. `Documents/AntinomiaTest/`). Se non sai dove sia, in Obsidian: Settings → About → "Open vault location" o icona sotto al nome del vault.
-3. Naviga in `<vault>/.obsidian/plugins/`. Se la cartella `plugins` non esiste, creala.
-4. **Copia la cartella `antinomia/`** scompattata dentro `<vault>/.obsidian/plugins/`. La struttura finale deve essere:
+> ⚠️ **Don't install Antinomia in your main vault on the first try.** Antinomia creates demo notes (prefix `ESEMPIO-`) + an `ESEMPIO-CHIAVE.md` file at the vault root. If you delete the wrong file by mistake, they could mix with your real notes.
+
+1. Open Obsidian
+2. Click the vault icon at the bottom left → **Open another vault** → **Create new vault**
+3. Name it: `AntinomiaTest` (or whatever you prefer)
+4. Confirm → an empty vault opens
+
+---
+
+## Step 2 — Install the Antinomia plugin
+
+1. **Unzip** the `antinomia-v1.1.0.zip` you received. You'll get an `antinomia/` folder containing `main.js`, `manifest.json` (and possibly `styles.css`).
+2. Open the **vault folder** on your filesystem (e.g. `Documents/AntinomiaTest/`). If you don't know where it is, in Obsidian: Settings → About → "Open vault location" or via the icon under the vault name.
+3. Navigate to `<vault>/.obsidian/plugins/`. If the `plugins` folder doesn't exist, create it.
+4. **Copy the unzipped `antinomia/` folder** into `<vault>/.obsidian/plugins/`. The final structure must be:
    ```
    <vault>/.obsidian/plugins/antinomia/main.js
    <vault>/.obsidian/plugins/antinomia/manifest.json
    ```
-5. Torna in Obsidian
+5. Go back to Obsidian
 6. Settings → **Community plugins**
-7. Se vedi "Community plugins are currently restricted", click su **"Turn on community plugins"** → Trust author and enable
-8. Sezione **"Installed plugins"** → trova **Antinomia** → toggle on
-9. Antinomia si attiva. Al primo lancio si apre il **Welcome Modal** con il paradigma e i 5 layer.
+7. If you see "Community plugins are currently restricted", click **"Turn on community plugins"** → Trust author and enable
+8. **"Installed plugins"** section → find **Antinomia** → toggle on
+9. Antinomia activates. On first launch the **Welcome Modal** opens with the paradigm and the 5 layers.
 
 ---
 
-## Step 3 — Installa il plugin consigliato Front Matter Title
+## Step 3 — Install the recommended Front Matter Title plugin
 
-Senza questo plugin, il File Explorer ti mostra basename tecnici tipo `T-20260530-091416.md` invece dei titoli umani che hai dato alle note. Antinomia te lo segnala con un **banner giallo nel Welcome Modal**.
+Without this plugin, the File Explorer shows technical basenames like `T-20260530-091416.md` instead of the human titles you gave the notes. Antinomia warns you about this with a **yellow banner in the Welcome Modal**.
 
 1. Settings → **Community plugins** → **Browse**
-2. Cerca **Front Matter Title** (autore: Snezhig)
+2. Search for **Front Matter Title** (author: Snezhig)
 3. Install → Enable
-4. Settings → **Front Matter Title** (sezione plugin community) → "Common main template" → metti la parola `titolo`
-5. Salva
+4. Settings → **Front Matter Title** (community plugin section) → "Common main template" → enter the word `titolo`
+5. Save
 
-Ora vedrai i titoli umani ovunque (File Explorer, tab, wikilink).
+Now you'll see human titles everywhere (File Explorer, tabs, wikilinks).
 
 ---
 
-## Step 4 — Configura un backend AI
+## Step 4 — Configure an AI backend
 
-Antinomia usa modelli AI per Hunter, propose IF/THEN, Mappa presupposti, classifica. Due opzioni:
+Antinomia uses AI models for Hunter, propose IF/THEN, map presuppositions, classify. Two options:
 
-### 4A — Locale gratuito (raccomandato per beta tester)
+### 4A — Free local (recommended for beta testers)
 
-1. Scarica e installa **LM Studio** da [lmstudio.ai](https://lmstudio.ai)
-2. Avvia LM Studio
-3. Sezione **Discover** o **Search** → cerca `qwen3-14b-claude-4.5-opus-high-reasoning-distill` (o un altro Qwen 14B / 9B se hai meno VRAM). Download (~6-9 GB).
-4. Sezione **Local Server** o **Developer** → carica il modello → avvia il server (default `http://localhost:1234`)
-5. In Obsidian: Settings → **Antinomia** → sezione **Profili AI** → modifica il profilo Default (o aggiungi nuovo)
-6. **Backend preset** → "LM Studio (locale)" (oppure "LM Studio OpenAI-compat" se preferisci formato OpenAI)
-7. API key: lascia `lmstudio` (placeholder, LM Studio non lo verifica)
-8. Click **Test** → deve rispondere "pong" o equivalente
+1. Download and install **LM Studio** from [lmstudio.ai](https://lmstudio.ai)
+2. Launch LM Studio
+3. **Discover** or **Search** section → look for `qwen3-14b-claude-4.5-opus-high-reasoning-distill` (or another Qwen 14B / 9B if you have less VRAM). Download (~6-9 GB).
+4. **Local Server** or **Developer** section → load the model → start the server (default `http://localhost:1234`)
+5. In Obsidian: Settings → **Antinomia** → **Profili AI** section → edit the Default profile (or add a new one)
+6. **Backend preset** → "LM Studio (locale)" (or "LM Studio OpenAI-compat" if you prefer OpenAI format)
+7. API key: leave it as `lmstudio` (placeholder; LM Studio doesn't verify it)
+8. Click **Test** → it should respond "pong" or equivalent
 
-### 4B — Cloud a pagamento
+### 4B — Paid cloud
 
-1. Crea API key da:
+1. Create an API key from:
    - Anthropic: [console.anthropic.com](https://console.anthropic.com) (Claude)
    - OpenAI: [platform.openai.com](https://platform.openai.com) (GPT)
-   - Groq: [console.groq.com](https://console.groq.com) (Llama 3.3 super veloce)
-   - OpenRouter: [openrouter.ai](https://openrouter.ai) (gateway a 100+ modelli)
-2. Settings → Antinomia → Profili AI → modifica → Backend preset corrispondente
-3. Incolla la chiave → Test
+   - Groq: [console.groq.com](https://console.groq.com) (Llama 3.3, super fast)
+   - OpenRouter: [openrouter.ai](https://openrouter.ai) (gateway to 100+ models)
+2. Settings → Antinomia → Profili AI → edit → matching Backend preset
+3. Paste the key → Test
 
-> ⚠️ Le API cloud hanno **costi per token consumato**. Se sei sensibile ai costi, usa LM Studio in locale.
+> ⚠️ Cloud APIs have **per-token costs**. If you're cost-sensitive, use LM Studio locally.
 
 ---
 
-## Step 5 — Esplora il vault di esempio
+## Step 5 — Explore the example vault
 
-Ora la parte interessante: vedi cosa fa Antinomia con un set di note pre-confezionato.
+Now the interesting part: see what Antinomia does with a pre-built note set.
 
-1. Settings → **Antinomia** → scorri in basso fino a **Onboarding**
-2. Click sul bottone **"Crea vault di esempio"**
-3. Conferma il modal di avviso
-4. Vengono create **21 note** (3 tensioni + 15 substrate + 1 defeated + 1 principio Design C) nella cartella `notes/` + un file `ESEMPIO-CHIAVE.md` nella root del vault
+1. Settings → **Antinomia** → scroll down to **Onboarding**
+2. Click the **"Crea vault di esempio"** button (create example vault)
+3. Confirm the warning modal
+4. **21 notes** are created (3 tensions + 15 substrate + 1 defeated + 1 Design C principle) inside `notes/` + an `ESEMPIO-CHIAVE.md` file at the vault root
 
-### Cosa fare adesso (5-10 minuti)
+### What to do now (5-10 minutes)
 
-1. **Apri `ESEMPIO-CHIAVE.md`** (nella root del vault, file in cima al File Explorer). Lì c'è la guida con le contraddizioni seminate (CN1-CN5).
+1. **Open `ESEMPIO-CHIAVE.md`** (at the vault root, top file in the File Explorer). It contains the guide to the seeded contradictions (CN1-CN5).
 
-2. **Esplora le sidebar Antinomia** (le icone a sinistra nella ribbon di Obsidian o dal menu in cima a ogni view):
-   - 📊 Dashboard (sidebar destra)
-   - 📝 Tensioni aperte
+2. **Explore the Antinomia sidebars** (ribbon icons on the left or via the nav menu at the top of every view):
+   - 📊 Dashboard (right sidebar)
+   - 📝 Open tensions
    - 📚 Substrate
-   - 🧭 Principi
+   - 🧭 Principles
    - 🗄 Defeated archive
 
-3. **Apri il Grafo Antinomia** (auto-aperto all'avvio del plugin, o dal menu nav → 🕸 Grafo). Vedi:
-   - 21 nodi colorati per layer (arancione = tensioni aperte, grigio = substrate, verde = principio, rosso = defeated)
-   - 1 **arco rosso** tra il defeated e il principio dell'esempio Design C (`ESEMPIO-D-quantita-qualita` → `ESEMPIO-P-quantita-qualita`)
-   - Spunta/togli i checkbox in alto per filtrare per layer (fade-in/out animato)
-   - Trascina i pallini, gira la rotella (zoom 1.6×/step animato 320ms), usa lo slider verticale
+3. **Open the Antinomia Graph** (auto-opened at plugin startup, or via nav menu → 🕸 Grafo). You'll see:
+   - 21 colored nodes by layer (orange = open tensions, grey = substrate, green = principle, red = defeated)
+   - 1 **red edge** between the defeated and the principle of the Design C example (`ESEMPIO-D-quantita-qualita` → `ESEMPIO-P-quantita-qualita`)
+   - Toggle checkboxes at the top to filter by layer (animated fade-in/out)
+   - Drag the dots, spin the wheel to zoom (1.6×/step animated 320 ms), use the vertical slider
 
-4. **Lancia il Hunter**:
+4. **Run the Hunter**:
    - `Ctrl+P` → "**Antinomia: cerca contraddizioni (Hunter)**"
-   - Aspetta il completamento (con LM Studio 14B su 18 note: ~2 minuti)
-   - Confronta l'output con la **CHIAVE**. Atteso: trova CN2, CN3, CN4 (test substrate-substrate), CN5. CN1 è il caso più difficile per i modelli locali.
-   - Se vuoi fermare il Hunter prima del completamento: bottone "⛔ Stop Hunter" nella sidebar dei risultati.
+   - Wait for completion (with LM Studio 14B on 18 notes: ~2 minutes)
+   - Compare the output against the **KEY**. Expected: it finds CN2, CN3, CN4 (substrate-substrate test), CN5. CN1 is the hardest case for small local models.
+   - If you want to stop the Hunter before completion: click the "⛔ Stop Hunter" button in the results sidebar.
 
-5. **Hunter su singola nota** (focus mode):
-   - Menu nav globale → **🔍 Hunter ▾** → **"Hunter su una nota (focus)"**
-   - Si apre un picker → scegli es. "Compro sempre il piu' economico"
-   - Il Hunter cerca solo coppie che coinvolgono quella nota specifica
+5. **Hunter on a single note** (focus mode):
+   - Global nav menu → **🔍 Hunter ▾** → **"Hunter su una nota (focus)"**
+   - A picker opens → choose e.g. "Compro sempre il piu' economico"
+   - The Hunter scans only pairs involving that specific note
 
-6. **Prova le altre funzioni AI**:
-   - Apri una tensione → sidebar Tensioni aperte → bottone **"Presupposti"** → "Proponi presupposti (AI)" → l'AI suggerisce
-   - Apri una tensione → bottone **"↑ Eleva"** → form IF/THEN/GREY → "Proponi IF/THEN (AI)" → si crea un nuovo principio + il defeated della tensione originale (Design C)
-
----
-
-## Step 6 — Pulisci quando hai finito
-
-Quando hai capito come funziona e vuoi iniziare il tuo vault vero:
-
-1. Settings → Antinomia → **Onboarding** → bottone **"Cancella esempi"**
-2. Conferma → tutte le note `ESEMPIO-*` + la `ESEMPIO-CHIAVE.md` vanno nel cestino di Obsidian (recuperabili dal cestino se cambi idea)
-3. Il vault è pulito. Inizia con: `Ctrl+P` → "Antinomia: nuova tensione" oppure dal menu nav → ➕ Crea
+6. **Try the other AI features**:
+   - Open a tension → Open Tensions sidebar → **"Presupposti"** button → "Proponi presupposti (AI)" → AI suggests them
+   - Open a tension → **"↑ Eleva"** button → IF/THEN/GREY form → "Proponi IF/THEN (AI)" → a new principle is created + the original tension becomes a defeated (Design C)
 
 ---
 
-## Avvertenze importanti
+## Step 6 — Clean up when you're done
 
-⚠️ **Antinomia non è un sistema di supporto decisionale.** Le coppie che il Hunter propone sono spunti riflessivi, non verità. Il modello AI può allucinare, semplificare, fraintendere. **Non usare per decidere in situazioni reali** (lavoro, salute, finanza, relazioni). Vedi il disclaimer all'apertura del Welcome Modal.
+When you understand how it works and want to start your real vault:
 
----
-
-## Feedback al team
-
-Cose particolarmente utili da segnalare:
-
-- **Bug e crash**: console di Obsidian (Ctrl+Shift+I) → tab Console → copia eventuali errori `[Antinomia] ...`
-- **Hunter su tuo vault**: quante coppie trova, quante sono buone, quante false positive
-- **Workflow d'uso reale**: cosa è scomodo, cosa manca, cosa non hai usato
-- **Comparazione tra modelli AI**: se hai provato cloud e locale, qualità dei risultati
-
-Grazie per aver dedicato del tempo. Antinomia è una pratica, non un tool: ogni feedback su come si "vive" il sistema vale molto.
+1. Settings → Antinomia → **Onboarding** → **"Cancella esempi"** button (delete examples)
+2. Confirm → all `ESEMPIO-*` notes + the `ESEMPIO-CHIAVE.md` go into the Obsidian trash (recoverable from trash if you change your mind)
+3. The vault is clean. Start with: `Ctrl+P` → "Antinomia: nuova tensione" or via nav menu → ➕ Crea
 
 ---
 
-## Risoluzione problemi rapidi
+## Important warnings
 
-- **Il plugin non compare in "Installed plugins"**: la cartella `antinomia/` deve essere DIRETTAMENTE dentro `.obsidian/plugins/`, non annidata in un altro livello. Verifica che `manifest.json` sia direttamente leggibile in `.obsidian/plugins/antinomia/manifest.json`.
-- **"Failed to fetch" cliccando funzioni AI**: ricarica il plugin (Settings → Community plugins → toggle off/on Antinomia). Obsidian non rilegge `main.js` se cambia su disco senza reload.
-- **LM Studio "Processing prompt 100%" non risponde**: il modello è lento sul prompt grosso. Premi "⛔ Stop Hunter" (il bottone funziona davvero, chiude il socket TCP e ferma la generazione lato LM Studio). Riduci il cap note in Settings o usa un modello più piccolo.
-- **File Explorer mostra `T-20260530-...` invece dei titoli**: manca Front Matter Title (Step 3).
+⚠️ **Antinomia is not a decision-support system.** The pairs the Hunter proposes are prompts for thinking, not truths. The AI model can hallucinate, oversimplify, misinterpret. **Don't use it to decide in real situations** (work, health, finance, relationships). See the disclaimer when the Welcome Modal opens.
+
+---
+
+## Feedback for the team
+
+Particularly useful things to report:
+
+- **Bugs and crashes**: Obsidian's console (Ctrl+Shift+I) → Console tab → copy any `[Antinomia] ...` errors
+- **Hunter on your own vault**: how many pairs it finds, how many are good, how many are false positives
+- **Real-world workflow**: what's clunky, what's missing, what you don't use
+- **Comparison between AI models**: if you've tried both cloud and local, report quality differences
+
+Thanks for spending time on this. Antinomia is a practice, not a tool: any feedback on how the system feels in real use matters a lot.
+
+---
+
+## Quick troubleshooting
+
+- **Plugin doesn't appear in "Installed plugins"**: the `antinomia/` folder must be DIRECTLY inside `.obsidian/plugins/`, not nested in another level. Check that `manifest.json` is directly readable at `.obsidian/plugins/antinomia/manifest.json`.
+- **"Failed to fetch" when clicking AI features**: reload the plugin (Settings → Community plugins → toggle off/on Antinomia). Obsidian doesn't re-read `main.js` if it changes on disk without a reload.
+- **LM Studio "Processing prompt 100%" hangs**: the model is slow on the long prompt. Press "⛔ Stop Hunter" (the button actually works, it closes the TCP socket and stops generation on LM Studio's side). Lower the note cap in Settings or use a smaller model.
+- **File Explorer shows `T-20260530-...` instead of titles**: Front Matter Title is missing (Step 3).
