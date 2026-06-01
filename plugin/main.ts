@@ -235,7 +235,7 @@ const BACKEND_PRESETS: BackendPreset[] = [
     baseUrl: "https://api.anthropic.com",
     defaultModel: "claude-sonnet-4-6",
     defaultKey: "",
-    helpKey: "Crea la chiave su console.anthropic.com.",
+    helpKey: "Create the key at console.anthropic.com.",
   },
   {
     id: "lmstudio",
@@ -3537,9 +3537,9 @@ function renderAntinomiaNav(
   mkBtn("📊 Dashboard", () => goTo(VIEW_TYPE_DASHBOARD));
 
   // -- Note (submenu)
-  mkMenuBtn("📝 Note ▾", (m) => {
+  mkMenuBtn("📝 Notes ▾", (m) => {
     m.addItem((i) =>
-      i.setTitle("Tensioni aperte").setIcon("git-pull-request")
+      i.setTitle("Open tensions").setIcon("git-pull-request")
         .onClick(() => goTo(VIEW_TYPE_OPEN_TENSIONS))
     );
     m.addItem((i) =>
@@ -3547,7 +3547,7 @@ function renderAntinomiaNav(
         .onClick(() => goTo(VIEW_TYPE_SUBSTRATE_LIST))
     );
     m.addItem((i) =>
-      i.setTitle("Principi").setIcon("compass")
+      i.setTitle("Principles").setIcon("compass")
         .onClick(() => goTo(VIEW_TYPE_PRINCIPLES_LIST))
     );
     m.addItem((i) =>
@@ -3556,7 +3556,7 @@ function renderAntinomiaNav(
     );
     m.addSeparator();
     m.addItem((i) =>
-      i.setTitle("Note non classificate").setIcon("help-circle")
+      i.setTitle("Unclassified notes").setIcon("help-circle")
         .onClick(() => goTo(VIEW_TYPE_UNCLASSIFIED))
     );
   });
@@ -3564,11 +3564,11 @@ function renderAntinomiaNav(
   // -- Hunter (submenu)
   mkMenuBtn("🔍 Hunter ▾", (m) => {
     m.addItem((i) =>
-      i.setTitle("Risultati Hunter").setIcon("search")
+      i.setTitle("Hunter results").setIcon("search")
         .onClick(() => goTo(VIEW_TYPE_HUNTER_RESULTS))
     );
     m.addItem((i) =>
-      i.setTitle("Falsi positivi").setIcon("eye-off")
+      i.setTitle("False positives").setIcon("eye-off")
         .onClick(() => goTo(VIEW_TYPE_DISMISSED_PAIRS))
     );
     m.addSeparator();
@@ -3577,7 +3577,7 @@ function renderAntinomiaNav(
         .onClick(() => void plugin.runHunter())
     );
     m.addItem((i) =>
-      i.setTitle("Hunter su una nota (focus)").setIcon("target")
+      i.setTitle("Hunter on a note (focus)").setIcon("target")
         .onClick(() => {
           const isCandidate = (f: TFile): boolean => {
             if (f.extension !== "md") return false;
@@ -3603,7 +3603,7 @@ function renderAntinomiaNav(
             plugin.app, dummy,
             (chosen) => void plugin.runHunter(chosen),
             isCandidate,
-            "Scegli una nota (tensione aperta o substrate) per il Hunter focus..."
+            "Choose a note (open tension or substrate) for Hunter focus..."
           ).open();
         })
     );
@@ -3896,8 +3896,8 @@ class OpenTensionsView extends ItemView {
         void this.plugin.openMapPresupposti(file);
       });
       const elBtn = mkBtn(
-        "↑ Eleva",
-        "Eleva a principio (apre form IF/THEN/GREY)",
+        "↑ Elevate",
+        "Elevate to principle (opens IF/THEN/GREY form)",
         () => {
           void this.plugin.openElevateModal(file);
         }
@@ -4213,10 +4213,10 @@ class HunterResultsView extends ItemView {
 
     const isOpenTension = t === TYPE.tension && fm?.status === "open";
     if (isOpenTension) {
-      mkBtn("↑ Eleva", "Eleva a principio (apre form IF/THEN/GREY)", () => {
+      mkBtn("↑ Elevate", "Elevate to principle (opens IF/THEN/GREY form)", () => {
         void this.plugin.openElevateModal(file);
       });
-      mkBtn("✓ Risolta", "Marca come risolta", () => {
+      mkBtn("✓ Resolved", "Mark as resolved", () => {
         void this.plugin.markResolved(file);
       });
     }
@@ -4639,7 +4639,7 @@ class DefeatedListView extends ItemView {
     desc.style.fontSize = "0.85em";
     desc.style.opacity = "0.7";
     desc.setText(
-      "Convinzioni sconfitte. Memoria storica: non si toccano, restano come traccia di cosa NON era vero."
+      "Defeated beliefs. Historical memory: they are not edited; they remain as a trace of what was NOT true."
     );
 
     const items = this.app.vault.getMarkdownFiles().filter((f) => {
@@ -5601,27 +5601,27 @@ class UnclassifiedNotesView extends ItemView {
         };
       };
 
-      mkBtn("Tensione", "Marca come tensione (aggiunge antinomia_type)", () =>
+      mkBtn("Tension", "Mark as tension (adds antinomia_type)", () =>
         void this.plugin.markAsType(file, TYPE.tension)
       );
-      mkBtn("Substrate", "Marca come substrate", () =>
+      mkBtn("Substrate", "Mark as substrate", () =>
         void this.plugin.markAsType(file, TYPE.substrate)
       );
-      mkBtn("Principio", "Marca come principio", () =>
+      mkBtn("Principle", "Mark as principle", () =>
         void this.plugin.markAsType(file, TYPE.principle)
       );
-      mkBtn("Defeated", "Marca come defeated", () =>
+      mkBtn("Defeated", "Mark as defeated", () =>
         void this.plugin.markAsType(file, TYPE.defeated)
       );
-      mkBtn("Meta", "Marca come meta_nota", () =>
+      mkBtn("Meta", "Mark as meta_note", () =>
         void this.plugin.markAsType(file, TYPE.meta)
       );
-      mkBtn("AI", "Classifica con AI (chiede conferma)", () =>
+      mkBtn("AI", "Classify with AI (asks confirmation)", () =>
         void this.plugin.classifyActiveNoteExternal(file)
       );
       mkBtn(
-        "Ignora",
-        "Aggiungi antinomia_ignora: true (la nota sparisce da questa lista)",
+        "Ignore",
+        "Adds antinomia_ignore: true (the note disappears from this list)",
         () => void this.plugin.ignoreNote(file),
         true
       );
@@ -5786,14 +5786,18 @@ class AntinomiaGraphView extends ItemView {
       cb.onchange = () => {
         this.filters[key] = cb.checked;
         this.rebuildGraph();
+        // After toggling a filter, re-apply the layout so newly visible nodes
+        // get spread out instead of stacking at (0,0). Without this, enabling
+        // a filter that has nodes at (0,0) appears to "freeze" the graph.
+        this.applyLayoutToCy();
       };
     };
 
-    mkChk("tensione_aperta", "Tensioni aperte", "tensione_aperta");
-    mkChk("tensione_risolta", "Risolte", "tensione_risolta");
-    mkChk("tensione_elevata", "Elevate", "tensione_elevata");
+    mkChk("tensione_aperta", "Open tensions", "tensione_aperta");
+    mkChk("tensione_risolta", "Resolved", "tensione_risolta");
+    mkChk("tensione_elevata", "Elevated", "tensione_elevata");
     mkChk("substrate", "Substrate", "substrate");
-    mkChk("principle", "Principi", "principle");
+    mkChk("principle", "Principles", "principle");
     mkChk("defeated", "Defeated", "defeated");
     mkChk("meta_note", "Meta", "meta_note");
 
@@ -5805,8 +5809,8 @@ class AntinomiaGraphView extends ItemView {
     const layoutSel = toolbar.createEl("select");
     layoutSel.style.padding = "2px 4px";
     [
-      ["clusters", "Clusters per layer"],
-      ["fcose", "Force-directed libero"],
+      ["clusters", "Clusters by layer"],
+      ["fcose", "Force-directed (free)"],
       ["concentric", "Concentric"],
       ["grid", "Grid"],
       ["circle", "Circle"],
@@ -6910,28 +6914,6 @@ export default class AntinomiaPlugin extends Plugin {
       }, 800);
     }
 
-    // Auto-open Dashboard + Graph on startup if their settings are on.
-    // onLayoutReady fires after Obsidian restores the saved workspace,
-    // so we only open if no relevant leaf already exists.
-    this.app.workspace.onLayoutReady(() => {
-      if (this.settings.autoOpenDashboard) {
-        const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD);
-        if (existing.length > 0) {
-          this.app.workspace.revealLeaf(existing[0]);
-        } else {
-          void this.activateViewExternal(VIEW_TYPE_DASHBOARD);
-        }
-      }
-      if (this.settings.autoOpenGraph) {
-        const existingGraph = this.app.workspace.getLeavesOfType(VIEW_TYPE_GRAPH);
-        if (existingGraph.length > 0) {
-          this.app.workspace.revealLeaf(existingGraph[0]);
-        } else {
-          void this.activateView(VIEW_TYPE_GRAPH, "tab");
-        }
-      }
-    });
-
     this.registerView(
       VIEW_TYPE_OPEN_TENSIONS,
       (leaf) => new OpenTensionsView(leaf, this)
@@ -6977,7 +6959,7 @@ export default class AntinomiaPlugin extends Plugin {
       (leaf) => new AntinomiaGraphView(leaf, this)
     );
 
-    this.addRibbonIcon("git-pull-request", "Antinomia: tensioni aperte", () =>
+    this.addRibbonIcon("git-pull-request", "Antinomia: Open tensions", () =>
       this.activateView(VIEW_TYPE_OPEN_TENSIONS)
     );
     this.addRibbonIcon("search", "Antinomia: Contradiction Hunter", () =>
@@ -6989,6 +6971,29 @@ export default class AntinomiaPlugin extends Plugin {
     this.addRibbonIcon("git-fork", "Antinomia: Graph View", () =>
       this.activateView(VIEW_TYPE_GRAPH, "tab")
     );
+
+    // Auto-open Dashboard + Graph on startup if their settings are on.
+    // Must run AFTER registerView() so Obsidian knows how to instantiate them.
+    // onLayoutReady fires after Obsidian restores the saved workspace,
+    // so we only open if no relevant leaf already exists.
+    this.app.workspace.onLayoutReady(() => {
+      if (this.settings.autoOpenDashboard) {
+        const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD);
+        if (existing.length > 0) {
+          this.app.workspace.revealLeaf(existing[0]);
+        } else {
+          void this.activateViewExternal(VIEW_TYPE_DASHBOARD);
+        }
+      }
+      if (this.settings.autoOpenGraph) {
+        const existingGraph = this.app.workspace.getLeavesOfType(VIEW_TYPE_GRAPH);
+        if (existingGraph.length > 0) {
+          this.app.workspace.revealLeaf(existingGraph[0]);
+        } else {
+          void this.activateView(VIEW_TYPE_GRAPH, "tab");
+        }
+      }
+    });
 
     // ---- Creation (guided + bypass) ----
     this.addCommand({
@@ -8068,7 +8073,7 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
         .setName("Open external service")
         .addButton((b) =>
           b
-            .setButtonText("Apri youtubetotranscript.com")
+            .setButtonText("Open youtubetotranscript.com")
             .setCta()
             .onClick(() => {
               const externalUrl = `https://youtubetotranscript.com/transcript?v=${videoId}`;
@@ -8109,7 +8114,7 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
         )
         .addButton((b) =>
           b
-            .setButtonText("Crea substrate")
+            .setButtonText("Create substrate")
             .setCta()
             .onClick(() => {
               const txt = pasted.trim();
@@ -9144,7 +9149,7 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
       // Crea nuova leaf nel main area (anche se esiste un'altra in sidebar)
       const leaf = workspace.getLeaf("tab");
       if (!leaf) {
-        new Notice("Impossibile aprire il pannello.");
+        new Notice("Unable to open the panel.");
         return;
       }
       await leaf.setViewState({ type: viewType, active: true });
@@ -9160,7 +9165,7 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
           ? workspace.getLeftLeaf(false)
           : workspace.getRightLeaf(false);
       if (!leaf) {
-        new Notice("Impossibile aprire il pannello.");
+        new Notice("Unable to open the panel.");
         return;
       }
       await leaf.setViewState({ type: viewType, active: true });

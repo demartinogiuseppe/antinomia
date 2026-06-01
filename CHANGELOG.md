@@ -1,5 +1,39 @@
 # Changelog
 
+## v1.2.3 (June 1, 2026) — Auto-open Dashboard/Graph + graph filter freeze + Italian residues
+
+Bug fix release. No breaking changes, no schema changes.
+
+### Auto-open Dashboard + Graph on startup (Bug A)
+
+When `autoOpenDashboard` / `autoOpenGraph` were on in Settings, Dashboard and Graph did not actually appear at Obsidian startup unless the vault already contained Antinomia notes. Workaround: create example vault first, restart Obsidian.
+
+Root cause: the `workspace.onLayoutReady()` callback was registered BEFORE `registerView()` for Dashboard and Graph. On launches where Obsidian's layout was already ready, the callback fired immediately and tried to instantiate views that the plugin had not yet declared — so Obsidian silently dropped the request.
+
+Fix: moved the auto-open block AFTER all `registerView()` calls in `onload()`. Now Dashboard and Graph reliably auto-open on startup regardless of vault state.
+
+### Graph freeze when toggling filters, especially Principles (Bug B)
+
+Toggling a filter checkbox in the Graph toolbar (e.g. enabling "Principles") could freeze the graph: newly visible nodes were added at position (0,0) and the continuous physics could not separate them, making the graph appear stuck.
+
+Fix: the checkbox `onchange` handler now calls `applyLayoutToCy()` after `rebuildGraph()`, re-running the active layout (fcose by default) so newly visible nodes are spread out and animation resumes cleanly.
+
+### Italian residues cleanup (final sweep)
+
+Strings still in Italian found during this session, now in English:
+- **Graph toolbar checkboxes**: `Tensioni aperte` → `Open tensions`, `Risolte` → `Resolved`, `Elevate` → `Elevated`, `Principi` → `Principles`.
+- **Graph layout dropdown**: `Clusters per layer` → `Clusters by layer`, `Force-directed libero` → `Force-directed (free)`.
+- **Ribbon icon tooltip**: `Antinomia: tensioni aperte` → `Antinomia: Open tensions`.
+- **Top nav submenu "Note"**: `Note` → `Notes`, `Tensioni aperte` → `Open tensions`, `Principi` → `Principles`, `Note non classificate` → `Unclassified notes`.
+- **Top nav submenu "Hunter"**: `Risultati Hunter` → `Hunter results`, `Falsi positivi` → `False positives`, `Hunter su una nota (focus)` → `Hunter on a note (focus)`.
+- **Unclassified notes sidebar buttons**: `Tensione`/`Principio`/`Ignora` and their tooltips translated.
+- **Open tensions sidebar action buttons**: `↑ Eleva` → `↑ Elevate`, `✓ Risolta` → `✓ Resolved`, tooltips translated.
+- **Defeated archive description**: `Convinzioni sconfitte. Memoria storica…` → `Defeated beliefs. Historical memory…`.
+- **Notice messages**: `Impossibile aprire il pannello.` → `Unable to open the panel.`
+- **NotePicker placeholders** and a few other minor strings.
+
+---
+
 ## v1.2.2 (June 1, 2026) — Graph relayout + Italian residues in nav menu
 
 Bug fix release. No breaking changes, no schema changes.
