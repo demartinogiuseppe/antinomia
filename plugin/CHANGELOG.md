@@ -1,12 +1,27 @@
 # Changelog
 
-## v1.2.2 (June 1, 2026) — Graph relayout after example-vault generation
+## v1.2.2 (June 1, 2026) — Graph relayout + Italian residues in nav menu
 
-Bug fix: after clicking "Create example vault" (either from the Welcome modal CTA or from Settings → Onboarding), if the Antinomia Graph was open in the background, the 20+ new nodes would all be added at position (0,0) and the continuous physics could not separate them — resulting in a collapsed cluster with overlapping labels. Closing and reopening the graph tab worked around it, but it was a confusing first impression.
+Bug fix release. No breaking changes, no schema changes.
 
-Fix: `createExampleNotes()` now triggers a forced relayout of any open graph view 300ms after the notes are created (small delay gives Obsidian's metadataCache time to process the new files). The graph re-applies its fcose layout from scratch, spreading the nodes correctly.
+### Graph relayout after example-vault generation
 
-No breaking changes, no schema changes.
+After clicking "Create example vault" (either from the Welcome modal CTA or from Settings → Onboarding), if the Antinomia Graph was open in the background, the 20+ new nodes would all be added at position (0,0) and the continuous physics could not separate them — resulting in a collapsed cluster with overlapping labels. Closing and reopening the graph tab worked around it, but it was a confusing first impression.
+
+Fix: `createExampleNotes()` now triggers a forced relayout of any open graph view 300ms after the notes are created (delay gives Obsidian's metadataCache time to process the new files). The graph re-applies its fcose layout from scratch.
+
+### Italian residues cleanup in the global nav menu
+
+A handful of strings in the top navigation bar were missed during the v1.2.0 full-English pass:
+
+- Top buttons: `Crea` → `Create`, `Grafo` → `Graph`, `Guida` → `Guide`.
+- Create submenu items: `Nuova tensione (guidata)` → `New tension (guided)`, `Nuovo substrate (guidato)` → `New substrate (guided)`, `Inserimento libero (AI classifica)` → `Free-form input (AI classifies)`, `Substrate da clipboard/PDF/YouTube` → `Substrate from clipboard/PDF/YouTube`.
+- Guide submenu items: `Checklist iniziale` → `Getting Started checklist`, `Tutorial concetti` → `Key concepts tutorial`, `Welcome (riavvia)` → `Welcome (restart)`, `Dimmi come procedere` → `Tell me what to do`.
+- Sidebar hint dismiss button: `Capito` → `Got it`.
+
+### Repo housekeeping
+
+`releases/` folder restructured: each version now has its own subfolder `releases/vX.X.X/` containing zip + BETA-INSTALL + main.js + manifest.json + versions.json. `package-release.ps1` updated to write into the per-version folder.
 
 ---
 

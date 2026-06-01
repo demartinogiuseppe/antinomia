@@ -3488,7 +3488,7 @@ class MapPresuppostiModal extends Modal {
 
 /**
  * Renders a global navigation bar at the top of an Antinomia view.
- * Clicking a leaf-level entry (Dashboard, Grafo, Audit) replaces the
+ * Clicking a leaf-level entry (Dashboard, Graph, Audit) replaces the
  * current leaf's view; submenu entries either replace the view or open
  * a modal / fire an action.
  */
@@ -3609,10 +3609,10 @@ function renderAntinomiaNav(
     );
   });
 
-  // -- Crea (submenu)
-  mkMenuBtn("➕ Crea ▾", (m) => {
+  // -- Create (submenu)
+  mkMenuBtn("➕ Create ▾", (m) => {
     m.addItem((i) =>
-      i.setTitle("Nuova tensione (guidata)").setIcon("git-pull-request")
+      i.setTitle("New tension (guided)").setIcon("git-pull-request")
         .onClick(() => {
           new NewTensionModal(plugin.app, plugin, (fields, skipped) => {
             if (fields === null && !skipped) return;
@@ -3622,7 +3622,7 @@ function renderAntinomiaNav(
         })
     );
     m.addItem((i) =>
-      i.setTitle("Nuovo substrate (guidato)").setIcon("layers")
+      i.setTitle("New substrate (guided)").setIcon("layers")
         .onClick(() => {
           new NewSubstrateModal(plugin.app, plugin, (fields, skipped) => {
             if (fields === null && !skipped) return;
@@ -3635,46 +3635,46 @@ function renderAntinomiaNav(
     );
     m.addSeparator();
     m.addItem((i) =>
-      i.setTitle("Inserimento libero (AI classifica)").setIcon("sparkles")
+      i.setTitle("Free-form input (AI classifies)").setIcon("sparkles")
         .onClick(() => new FreeInputModal(plugin.app, plugin).open())
     );
     m.addItem((i) =>
-      i.setTitle("Substrate da clipboard").setIcon("clipboard")
+      i.setTitle("Substrate from clipboard").setIcon("clipboard")
         .onClick(() => void plugin.openFreeInputFromClipboard())
     );
     m.addItem((i) =>
-      i.setTitle("Substrate da PDF").setIcon("file")
+      i.setTitle("Substrate from PDF").setIcon("file")
         .onClick(() => void plugin.openSubstrateFromPDF())
     );
     m.addItem((i) =>
-      i.setTitle("Substrate da YouTube").setIcon("youtube")
+      i.setTitle("Substrate from YouTube").setIcon("youtube")
         .onClick(() => void plugin.openSubstrateFromYouTube())
     );
   });
 
-  // -- Grafo (custom)
-  mkBtn("🕸 Grafo", () => goTo(VIEW_TYPE_GRAPH));
+  // -- Graph (custom)
+  mkBtn("🕸 Graph", () => goTo(VIEW_TYPE_GRAPH));
 
   // -- Audit
   mkBtn("🩺 Audit", () => goTo(VIEW_TYPE_AUDIT));
 
-  // -- Guida (submenu)
-  mkMenuBtn("❓ Guida ▾", (m) => {
+  // -- Guide (submenu)
+  mkMenuBtn("❓ Guide ▾", (m) => {
     m.addItem((i) =>
-      i.setTitle("Checklist iniziale").setIcon("list-checks")
+      i.setTitle("Getting Started checklist").setIcon("list-checks")
         .onClick(() => goTo(VIEW_TYPE_ONBOARDING))
     );
     m.addItem((i) =>
-      i.setTitle("Tutorial concetti").setIcon("book-open")
+      i.setTitle("Key concepts tutorial").setIcon("book-open")
         .onClick(() => new TutorialModal(plugin.app, plugin).open())
     );
     m.addItem((i) =>
-      i.setTitle("Welcome (riavvia)").setIcon("hand")
+      i.setTitle("Welcome (restart)").setIcon("hand")
         .onClick(() => new WelcomeModal(plugin.app, plugin).open())
     );
     m.addSeparator();
     m.addItem((i) =>
-      i.setTitle("Dimmi come procedere").setIcon("compass")
+      i.setTitle("Tell me what to do").setIcon("compass")
         .onClick(() => new GuidanceModal(plugin.app, plugin).open())
     );
   });
@@ -3743,7 +3743,7 @@ class OpenTensionsView extends ItemView {
       txt.setText(
         "Tip: each tension is a card with quick buttons (Title / Link / Presuppositions / ↑ Elevate / ✓ Resolved / × Defeated). Click the title to open the note. At the top of the sidebar, 4 toolbar buttons: '+ Tension', '+ Substrate', '✨ Free' (AI classifies), '🔍 Hunter'."
       );
-      const dismissBtn = hint.createEl("button", { text: "Capito" });
+      const dismissBtn = hint.createEl("button", { text: "Got it" });
       dismissBtn.style.padding = "2px 10px";
       dismissBtn.style.cursor = "pointer";
       dismissBtn.style.fontSize = "0.85em";
@@ -3998,7 +3998,7 @@ class HunterResultsView extends ItemView {
       txt.setText(
         "Tip: the Hunter scans open tensions + substrate, and proposes contradictory PAIRS. It does not resolve. Confidence high/medium/low, sorted by quality. × dismisses a false positive (persistent). Below each pair, Elevate/Resolved/Defeated buttons act directly on one of the two notes."
       );
-      const dismissBtn = hint.createEl("button", { text: "Capito" });
+      const dismissBtn = hint.createEl("button", { text: "Got it" });
       dismissBtn.style.padding = "2px 10px";
       dismissBtn.style.cursor = "pointer";
       dismissBtn.style.fontSize = "0.85em";
