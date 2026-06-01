@@ -22,7 +22,7 @@ import {
 // Antinomia V1 â€” Step 5e: guided creation modals + human titles + Hunter v2.1
 //
 // Design invariants (do not violate without explicit user reconfirmation):
-//   - Layer of a note = `antinomia_tipo` frontmatter ONLY. Files never move.
+//   - Layer of a note = `antinomia_type` frontmatter ONLY. Files never move.
 //   - Hunter IDENTIFIES contradictions, does NOT propose resolutions.
 //   - AI calls only on explicit user action (no background AI).
 //   - Backend pluggable (Anthropic cloud / LM Studio / custom).
@@ -32,11 +32,11 @@ import {
 const FOLDER = { notes: "notes" } as const;
 
 const TYPE = {
-  tension: "tensione",
+  tension: "tension",
   substrate: "substrate",
-  principle: "principio",
+  principle: "principle",
   defeated: "defeated",
-  meta: "meta_nota",
+  meta: "meta_note",
 } as const;
 
 const VIEW_TYPE_OPEN_TENSIONS = "antinomia-open-tensions";
@@ -574,7 +574,7 @@ class WelcomeModal extends Modal {
           void this.plugin.createNote("T", content);
         },
         {
-          titolo: "Esempio â€” Solitudine creativa vs correzione sociale",
+          title: "Esempio â€” Solitudine creativa vs correzione sociale",
           statementA:
             "Il lavoro creativo profondo richiede solitudine prolungata. Le idee originali nascono nel silenzio, lontano dal rumore degli altri. La presenza altrui diluisce l'intuizione e spinge verso il conformismo.",
           statementB:
@@ -794,13 +794,13 @@ class GuidanceModal extends Modal {
     const countByType = (t: string) =>
       files.filter((f) => {
         const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-        return fm?.antinomia_tipo === t;
+        return fm?.antinomia_type === t;
       }).length;
 
     const tensions = countByType(TYPE.tension);
     const openTensions = files.filter((f) => {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      return fm?.antinomia_tipo === TYPE.tension && fm?.stato === "aperta";
+      return fm?.antinomia_type === TYPE.tension && fm?.status === "open";
     }).length;
     const substrates = countByType(TYPE.substrate);
     const principles = countByType(TYPE.principle);
@@ -1091,7 +1091,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Migra principi esistenti")
       .setDesc(
-        "Per ogni principio gia' nel vault che ha la sezione '## Origine (tensione)' nel body, crea un defeated retroattivo. Esegui una sola volta dopo aver attivato split."
+        "Per ogni principio gia' nel vault che ha la sezione '## Origin (tension)' nel body, crea un defeated retroattivo. Esegui una sola volta dopo aver attivato split."
       )
       .addButton((b) =>
         b.setButtonText("Esegui migrazione").onClick(() => void this.plugin.migrateExistingPrinciples())
@@ -1146,9 +1146,9 @@ class AntinomiaSettingTab extends PluginSettingTab {
       colorRow("tensione_risolta", "Tensioni risolte");
       colorRow("tensione_elevata", "Tensioni elevate");
       colorRow("substrate", "Substrate");
-      colorRow("principio", "Principi");
+      colorRow("principle", "Principi");
       colorRow("defeated", "Defeated");
-      colorRow("meta_nota", "Meta nota");
+      colorRow("meta_note", "Meta nota");
       colorRow("label", "Testo (label)");
       // edge e background usano color picker generico ma supportano rgba; UI standard converte
       colorRow("edge", "Linee (edge)");
@@ -1937,7 +1937,7 @@ function humanTitle(app: App, file: TFile): string {
   const cache = app.metadataCache.getFileCache(file);
   const fm = cache?.frontmatter;
   const explicit =
-    (fm?.titolo as string | undefined) ?? (fm?.title as string | undefined);
+    (fm?.title as string | undefined) ?? (fm?.title as string | undefined);
   if (explicit && String(explicit).trim()) return String(explicit).trim();
   const firstHeading = cache?.headings?.[0]?.heading;
   if (firstHeading && firstHeading.trim()) return firstHeading.trim();
@@ -2140,10 +2140,10 @@ Vincoli:
 - Per le tensioni, idealmente "X vs Y" o "X (tensione su Y)".
 
 Rispondi SOLO con JSON valido, senza fence:
-{"titolo": "<la tua proposta>"}`;
+{"title": "<la tua proposta>"}`;
 
 interface TitleProposal {
-  titolo: string;
+  title: string;
 }
 
 const PRESUPPOSTI_SYSTEM = `Sei l'assistente di Antinomia. Stai aiutando l'utente a mappare i PRESUPPOSTI di una tensione.
@@ -2179,13 +2179,13 @@ Per TENSIONE: statementA/statementB devono essere affermazioni complete, semanti
 Per SUBSTRATE: contenuto preserva fedelmente l'input grezzo.
 
 Rispondi SOLO con JSON valido, senza fence:
-{"tipo": "tensione" | "substrate", "titolo": "...", "statementA": "...", "statementB": "...", "contenuto": "..."}
+{"tipo": "tension" | "substrate", "title": "...", "statementA": "...", "statementB": "...", "contenuto": "..."}
 
 Per tensione lascia contenuto vuoto. Per substrate lascia statementA/statementB vuoti.`;
 
 interface FreeInputAnalysis {
-  tipo: "tensione" | "substrate";
-  titolo: string;
+  tipo: "tension" | "substrate";
+  title: string;
   statementA: string;
   statementB: string;
   contenuto: string;
@@ -2529,8 +2529,8 @@ class TitleEditModal extends Modal {
 }
 
 interface DefeatedSubmit {
-  motivo: string;
-  sostituita_da: string | null;
+  motive: string;
+  replaced_by: string | null;
 }
 
 class DefeatedReasonModal extends Modal {
@@ -2549,14 +2549,14 @@ class DefeatedReasonModal extends Modal {
     contentEl.createEl("h3", { text: "Archivia come defeated" });
     contentEl.createEl("p", { text: "Perche' e' stata sconfitta?" });
 
-    let motivo = "falso_positivo";
+    let motivo = "false_positive";
     let sostituitaDa: string | null = null;
 
     // --- Motivo dropdown ---
     new Setting(contentEl).setName("Motivo").addDropdown((dd) => {
-      dd.addOption("falso_positivo", "falso_positivo");
-      dd.addOption("elevata", "elevata");
-      dd.addOption("sconfitta_genuina", "sconfitta_genuina");
+      dd.addOption("false_positive", "false_positive");
+      dd.addOption("elevated", "elevated");
+      dd.addOption("genuinely_defeated", "genuinely_defeated");
       dd.setValue(motivo);
       dd.onChange((v) => {
         motivo = v;
@@ -2564,7 +2564,7 @@ class DefeatedReasonModal extends Modal {
       });
     });
 
-    // --- Sostituita_da picker (only shown when motivo == "elevata") ---
+    // --- Sostituita_da picker (only shown when motivo == "elevated") ---
     const sostBlock = contentEl.createEl("div");
     sostBlock.style.marginBottom = "10px";
 
@@ -2576,7 +2576,7 @@ class DefeatedReasonModal extends Modal {
     const renderSostituitaSection = () => {
       sostBlock.empty();
       labelEl.setText("");
-      if (motivo !== "elevata") return;
+      if (motivo !== "elevated") return;
 
       new Setting(sostBlock)
         .setName("Sostituita da quale principio")
@@ -2598,7 +2598,7 @@ class DefeatedReasonModal extends Modal {
               },
               (f) => {
                 const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-                return fm?.antinomia_tipo === TYPE.principle;
+                return fm?.antinomia_type === TYPE.principle;
               },
               "Cerca un principio..."
             ).open();
@@ -2609,7 +2609,7 @@ class DefeatedReasonModal extends Modal {
         labelEl.setText(`Sostituita da: [[${sostituitaDa}]]`);
       } else {
         labelEl.setText(
-          "(Nessun principio selezionato â€” puoi salvare comunque, sostituita_da resta vuoto.)"
+          "(Nessun principio selezionato â€” puoi salvare comunque, replaced_by resta vuoto.)"
         );
       }
     };
@@ -2627,7 +2627,7 @@ class DefeatedReasonModal extends Modal {
           .setButtonText("Archivia")
           .setCta()
           .onClick(() => {
-            this.result = { motivo, sostituita_da: sostituitaDa };
+            this.result = { motivo, replaced_by: sostituitaDa };
             this.close();
           })
       );
@@ -2647,20 +2647,20 @@ interface TensionFields {
 }
 function tensionTemplate(fields: TensionFields = {}): string {
   const date = todayISO();
-  const titoloLine = fields.titolo
-    ? `titolo: ${yamlQuote(fields.titolo)}`
-    : "titolo:";
+  const titoloLine = fields.title
+    ? `title: ${yamlQuote(fields.title)}`
+    : "title:";
   const a = fields.statementA?.trim() ?? "";
   const b = fields.statementB?.trim() ?? "";
   return `---
-antinomia_tipo: ${TYPE.tension}
+antinomia_type: ${TYPE.tension}
 ${titoloLine}
-stato: aperta
+status: aperta
 lingua_base: italiano
 data_creazione: ${date}
-data_modifica: ${date}
+modified_date: ${date}
 origine: input_utente
-collegamenti: []
+links: []
 ---
 - **A (base):** ${a}
 - **A (originale):**
@@ -2677,16 +2677,16 @@ interface SubstrateFields {
 }
 function substrateTemplate(fields: SubstrateFields = {}): string {
   const date = todayISO();
-  const titoloLine = fields.titolo
-    ? `titolo: ${yamlQuote(fields.titolo)}`
-    : "titolo:";
+  const titoloLine = fields.title
+    ? `title: ${yamlQuote(fields.title)}`
+    : "title:";
   const c = fields.contenuto?.trim() ?? "";
   return `---
-antinomia_tipo: ${TYPE.substrate}
+antinomia_type: ${TYPE.substrate}
 ${titoloLine}
 lingua_base: italiano
-lingua_originale: italiano
-fonte: input_utente
+original_language: italiano
+source: input_utente
 data: ${date}
 ---
 - **Contenuto (base):** ${c}
@@ -2761,7 +2761,7 @@ class ElevateToPrincipleModal extends Modal {
     intro.style.fontSize = "0.9em";
     intro.style.opacity = "0.8";
     intro.setText(
-      `Stai trasformando la tensione "${humanTitle(this.app, this.file)}" in un principio operativo. Compila i campi sotto: diventeranno il nuovo body. Il testo originale della tensione verra' conservato sotto la sezione "## Origine (tensione)".`
+      `Stai trasformando la tensione "${humanTitle(this.app, this.file)}" in un principio operativo. Compila i campi sotto: diventeranno il nuovo body. Il testo originale della tensione verra' conservato sotto la sezione "## Origin (tension)".`
     );
 
     // Show the tension content inline (scrollable) so the user can re-read
@@ -3006,7 +3006,7 @@ class NewTensionModal extends Modal {
       "Una tensione cattura una contraddizione tra due posizioni. Piu' sono incompatibili, piu' la tensione e' feconda. I presupposti li mapperai dopo, con calma."
     );
 
-    let titolo = this.prefill.titolo ?? "";
+    let titolo = this.prefill.title ?? "";
     let statementA = this.prefill.statementA ?? "";
     let statementB = this.prefill.statementB ?? "";
 
@@ -3153,7 +3153,7 @@ class NewSubstrateModal extends Modal {
       "Un substrate e' materiale grezzo: una citazione, un fatto, un appunto. La materia prima da cui possono emergere tensioni e principi."
     );
 
-    let titolo = this.prefill.titolo ?? "";
+    let titolo = this.prefill.title ?? "";
     let contenuto = this.prefill.contenuto ?? "";
 
     const mkLabel = (text: string) => {
@@ -3552,8 +3552,8 @@ function renderAntinomiaNav(
           const isCandidate = (f: TFile): boolean => {
             if (f.extension !== "md") return false;
             const fm = plugin.app.metadataCache.getFileCache(f)?.frontmatter;
-            const t = fm?.antinomia_tipo;
-            const isOpenTension = t === TYPE.tension && fm?.stato === "aperta";
+            const t = fm?.antinomia_type;
+            const isOpenTension = t === TYPE.tension && fm?.status === "open";
             return isOpenTension || t === TYPE.substrate;
           };
           // Se la nota attiva e' una tensione aperta o un substrate, usala direttamente
@@ -3806,7 +3806,7 @@ class OpenTensionsView extends ItemView {
 
     const open = this.app.vault.getMarkdownFiles().filter((f) => {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      return fm?.antinomia_tipo === TYPE.tension && fm?.stato === "aperta";
+      return fm?.antinomia_type === TYPE.tension && fm?.status === "open";
     });
     if (open.length === 0) {
       container.createEl("p", { text: "Nessuna tensione aperta. Crea la prima qui sopra." });
@@ -4133,7 +4133,7 @@ class HunterResultsView extends ItemView {
 
   /**
    * Compact row of action buttons targeting a single note in a contradiction
-   * pair. Buttons shown depend on the note's antinomia_tipo:
+   * pair. Buttons shown depend on the note's antinomia_type:
    *   - tensione (aperta): â†‘ Eleva, âœ“ Risolta, Ã— Defeated
    *   - tensione (chiusa) / principio / substrate: Ã— Defeated
    *   - other / missing: nothing
@@ -4142,7 +4142,7 @@ class HunterResultsView extends ItemView {
     const file = this.findFileByBasename(basename);
     if (!file) return;
     const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
-    const t = fm?.antinomia_tipo;
+    const t = fm?.antinomia_type;
     if (
       t !== TYPE.tension &&
       t !== TYPE.substrate &&
@@ -4181,7 +4181,7 @@ class HunterResultsView extends ItemView {
       };
     };
 
-    const isOpenTension = t === TYPE.tension && fm?.stato === "aperta";
+    const isOpenTension = t === TYPE.tension && fm?.status === "open";
     if (isOpenTension) {
       mkBtn("â†‘ Eleva", "Eleva a principio (apre form IF/THEN/GREY)", () => {
         void this.plugin.openElevateModal(file);
@@ -4260,7 +4260,7 @@ class DismissedPairsView extends ItemView {
       "Coppie marcate come falso positivo (via Ã— nella sidebar Hunter). Non verranno piu' riproposte. Clicca 'Reincludi' per rimuovere il dismiss e farle riapparire ai prossimi run."
     );
 
-    // Collect all dismissed pairs. Stored as `hunter_falsi_positivi: [basename, ...]`
+    // Collect all dismissed pairs. Stored as `hunter_false_positives: [basename, ...]`
     // in the frontmatter of the alphabetically smaller-basename note.
     interface Pair {
       ownerFile: TFile;
@@ -4270,7 +4270,7 @@ class DismissedPairsView extends ItemView {
     const pairs: Pair[] = [];
     for (const f of this.app.vault.getMarkdownFiles()) {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      const list = fm?.hunter_falsi_positivi;
+      const list = fm?.hunter_false_positives;
       if (Array.isArray(list)) {
         for (const other of list) {
           if (typeof other === "string" && other.length > 0) {
@@ -4483,7 +4483,7 @@ class SubstrateListView extends ItemView {
 
     const items = this.app.vault.getMarkdownFiles().filter((f) => {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      return fm?.antinomia_tipo === TYPE.substrate;
+      return fm?.antinomia_type === TYPE.substrate;
     });
     items.sort((a, b) => b.stat.mtime - a.stat.mtime);
 
@@ -4544,7 +4544,7 @@ class PrinciplesListView extends ItemView {
 
     const items = this.app.vault.getMarkdownFiles().filter((f) => {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      return fm?.antinomia_tipo === TYPE.principle;
+      return fm?.antinomia_type === TYPE.principle;
     });
     items.sort((a, b) => b.stat.mtime - a.stat.mtime);
 
@@ -4559,7 +4559,7 @@ class PrinciplesListView extends ItemView {
         showCollega: true,
         showDefeated: true,
         extraInfo: (card, fm) => {
-          const origin = fm?.origine_tensione;
+          const origin = fm?.origin_tension;
           if (typeof origin === "string" && origin.length > 0) {
             const o = card.createEl("div");
             o.style.fontSize = "0.78em";
@@ -4614,7 +4614,7 @@ class DefeatedListView extends ItemView {
 
     const items = this.app.vault.getMarkdownFiles().filter((f) => {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      return fm?.antinomia_tipo === TYPE.defeated;
+      return fm?.antinomia_type === TYPE.defeated;
     });
     items.sort((a, b) => b.stat.mtime - a.stat.mtime);
 
@@ -4627,14 +4627,14 @@ class DefeatedListView extends ItemView {
         showCollega: true,
         showDefeated: false, // already defeated, can't re-defeat
         extraInfo: (card, fm) => {
-          const motivo = fm?.motivo;
-          const sost = fm?.sostituita_da;
+          const motivo = fm?.motive;
+          const sost = fm?.replaced_by;
           const meta = card.createEl("div");
           meta.style.fontSize = "0.78em";
           meta.style.opacity = "0.7";
           meta.style.marginBottom = "4px";
           const parts: string[] = [];
-          if (typeof motivo === "string") parts.push(`motivo: ${motivo}`);
+          if (typeof motivo === "string") parts.push(`motive: ${motivo}`);
           if (typeof sost === "string" && sost.length > 0)
             parts.push(`sostituita da: ${sost}`);
           meta.setText(parts.join("  |  "));
@@ -4679,7 +4679,7 @@ class OnboardingChecklistView extends ItemView {
   private countByType(type: string): number {
     return this.app.vault.getMarkdownFiles().filter((f) => {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      return fm?.antinomia_tipo === type;
+      return fm?.antinomia_type === type;
     }).length;
   }
 
@@ -4687,7 +4687,7 @@ class OnboardingChecklistView extends ItemView {
     return (
       this.app.vault.getMarkdownFiles().find((f) => {
         const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-        return fm?.antinomia_tipo === type;
+        return fm?.antinomia_type === type;
       }) ?? null
     );
   }
@@ -4695,7 +4695,7 @@ class OnboardingChecklistView extends ItemView {
   private hasAnyPresupposti(): boolean {
     return this.app.vault.getMarkdownFiles().some((f) => {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      if (fm?.antinomia_tipo !== TYPE.tension) return false;
+      if (fm?.antinomia_type !== TYPE.tension) return false;
       // Quick check: read file via cache (heading only) is async; we use
       // a lightweight heuristic â€” file body length > some threshold AND
       // metadata cache hints at presence is hard. Skip: rely on user
@@ -4714,7 +4714,7 @@ class OnboardingChecklistView extends ItemView {
   private scanBodyForPresupposti(): boolean {
     const tensions = this.app.vault.getMarkdownFiles().filter((f) => {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      return fm?.antinomia_tipo === TYPE.tension;
+      return fm?.antinomia_type === TYPE.tension;
     });
     const key = tensions.map((f) => f.path + f.stat.mtime).join("|");
     if (key !== this.lastScannedKey) {
@@ -4977,16 +4977,16 @@ class DashboardView extends ItemView {
     const byType = (t: string) =>
       files.filter((f) => {
         const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-        return fm?.antinomia_tipo === t;
+        return fm?.antinomia_type === t;
       });
     const tensions = byType(TYPE.tension);
     const openTensions = tensions.filter((f) => {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      return fm?.stato === "aperta";
+      return fm?.status === "open";
     });
     const resolvedTensions = tensions.filter((f) => {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      return fm?.stato === "risolta";
+      return fm?.status === "resolved";
     });
     const substrates = byType(TYPE.substrate);
     const principles = byType(TYPE.principle);
@@ -4994,7 +4994,7 @@ class DashboardView extends ItemView {
     const meta = byType(TYPE.meta);
     const unclassified = files.filter((f) => {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      return !fm || !fm.antinomia_tipo;
+      return !fm || !fm.antinomia_type;
     });
 
     // ---- Counters grid ----
@@ -5111,7 +5111,7 @@ class DashboardView extends ItemView {
     const recent = [...files]
       .filter((f) => {
         const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-        return fm?.antinomia_tipo;
+        return fm?.antinomia_type;
       })
       .sort((a, b) => b.stat.mtime - a.stat.mtime)
       .slice(0, 5);
@@ -5224,7 +5224,7 @@ class AuditVaultView extends ItemView {
   private async refreshBodyCache(): Promise<void> {
     const files = this.app.vault.getMarkdownFiles().filter((f) => {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      return fm?.antinomia_tipo;
+      return fm?.antinomia_type;
     });
     const key = files.map((f) => f.path + ":" + f.stat.mtime).join("|");
     if (key === this.bodyCacheKey) return;
@@ -5285,13 +5285,13 @@ class AuditVaultView extends ItemView {
 
     for (const f of files) {
       const fm = fmOf(f);
-      const tipo = fm?.antinomia_tipo;
+      const tipo = fm?.antinomia_type;
       if (!tipo) continue;
       const body = this.bodyCache.get(f.path) ?? "";
 
       // No title (frontmatter `titolo` missing/empty AND no first heading)
       const explicitTitle =
-        typeof fm?.titolo === "string" && (fm.titolo as string).trim();
+        typeof fm?.title === "string" && (fm.title as string).trim();
       const cache = this.app.metadataCache.getFileCache(f);
       const firstHeading = cache?.headings?.[0]?.heading;
       if (!explicitTitle && !firstHeading) {
@@ -5337,7 +5337,7 @@ class AuditVaultView extends ItemView {
         }
       }
       if (tipo === TYPE.defeated) {
-        if (!fm?.motivo) {
+        if (!fm?.motive) {
           cat.defeatedNoMotivo.push({
             file: f,
             label: humanTitle(this.app, f),
@@ -5378,13 +5378,13 @@ class AuditVaultView extends ItemView {
         title: "Defeated senza motivo",
         issues: cat.defeatedNoMotivo,
         suggestion:
-          "Apri la nota e aggiungi il campo 'motivo:' nel frontmatter (falso_positivo / elevata / sconfitta_genuina).",
+          "Apri la nota e aggiungi il campo 'motive:' nel frontmatter (falso_positivo / elevata / sconfitta_genuina).",
       },
       {
         title: "Note senza titolo umano",
         issues: cat.noTitle,
         suggestion:
-          "Usa 'Antinomia: imposta titolo nota' o aggiungi 'titolo:' nel frontmatter.",
+          "Usa 'Antinomia: imposta titolo nota' o aggiungi 'title:' nel frontmatter.",
       },
     ];
 
@@ -5439,7 +5439,7 @@ class AuditVaultView extends ItemView {
 
 /**
  * Migration helper: shows every markdown note in the vault that does NOT have
- * `antinomia_tipo` (and is not flagged `antinomia_ignora`). For each one, the
+ * `antinomia_type` (and is not flagged `antinomia_ignora`). For each one, the
  * user can: mark as a specific layer, classify via AI, or ignore.
  */
 class UnclassifiedNotesView extends ItemView {
@@ -5478,13 +5478,13 @@ class UnclassifiedNotesView extends ItemView {
     desc.style.fontSize = "0.85em";
     desc.style.opacity = "0.7";
     desc.setText(
-      "Note del vault senza antinomia_tipo. Utile per migrare un vault esistente: classifica una per una manualmente o con AI. 'Ignora' aggiunge antinomia_ignora: true (non riapparira'). I file in trash sono esclusi."
+      "Note del vault senza antinomia_type. Utile per migrare un vault esistente: classifica una per una manualmente o con AI. 'Ignora' aggiunge antinomia_ignora: true (non riapparira'). I file in trash sono esclusi."
     );
 
     const all = this.app.vault.getMarkdownFiles();
     const items = all.filter((f) => {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      if (fm?.antinomia_tipo) return false;
+      if (fm?.antinomia_type) return false;
       if (fm?.antinomia_ignora === true) return false;
       // skip files that are trashed (Obsidian trash convention varies)
       return true;
@@ -5571,7 +5571,7 @@ class UnclassifiedNotesView extends ItemView {
         };
       };
 
-      mkBtn("Tensione", "Marca come tensione (aggiunge antinomia_tipo)", () =>
+      mkBtn("Tensione", "Marca come tensione (aggiunge antinomia_type)", () =>
         void this.plugin.markAsType(file, TYPE.tension)
       );
       mkBtn("Substrate", "Marca come substrate", () =>
@@ -5763,9 +5763,9 @@ class AntinomiaGraphView extends ItemView {
     mkChk("tensione_risolta", "Risolte", "tensione_risolta");
     mkChk("tensione_elevata", "Elevate", "tensione_elevata");
     mkChk("substrate", "Substrate", "substrate");
-    mkChk("principio", "Principi", "principio");
+    mkChk("principle", "Principi", "principle");
     mkChk("defeated", "Defeated", "defeated");
-    mkChk("meta_nota", "Meta", "meta_nota");
+    mkChk("meta_note", "Meta", "meta_note");
 
     // Spacer
     const spacer = toolbar.createDiv();
@@ -5898,17 +5898,17 @@ class AntinomiaGraphView extends ItemView {
     const layerKey = (
       fm: any
     ): keyof GraphFilters | null => {
-      const t = fm?.antinomia_tipo;
+      const t = fm?.antinomia_type;
       if (t === TYPE.tension) {
-        const stato = fm?.stato;
-        if (stato === "elevata") return "tensione_elevata";
-        if (stato === "risolta") return "tensione_risolta";
+        const stato = fm?.status;
+        if (stato === "elevated") return "tensione_elevata";
+        if (stato === "resolved") return "tensione_risolta";
         return "tensione_aperta";
       }
       if (t === TYPE.substrate) return "substrate";
-      if (t === TYPE.principle) return "principio";
+      if (t === TYPE.principle) return "principle";
       if (t === TYPE.defeated) return "defeated";
-      if (t === TYPE.meta_nota) return "meta_nota";
+      if (t === TYPE.meta_nota) return "meta_note";
       return null;
     };
 
@@ -5918,9 +5918,9 @@ class AntinomiaGraphView extends ItemView {
         tensione_risolta: "tensione_risolta",
         tensione_elevata: "tensione_elevata",
         substrate: "substrate",
-        principio: "principio",
+        principio: "principle",
         defeated: "defeated",
-        meta_nota: "meta_nota",
+        meta_nota: "meta_note",
       };
       return map[String(key)] || "unknown";
     };
@@ -5983,17 +5983,17 @@ class AntinomiaGraphView extends ItemView {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
       if (!fm) continue;
 
-      // origine_tensione: scalar "[[X]]"
-      const origine = extractBasenameFromWikilink(fm.origine_tensione);
+      // origin_tension: scalar "[[X]]"
+      const origine = extractBasenameFromWikilink(fm.origin_tension);
       if (origine) addEdge(f.basename, origine, "origine");
 
-      // sostituita_da: scalar "[[X]]"
-      const sost = extractBasenameFromWikilink(fm.sostituita_da);
+      // replaced_by: scalar "[[X]]"
+      const sost = extractBasenameFromWikilink(fm.replaced_by);
       if (sost) addEdge(f.basename, sost, "sostituita");
 
-      // collegamenti: array of "[[X]]"
-      if (Array.isArray(fm.collegamenti)) {
-        for (const c of fm.collegamenti) {
+      // links: array of "[[X]]"
+      if (Array.isArray(fm.links)) {
+        for (const c of fm.links) {
           const b = extractBasenameFromWikilink(c);
           if (b) addEdge(f.basename, b, "collegamento");
         }
@@ -6681,8 +6681,8 @@ export default class AntinomiaPlugin extends Plugin {
     const candidates: TFile[] = [];
     for (const f of all) {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      const t = fm?.antinomia_tipo;
-      const isOpenTension = t === TYPE.tension && fm?.stato === "aperta";
+      const t = fm?.antinomia_type;
+      const isOpenTension = t === TYPE.tension && fm?.status === "open";
       const isSubstrate = t === TYPE.substrate;
       if (isOpenTension || isSubstrate) candidates.push(f);
     }
@@ -6708,8 +6708,8 @@ export default class AntinomiaPlugin extends Plugin {
     let nTensions = 0, nSubstrates = 0;
     for (const f of selected) {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      if (fm?.antinomia_tipo === TYPE.tension) nTensions++;
-      else if (fm?.antinomia_tipo === TYPE.substrate) nSubstrates++;
+      if (fm?.antinomia_type === TYPE.tension) nTensions++;
+      else if (fm?.antinomia_type === TYPE.substrate) nSubstrates++;
     }
 
     const bodyLimit = this.settings.hunterNoteBodyLimit;
@@ -6719,7 +6719,7 @@ export default class AntinomiaPlugin extends Plugin {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
       const body = stripFrontmatter(raw).trim();
       const truncBody = body.length > bodyLimit ? body.slice(0, bodyLimit) + "..." : body;
-      const tipo = fm?.antinomia_tipo || "?";
+      const tipo = fm?.antinomia_type || "?";
       noteBlocks.push(`### ${f.basename} [${tipo}]\n${truncBody}`);
     }
     const nTotal = selected.length;
@@ -6815,7 +6815,7 @@ export default class AntinomiaPlugin extends Plugin {
     const dismissedSet = new Set<string>();
     for (const f of selected) {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      const fp = fm?.hunter_falsi_positivi;
+      const fp = fm?.hunter_false_positives;
       if (Array.isArray(fp)) {
         for (const peer of fp) {
           const key = [f.basename, String(peer)].sort().join("|");
@@ -7034,7 +7034,7 @@ export default class AntinomiaPlugin extends Plugin {
         const file = this.app.workspace.getActiveFile();
         if (!file) return false;
         const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
-        if (fm?.antinomia_tipo !== TYPE.tension) return false;
+        if (fm?.antinomia_type !== TYPE.tension) return false;
         if (!checking) void this.openElevateModal(file);
         return true;
       },
@@ -7046,7 +7046,7 @@ export default class AntinomiaPlugin extends Plugin {
         const file = this.app.workspace.getActiveFile();
         if (!file) return false;
         const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
-        if (fm?.antinomia_tipo !== TYPE.tension || fm?.stato !== "aperta")
+        if (fm?.antinomia_type !== TYPE.tension || fm?.status !== "open")
           return false;
         if (!checking) void this.markResolved(file);
         return true;
@@ -7059,7 +7059,7 @@ export default class AntinomiaPlugin extends Plugin {
         const file = this.app.workspace.getActiveFile();
         if (!file) return false;
         const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
-        const t = fm?.antinomia_tipo;
+        const t = fm?.antinomia_type;
         if (
           t !== TYPE.tension &&
           t !== TYPE.principle &&
@@ -7094,8 +7094,8 @@ export default class AntinomiaPlugin extends Plugin {
         const file = this.app.workspace.getActiveFile();
         if (!file || file.extension !== "md") return false;
         const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
-        const t = fm?.antinomia_tipo;
-        const isOpenTension = t === TYPE.tension && fm?.stato === "aperta";
+        const t = fm?.antinomia_type;
+        const isOpenTension = t === TYPE.tension && fm?.status === "open";
         const isSubstrate = t === TYPE.substrate;
         if (!isOpenTension && !isSubstrate) return false;
         if (!checking) void this.runHunter(file);
@@ -7119,8 +7119,8 @@ export default class AntinomiaPlugin extends Plugin {
         const all = this.app.vault.getMarkdownFiles();
         const orphans = all.filter((f) => {
           const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-          if (fm?.antinomia_tipo !== TYPE.principle) return false;
-          const ot = fm?.origine_tensione;
+          if (fm?.antinomia_type !== TYPE.principle) return false;
+          const ot = fm?.origin_tension;
           if (typeof ot !== "string") return true;
           const m = ot.match(/\[\[([^\]|]+)/);
           if (!m) return true;
@@ -7128,7 +7128,7 @@ export default class AntinomiaPlugin extends Plugin {
           const refFile = all.find((f2) => f2.basename === refBase);
           if (!refFile) return true;
           const refFm = this.app.metadataCache.getFileCache(refFile)?.frontmatter;
-          return refFm?.antinomia_tipo !== TYPE.defeated;
+          return refFm?.antinomia_type !== TYPE.defeated;
         });
         if (orphans.length === 0) {
           new Notice("Nessun principio orfano nel vault.");
@@ -7136,7 +7136,7 @@ export default class AntinomiaPlugin extends Plugin {
         }
         const dummy = all.find((f) => {
           const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-          return fm?.antinomia_tipo !== TYPE.principle;
+          return fm?.antinomia_type !== TYPE.principle;
         }) ?? orphans[0];
         new NotePickerModal(
           this.app, dummy,
@@ -7153,7 +7153,7 @@ export default class AntinomiaPlugin extends Plugin {
         const all = this.app.vault.getMarkdownFiles();
         const defs = all.filter((f) => {
           const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-          return fm?.antinomia_tipo === TYPE.defeated;
+          return fm?.antinomia_type === TYPE.defeated;
         });
         if (defs.length < 2) {
           new Notice("Servono almeno 2 defeated nel vault.");
@@ -7161,11 +7161,11 @@ export default class AntinomiaPlugin extends Plugin {
         }
         const dummy = all.find((f) => {
           const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-          return fm?.antinomia_tipo !== TYPE.defeated;
+          return fm?.antinomia_type !== TYPE.defeated;
         }) ?? defs[0];
         const isDefeated = (f: TFile): boolean => {
           const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-          return fm?.antinomia_tipo === TYPE.defeated;
+          return fm?.antinomia_type === TYPE.defeated;
         };
         new NotePickerModal(
           this.app, dummy,
@@ -7323,7 +7323,7 @@ export default class AntinomiaPlugin extends Plugin {
         const file = this.app.workspace.getActiveFile();
         if (!file) return false;
         const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
-        if (fm?.antinomia_tipo !== TYPE.tension) return false;
+        if (fm?.antinomia_type !== TYPE.tension) return false;
         if (!checking) void this.openMapPresupposti(file);
         return true;
       },
@@ -7449,7 +7449,7 @@ export default class AntinomiaPlugin extends Plugin {
   /**
    * Create a rich example vault for beta testers:
    *   - 18 note (3 tensioni aperte + 15 substrate) tratte dal test_vault_disordinato
-   *   - 2 note Design C: 1 principio P + 1 defeated D collegati (motivo: elevata)
+   *   - 2 note Design C: 1 principio P + 1 defeated D collegati (motive: elevata)
    *   - 1 ESEMPIO-CHIAVE.md nella root del vault (documentazione contraddizioni seminate)
    * Tutte marcate `antinomia_esempio: true` per cancellazione one-click.
    */
@@ -7459,21 +7459,21 @@ export default class AntinomiaPlugin extends Plugin {
     const stamp = () => moment().format("YYYYMMDD-HHmmss");
 
     const tensionTpl = (
-      titolo: string,
+      title: string,
       a: string,
       b: string,
       presupA = "",
       presupB = ""
     ) => `---
-antinomia_tipo: ${TYPE.tension}
-titolo: ${yamlQuote(titolo)}
-stato: aperta
+antinomia_type: ${TYPE.tension}
+title: ${yamlQuote(titolo)}
+status: aperta
 lingua_base: italiano
 data_creazione: ${today}
-data_modifica: ${today}
+modified_date: ${today}
 origine: esempio
 antinomia_esempio: true
-collegamenti: []
+links: []
 ---
 - **A (base):** ${a}
 - **A (originale):**
@@ -7483,12 +7483,12 @@ collegamenti: []
 - **Presupposizioni B:** ${presupB}
 `;
 
-    const substrateTpl = (titolo: string, contenuto: string) => `---
-antinomia_tipo: ${TYPE.substrate}
-titolo: ${yamlQuote(titolo)}
+    const substrateTpl = (title: string, contenuto: string) => `---
+antinomia_type: ${TYPE.substrate}
+title: ${yamlQuote(titolo)}
 lingua_base: italiano
-lingua_originale: italiano
-fonte: esempio
+original_language: italiano
+source: esempio
 data: ${today}
 antinomia_esempio: true
 ---
@@ -7496,21 +7496,21 @@ antinomia_esempio: true
 - **Originale:**
 `;
 
-    // Template principio (Design C: file separato, origine_tensione punta al defeated)
+    // Template principio (Design C: file separato, origin_tension punta al defeated)
     const principleTpl = (
-      titolo: string,
+      title: string,
       ifA: string, thenA: string,
       ifB: string, thenB: string,
       grey: string,
       origineBasename: string
     ) => `---
-antinomia_tipo: ${TYPE.principle}
-titolo: ${yamlQuote(titolo)}
+antinomia_type: ${TYPE.principle}
+title: ${yamlQuote(titolo)}
 data: ${today}
-data_modifica: ${today}
-origine_tensione: "[[${origineBasename}]]"
+modified_date: ${today}
+origin_tension: "[[${origineBasename}]]"
 antinomia_esempio: true
-collegamenti: []
+links: []
 ---
 ## IF / THEN
 
@@ -7524,32 +7524,32 @@ collegamenti: []
 
 ${grey}
 
-## Origine (tensione)
+## Origin (tension)
 
-> Deriva da: [[${origineBasename}]]
+> Derived from: [[${origineBasename}]]
 
 _(testo originale conservato nel defeated linkato)_
 `;
 
     // Template defeated motivo=elevata (Design C: la tensione originale convertita in defeated)
     const defeatedTpl = (
-      titolo: string,
+      title: string,
       a: string, b: string,
       sostituitaDaBasename: string
     ) => `---
-antinomia_tipo: ${TYPE.defeated}
-titolo: ${yamlQuote(titolo)}
-motivo: elevata
+antinomia_type: ${TYPE.defeated}
+title: ${yamlQuote(titolo)}
+motive: elevata
 data: ${today}
-data_modifica: ${today}
-sostituita_da: "[[${sostituitaDaBasename}]]"
+modified_date: ${today}
+replaced_by: "[[${sostituitaDaBasename}]]"
 antinomia_esempio: true
-collegamenti: []
+links: []
 ---
 - **A (originale):** ${a}
 - **B (originale):** ${b}
 
-> Sostituita da: [[${sostituitaDaBasename}]]
+> Replaced by: [[${sostituitaDaBasename}]]
 `;
 
     // 18 note del test_vault_disordinato + 2 Design C (P + D collegati).
@@ -7659,7 +7659,7 @@ collegamenti: []
     // ====== ESEMPIO-CHIAVE.md nella ROOT del vault (NON in notes/) ======
     const chiaveContent = `---
 antinomia_esempio: true
-titolo: "ESEMPIO â€” Chiave delle contraddizioni seminate"
+title: "ESEMPIO â€” Chiave delle contraddizioni seminate"
 ---
 # Chiave del vault di esempio
 
@@ -7719,7 +7719,7 @@ NB: la "Produttivita' = risultati" tocca lo stesso tema di "Lavoro remoto vs uff
 - **Defeated**: ESEMPIO - Quantita' vs qualita' (tensione originaria)
 - **Principio**: ESEMPIO - Principio: quantita' o qualita' secondo il contesto
 
-Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†’ sostituita_da â†’ principio). E' un esempio di tensione gia' elevata: il principio operativo nasce dalla risoluzione della tensione, il defeated conserva la storia.
+Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†’ replaced_by â†’ principio). E' un esempio di tensione gia' elevata: il principio operativo nasce dalla risoluzione della tensione, il defeated conserva la storia.
 
 ---
 
@@ -7834,7 +7834,7 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
       this.app,
       this,
       (analysis, originalText) => {
-        if (analysis.tipo === "tensione") {
+        if (analysis.tipo === "tension") {
           new NewTensionModal(
             this.app,
             this,
@@ -7846,7 +7846,7 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
               void this.createNote("T", content);
             },
             {
-              titolo: analysis.titolo,
+              title: analysis.title,
               statementA: analysis.statementA,
               statementB: analysis.statementB,
             }
@@ -7863,7 +7863,7 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
               void this.createNote("S", content);
             },
             {
-              titolo: analysis.titolo,
+              title: analysis.title,
               contenuto: analysis.contenuto || originalText,
             }
           ).open();
@@ -7999,7 +7999,7 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
             : substrateTemplate();
           void this.createNote("S", content);
         },
-        { titolo: titoloSuggerito, contenuto: contenutoIniziale }
+        { title: titoloSuggerito, contenuto: contenutoIniziale }
       ).open();
       return;
     }
@@ -8095,7 +8095,7 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
                     : substrateTemplate();
                   void this.createNote("S", content);
                 },
-                { titolo: titoloSuggerito, contenuto: contenutoIniziale }
+                { title: titoloSuggerito, contenuto: contenutoIniziale }
               ).open();
             })
         );
@@ -8119,7 +8119,7 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
       return;
     }
     const fm0 = this.app.metadataCache.getFileCache(file)?.frontmatter;
-    if (fm0?.antinomia_tipo !== TYPE.tension) {
+    if (fm0?.antinomia_type !== TYPE.tension) {
       new Notice("Eleva: la nota attiva non e' una tensione.");
       return;
     }
@@ -8153,7 +8153,7 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
   /**
    * Rimuove una coppia dai falsi positivi dell'Hunter. Cerca tra entrambi
    * i file (a e b) ed elimina il basename dell'altro dall'array
-   * `hunter_falsi_positivi`. Se l'array diventa vuoto, rimuove il campo.
+   * `hunter_false_positives`. Se l'array diventa vuoto, rimuove il campo.
    */
   async undismissContradiction(
     aBasename: string,
@@ -8170,13 +8170,13 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
       if (!file) return false;
       let modified = false;
       await this.app.fileManager.processFrontMatter(file, (fm) => {
-        const arr = fm.hunter_falsi_positivi;
+        const arr = fm.hunter_false_positives;
         if (!Array.isArray(arr)) return;
         const filtered = arr.filter((x: any) => String(x) !== peer);
         if (filtered.length !== arr.length) {
           modified = true;
-          if (filtered.length === 0) delete fm.hunter_falsi_positivi;
-          else fm.hunter_falsi_positivi = filtered;
+          if (filtered.length === 0) delete fm.hunter_false_positives;
+          else fm.hunter_false_positives = filtered;
         }
       });
       return modified;
@@ -8194,7 +8194,7 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
 
   async openMapPresupposti(file: TFile): Promise<void> {
     const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
-    if (fm?.antinomia_tipo !== TYPE.tension) {
+    if (fm?.antinomia_type !== TYPE.tension) {
       new Notice("Mappa presupposti: la nota attiva non e' una tensione.");
       return;
     }
@@ -8260,14 +8260,14 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
             : substrateTemplate();
           void this.createNote("S", content);
         },
-        { titolo: titoloSuggerito, contenuto: contenutoIniziale }
+        { title: titoloSuggerito, contenuto: contenutoIniziale }
       ).open();
     }).open();
   }
 
   openFreeInputModal(): void {
     new FreeInputModal(this.app, this, (analysis, originalText) => {
-      if (analysis.tipo === "tensione") {
+      if (analysis.tipo === "tension") {
         new NewTensionModal(
           this.app,
           this,
@@ -8279,7 +8279,7 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
             void this.createNote("T", content);
           },
           {
-            titolo: analysis.titolo,
+            title: analysis.title,
             statementA: analysis.statementA,
             statementB: analysis.statementB,
           }
@@ -8296,7 +8296,7 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
             void this.createNote("S", content);
           },
           {
-            titolo: analysis.titolo,
+            title: analysis.title,
             contenuto: analysis.contenuto || originalText,
           }
         ).open();
@@ -8355,11 +8355,11 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
     const originBasename = file.basename;
     const today = todayISO();
     await this.app.fileManager.processFrontMatter(file, (fm) => {
-      fm.antinomia_tipo = TYPE.principle;
+      fm.antinomia_type = TYPE.principle;
       fm.data = today;
-      fm.data_modifica = today;
-      fm.origine_tensione = `[[${originBasename}]]`;
-      delete fm.stato;
+      fm.modified_date = today;
+      fm.origin_tension = `[[${originBasename}]]`;
+      delete fm.status;
       delete fm.origine;
     });
     const afterFm = await this.app.vault.read(file);
@@ -8372,8 +8372,8 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
     const newBody =
       "\n\n" +
       principleBodyTemplate(fields) +
-      "\n## Origine (tensione)\n\n" +
-      `> Deriva da: [[${originBasename}]]\n\n` +
+      "\n## Origin (tension)\n\n" +
+      `> Derived from: [[${originBasename}]]\n\n` +
       oldBody +
       "\n";
     await this.app.vault.modify(file, fmBlock + newBody);
@@ -8384,25 +8384,25 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
     const oldFm = this.app.metadataCache.getFileCache(file)?.frontmatter ?? {};
     const tensionBasename = file.basename;
     const today = todayISO();
-    const tensionTitle = typeof oldFm.titolo === "string" ? oldFm.titolo : tensionBasename;
-    const existingLinks: string[] = Array.isArray(oldFm.collegamenti)
-      ? oldFm.collegamenti.map((s: any) => String(s))
+    const tensionTitle = typeof oldFm.title === "string" ? oldFm.title : tensionBasename;
+    const existingLinks: string[] = Array.isArray(oldFm.links)
+      ? oldFm.links.map((s: any) => String(s))
       : [];
     const collegamentiYaml = existingLinks.length > 0
-      ? `collegamenti:\n${existingLinks.map((l) => "  - " + JSON.stringify(l)).join("\n")}\n`
-      : "collegamenti: []\n";
+      ? `links:\n${existingLinks.map((l) => "  - " + JSON.stringify(l)).join("\n")}\n`
+      : "links: []\n";
     const principleContent =
       "---\n" +
-      `antinomia_tipo: ${TYPE.principle}\n` +
-      `titolo: ${yamlQuote("Principio da " + tensionTitle)}\n` +
+      `antinomia_type: ${TYPE.principle}\n` +
+      `title: ${yamlQuote("Principio da " + tensionTitle)}\n` +
       `data: ${today}\n` +
-      `data_modifica: ${today}\n` +
-      `origine_tensione: "[[${tensionBasename}]]"\n` +
+      `modified_date: ${today}\n` +
+      `origin_tension: "[[${tensionBasename}]]"\n` +
       collegamentiYaml +
       "---\n\n" +
       principleBodyTemplate(fields) +
-      "\n## Origine (tensione)\n\n" +
-      `> Deriva da: [[${tensionBasename}]]\n\n` +
+      "\n## Origin (tension)\n\n" +
+      `> Derived from: [[${tensionBasename}]]\n\n` +
       "_(testo originale conservato nel defeated linkato)_\n";
     const principleFile = await this.createNote("P", principleContent);
     if (!principleFile) {
@@ -8411,29 +8411,29 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
     }
     const principleBasename = principleFile.basename;
     await this.app.fileManager.processFrontMatter(file, (fm) => {
-      fm.antinomia_tipo = TYPE.defeated;
-      fm.motivo = "elevata";
-      fm.sostituita_da = `[[${principleBasename}]]`;
-      fm.data_modifica = today;
-      delete fm.stato;
+      fm.antinomia_type = TYPE.defeated;
+      fm.motive = "elevated";
+      fm.replaced_by = `[[${principleBasename}]]`;
+      fm.modified_date = today;
+      delete fm.status;
     });
     const afterFm = await this.app.vault.read(file);
-    if (!afterFm.includes(`> Sostituita da: [[${principleBasename}]]`)) {
-      await this.app.vault.modify(file, afterFm + `\n\n> Sostituita da: [[${principleBasename}]]\n`);
+    if (!afterFm.includes(`> Replaced by: [[${principleBasename}]]`)) {
+      await this.app.vault.modify(file, afterFm + `\n\n> Replaced by: [[${principleBasename}]]\n`);
     }
     new Notice(`Elevata (split): ${tensionBasename} -> defeated, principio ${principleBasename}`);
   }
 
   /**
    * Migrazione retroattiva: per ogni principio gia' esistente, legge la
-   * sezione "## Origine (tensione)" dal body, crea un defeated D-... con
-   * quel contenuto e linka bidirezionalmente (sostituita_da + origine_tensione).
+   * sezione "## Origin (tension)" dal body, crea un defeated D-... con
+   * quel contenuto e linka bidirezionalmente (replaced_by + origin_tension).
    */
   async migrateExistingPrinciples(): Promise<void> {
     const all = this.app.vault.getMarkdownFiles();
     const principles = all.filter((f) => {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      return fm?.antinomia_tipo === TYPE.principle;
+      return fm?.antinomia_type === TYPE.principle;
     });
     if (principles.length === 0) {
       new Notice("Nessun principio nel vault.");
@@ -8442,14 +8442,14 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
     const alreadyLinked = new Set<string>();
     for (const p of principles) {
       const fm = this.app.metadataCache.getFileCache(p)?.frontmatter;
-      const ot = fm?.origine_tensione;
+      const ot = fm?.origin_tension;
       if (typeof ot === "string") {
         const m = ot.match(/\[\[([^\]|]+)/);
         if (m) {
           const refBase = m[1].split("/").pop() || m[1];
           const refFile = all.find((f) => f.basename === refBase);
           const refFm = refFile ? this.app.metadataCache.getFileCache(refFile)?.frontmatter : null;
-          if (refFm?.antinomia_tipo === TYPE.defeated) {
+          if (refFm?.antinomia_type === TYPE.defeated) {
             alreadyLinked.add(p.basename);
           }
         }
@@ -8465,27 +8465,27 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
       const originContent = originMatch ? originMatch[1].trim() : "";
       if (!originContent) { skipped++; continue; }
       const pFm = this.app.metadataCache.getFileCache(p)?.frontmatter ?? {};
-      const title = typeof pFm.titolo === "string"
-        ? `Tensione originaria di ${pFm.titolo}`
+      const title = typeof pFm.title === "string"
+        ? `Tensione originaria di ${pFm.title}`
         : `Tensione originaria di ${p.basename}`;
       const defeatedContent =
         "---\n" +
-        `antinomia_tipo: ${TYPE.defeated}\n` +
-        `titolo: ${yamlQuote(title)}\n` +
-        `motivo: elevata\n` +
+        `antinomia_type: ${TYPE.defeated}\n` +
+        `title: ${yamlQuote(title)}\n` +
+        `motive: elevata\n` +
         `data: ${today}\n` +
-        `data_modifica: ${today}\n` +
-        `sostituita_da: "[[${p.basename}]]"\n` +
-        "collegamenti: []\n" +
+        `modified_date: ${today}\n` +
+        `replaced_by: "[[${p.basename}]]"\n` +
+        "links: []\n" +
         "---\n\n" +
         originContent +
-        `\n\n> Sostituita da: [[${p.basename}]]\n` +
+        `\n\n> Replaced by: [[${p.basename}]]\n` +
         `\n_(generato da migrazione retroattiva ${today})_\n`;
       const defeatedFile = await this.createNote("D", defeatedContent);
       if (!defeatedFile) { skipped++; continue; }
       await this.app.fileManager.processFrontMatter(p, (fm) => {
-        fm.origine_tensione = `[[${defeatedFile.basename}]]`;
-        fm.data_modifica = today;
+        fm.origin_tension = `[[${defeatedFile.basename}]]`;
+        fm.modified_date = today;
       });
       migrated++;
     }
@@ -8494,43 +8494,43 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
 
   /**
    * Crea un defeated vuoto come "origine" di un principio orfano (cioe' un
-   * principio senza ## Origine (tensione) nel body). L'utente puo' poi
+   * principio senza ## Origin (tension) nel body). L'utente puo' poi
    * compilare a mano il body del defeated con la tensione originale che
    * ricorda. Linka bidirezionalmente al principio.
    */
   async createDefeatedForPrinciple(principleFile: TFile): Promise<void> {
     const fm = this.app.metadataCache.getFileCache(principleFile)?.frontmatter;
-    if (fm?.antinomia_tipo !== TYPE.principle) {
+    if (fm?.antinomia_type !== TYPE.principle) {
       new Notice("Selezione: la nota non e' un principio.");
       return;
     }
     const today = todayISO();
-    const title = typeof fm?.titolo === "string"
-      ? `Tensione originaria di ${fm.titolo}`
+    const title = typeof fm?.title === "string"
+      ? `Tensione originaria di ${fm.title}`
       : `Tensione originaria di ${principleFile.basename}`;
     const defeatedContent =
       "---\n" +
-      `antinomia_tipo: ${TYPE.defeated}\n` +
-      `titolo: ${yamlQuote(title)}\n` +
-      `motivo: elevata\n` +
+      `antinomia_type: ${TYPE.defeated}\n` +
+      `title: ${yamlQuote(title)}\n` +
+      `motive: elevata\n` +
       `data: ${today}\n` +
-      `data_modifica: ${today}\n` +
-      `sostituita_da: "[[${principleFile.basename}]]"\n` +
-      "collegamenti: []\n" +
+      `modified_date: ${today}\n` +
+      `replaced_by: "[[${principleFile.basename}]]"\n` +
+      "links: []\n" +
       "---\n\n" +
       "**A (originale):** [da compilare]\n\n" +
       "**B (originale):** [da compilare]\n\n" +
       "_(Defeated creato manualmente per agganciare un principio orfano al grafo. " +
       "Compila A/B con la tensione che ricordi essere all'origine di questo principio.)_\n\n" +
-      `> Sostituita da: [[${principleFile.basename}]]\n`;
+      `> Replaced by: [[${principleFile.basename}]]\n`;
     const defeatedFile = await this.createNote("D", defeatedContent);
     if (!defeatedFile) {
       new Notice("Errore: impossibile creare il defeated.");
       return;
     }
     await this.app.fileManager.processFrontMatter(principleFile, (frontm) => {
-      frontm.origine_tensione = `[[${defeatedFile.basename}]]`;
-      frontm.data_modifica = today;
+      frontm.origin_tension = `[[${defeatedFile.basename}]]`;
+      frontm.modified_date = today;
     });
     new Notice(`Creato defeated ${defeatedFile.basename} per ${principleFile.basename}.`);
   }
@@ -8550,13 +8550,13 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
     let updated = 0;
     for (const f of all) {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      if (fm?.antinomia_tipo !== TYPE.principle) continue;
-      const ot = fm?.origine_tensione;
+      if (fm?.antinomia_type !== TYPE.principle) continue;
+      const ot = fm?.origin_tension;
       if (typeof ot !== "string") continue;
       if (ot.includes(removeFile.basename)) {
         await this.app.fileManager.processFrontMatter(f, (frontm) => {
-          frontm.origine_tensione = `[[${keepFile.basename}]]`;
-          frontm.data_modifica = today;
+          frontm.origin_tension = `[[${keepFile.basename}]]`;
+          frontm.modified_date = today;
         });
         updated++;
       }
@@ -8573,8 +8573,8 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
   async markResolved(file: TFile): Promise<void> {
     try {
       await this.app.fileManager.processFrontMatter(file, (fm) => {
-        fm.stato = "risolta";
-        fm.data_modifica = todayISO();
+        fm.status = "resolved";
+        fm.modified_date = todayISO();
       });
       new Notice(`Risolta: ${file.basename}`);
     } catch (e) {
@@ -8588,29 +8588,29 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
         new Notice("Archiviazione annullata.");
         return;
       }
-      const { motivo, sostituita_da } = data;
+      const { motivo, replaced_by } = data;
       try {
         await this.app.fileManager.processFrontMatter(file, (fm) => {
-          fm.antinomia_tipo = TYPE.defeated;
-          fm.motivo = motivo;
-          fm.data_modifica = todayISO();
-          delete fm.stato;
+          fm.antinomia_type = TYPE.defeated;
+          fm.motive = motivo;
+          fm.modified_date = todayISO();
+          delete fm.status;
           delete fm.origine;
-          if (sostituita_da) {
-            fm.sostituita_da = `[[${sostituita_da}]]`;
+          if (replaced_by) {
+            fm.replaced_by = `[[${replaced_by}]]`;
           }
         });
         // If a substitute principle is set, add a body line so the link
         // is indexed by Obsidian's graph + backlinks immediately.
-        if (sostituita_da) {
+        if (replaced_by) {
           const raw = await this.app.vault.read(file);
-          const marker = `> Sostituita da: [[${sostituita_da}]]`;
+          const marker = `> Replaced by: [[${replaced_by}]]`;
           if (!raw.includes(marker)) {
             const trimmed = raw.endsWith("\n") ? raw : raw + "\n";
             await this.app.vault.modify(file, trimmed + "\n" + marker + "\n");
           }
         }
-        const subMsg = sostituita_da ? `, sostituita da ${sostituita_da}` : "";
+        const subMsg = replaced_by ? `, sostituita da ${replaced_by}` : "";
         new Notice(
           `Archiviata defeated (${motivo}${subMsg}): ${file.basename}`
         );
@@ -8621,16 +8621,16 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
   }
 
   /**
-   * Set antinomia_tipo on a note. For tensions/substrates we also add basic
-   * default fields to avoid downstream surprises (stato: aperta, data, ...).
+   * Set antinomia_type on a note. For tensions/substrates we also add basic
+   * default fields to avoid downstream surprises (status: aperta, data, ...).
    */
   async markAsType(file: TFile, tipo: string): Promise<void> {
     try {
       const today = todayISO();
       await this.app.fileManager.processFrontMatter(file, (fm) => {
-        fm.antinomia_tipo = tipo;
-        fm.data_modifica = today;
-        if (tipo === TYPE.tension && !fm.stato) fm.stato = "aperta";
+        fm.antinomia_type = tipo;
+        fm.modified_date = today;
+        if (tipo === TYPE.tension && !fm.status) fm.status = "open";
         if (!fm.lingua_base) fm.lingua_base = "italiano";
         if (tipo === TYPE.tension && !fm.data_creazione)
           fm.data_creazione = today;
@@ -8678,7 +8678,7 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
     }
     const raw = await this.app.vault.read(file);
     const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
-    const currentTipo = fm?.antinomia_tipo ?? "";
+    const currentTipo = fm?.antinomia_type ?? "";
     new Notice("Antinomia: classificazione in corso...");
     let result: { text: string; usage?: ClaudeResponse["usage"] };
     try {
@@ -8726,10 +8726,10 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
         }
         try {
           await this.app.fileManager.processFrontMatter(file, (frontm) => {
-            frontm.antinomia_tipo = parsed.tipo;
-            frontm.data_modifica = todayISO();
+            frontm.antinomia_type = parsed.tipo;
+            frontm.modified_date = todayISO();
           });
-          new Notice(`Applicato: antinomia_tipo = ${parsed.tipo}`);
+          new Notice(`Applicato: antinomia_type = ${parsed.tipo}`);
         } catch (e) {
           new Notice(`Errore: ${(e as Error).message}`);
         }
@@ -8739,7 +8739,7 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
 
   async setTitleOnActiveNote(file: TFile): Promise<void> {
     const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
-    const current = (fm?.titolo as string | undefined) ?? "";
+    const current = (fm?.title as string | undefined) ?? "";
     new TitleEditModal(
       this.app,
       current,
@@ -8749,9 +8749,9 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
         if (value === null) return;
         try {
           await this.app.fileManager.processFrontMatter(file, (frontm) => {
-            if (value === "") delete frontm.titolo;
-            else frontm.titolo = value;
-            frontm.data_modifica = todayISO();
+            if (value === "") delete frontm.title;
+            else frontm.title = value;
+            frontm.modified_date = todayISO();
           });
           new Notice(value ? `Titolo: ${value}` : "Titolo rimosso");
         } catch (e) {
@@ -8793,12 +8793,12 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
       return;
     }
     const parsed = extractJson<TitleProposal>(result.text);
-    if (!parsed?.titolo || !String(parsed.titolo).trim()) {
+    if (!parsed?.title || !String(parsed.title).trim()) {
       console.error("[Antinomia] title unparseable:", result.text);
       new Notice("Titolo non parseable. Vedi console.");
       return;
     }
-    const proposed = String(parsed.titolo).trim().slice(0, 80);
+    const proposed = String(parsed.title).trim().slice(0, 80);
     new TitleEditModal(
       this.app,
       proposed,
@@ -8808,8 +8808,8 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
         if (value === null || value === "") return;
         try {
           await this.app.fileManager.processFrontMatter(file, (frontm) => {
-            frontm.titolo = value;
-            frontm.data_modifica = todayISO();
+            frontm.title = value;
+            frontm.modified_date = todayISO();
           });
           new Notice(`Titolo: ${value}`);
         } catch (e) {
@@ -8839,14 +8839,14 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
         maxTokens: 200,
       });
       const parsed = extractJson<TitleProposal>(result.text);
-      if (!parsed || typeof parsed.titolo !== "string") {
+      if (!parsed || typeof parsed.title !== "string") {
         new Notice("AI: risposta titolo non parseable.");
         console.error("[Antinomia] proposeTitleFromContent unparseable:", result.text);
         return null;
       }
-      return parsed.titolo.trim();
+      return parsed.title.trim();
     } catch (e) {
-      new Notice(`AI errore titolo: ${(e as Error).message}`);
+      new Notice(`AI errore title: ${(e as Error).message}`);
       return null;
     }
   }
@@ -8952,7 +8952,7 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
         maxTokens: 1200,
       });
       const parsed = extractJson<FreeInputAnalysis>(result.text);
-      if (!parsed || (parsed.tipo !== "tensione" && parsed.tipo !== "substrate")) {
+      if (!parsed || (parsed.tipo !== "tension" && parsed.tipo !== "substrate")) {
         new Notice("AI: analisi non parseable.");
         console.error("[Antinomia] analyzeFreeInput unparseable:", result.text);
         return null;
@@ -8998,7 +8998,7 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
       await this.app.fileManager.processFrontMatter(file, (fm) => {
         if (a) fm.presupposizioniA = a;
         if (b) fm.presupposizioniB = b;
-        fm.data_modifica = todayISO();
+        fm.modified_date = todayISO();
       });
       // Riscrive il body (preserva frontmatter aggiornato)
       const afterFm = await this.app.vault.read(file);
@@ -9012,8 +9012,8 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
   }
 
   /**
-   * Collega due note via wikilink bidirezionale in `collegamenti: [...]` di
-   * entrambi i frontmatter, e aggiunge "> Vedi anche: [[target]]" nel body
+   * Collega due note via wikilink bidirezionale in `links: [...]` di
+   * entrambi i frontmatter, e aggiunge "> See also: [[target]]" nel body
    * della nota attiva. Idempotente â€” non duplica link esistenti.
    */
   async linkActiveTo(active: TFile, target: TFile): Promise<void> {
@@ -9026,29 +9026,29 @@ Apri il Grafo Antinomia â€” vedi i due nodi collegati da arco rosso (defeated â†
       const activeLink = `[[${active.basename}]]`;
 
       await this.app.fileManager.processFrontMatter(active, (fm) => {
-        const arr: string[] = Array.isArray(fm.collegamenti) ? fm.collegamenti : [];
+        const arr: string[] = Array.isArray(fm.links) ? fm.links : [];
         if (!arr.some((s) => s === targetLink || s === `"${targetLink}"`)) {
           arr.push(targetLink);
         }
-        fm.collegamenti = arr;
-        fm.data_modifica = todayISO();
+        fm.links = arr;
+        fm.modified_date = todayISO();
       });
       await this.app.fileManager.processFrontMatter(target, (fm) => {
-        const arr: string[] = Array.isArray(fm.collegamenti) ? fm.collegamenti : [];
+        const arr: string[] = Array.isArray(fm.links) ? fm.links : [];
         if (!arr.some((s) => s === activeLink || s === `"${activeLink}"`)) {
           arr.push(activeLink);
         }
-        fm.collegamenti = arr;
-        fm.data_modifica = todayISO();
+        fm.links = arr;
+        fm.modified_date = todayISO();
       });
 
-      // Aggiungi "> Vedi anche: [[target]]" nel body dell'attiva se mancante
+      // Aggiungi "> See also: [[target]]" nel body dell'attiva se mancante
       const rawA = await this.app.vault.read(active);
       const fmEnd = rawA.indexOf("\n---", 3);
       if (fmEnd !== -1) {
         const fmBlock = rawA.slice(0, fmEnd + 4);
         const body = rawA.slice(fmEnd + 4);
-        const line = `> Vedi anche: ${targetLink}`;
+        const line = `> See also: ${targetLink}`;
         if (!body.includes(line)) {
           await this.app.vault.modify(active, fmBlock + body + `\n\n${line}`);
         }
