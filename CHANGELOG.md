@@ -1,5 +1,55 @@
 # Changelog
 
+## v1.2.9 (June 2, 2026) — Multi-backend AI (Groq / OpenAI / OpenRouter / Ollama) + multilingual AI prompts
+
+Two correlated changes that finally match what the README and Substack posts have been promising.
+
+### Multi-backend AI: OpenAI-compatible support
+
+Up to v1.2.8, despite the documentation claiming "Multi-backend AI: Anthropic, OpenAI, Groq, OpenRouter, LM Studio, Ollama", the `callAI` implementation was hard-coded on the Anthropic wire format (`POST /v1/messages`, headers `x-api-key` + `anthropic-version`, body `{system, messages}`). Anything that wasn't Anthropic Cloud or an LM Studio instance pretending to be Anthropic-compatible would 404.
+
+Fixed by introducing a `detectApiFormat()` helper that classifies the base URL into one of two wire formats:
+
+- **anthropic** — `POST /v1/messages`, body `{model, max_tokens, system, messages}`, headers `x-api-key` + `anthropic-version`. Used for `api.anthropic.com`.
+- **openai** — `POST /chat/completions`, body `{model, max_tokens, messages:[{role:"system"}, ...]}`, single Bearer auth header. Used for Groq, OpenAI, OpenRouter, LM Studio, Ollama, and any custom OpenAI-compatible gateway.
+
+The response parser (`parseAIResponse()`) is similarly format-aware: Anthropic returns `{content: [{type, text}]}`, OpenAI-compatible returns `{choices: [{message: {content}}]}`. Both are normalized into a uniform `{text, usage}` shape.
+
+### New backend presets
+
+The "Backend preset" dropdown in the AI profile modal now offers six pre-filled options:
+
+| Preset | Base URL | Default model | Notes |
+|---|---|---|---|
+| Anthropic Cloud | api.anthropic.com | claude-sonnet-4-6 | Paid |
+| **Groq Cloud (free tier)** | api.groq.com/openai/v1 | llama-3.3-70b-versatile | **Free, generous rate limits** |
+| OpenAI | api.openai.com/v1 | gpt-4o-mini | Paid |
+| OpenRouter | openrouter.ai/api/v1 | meta-llama/llama-3.1-8b-instruct:free | Some free models |
+| LM Studio (local, free) | localhost:1234/v1 | qwen/qwen3.5-9b | Free, private |
+| Ollama (local, free) | localhost:11434/v1 | llama3.2 | Free, private |
+
+The model dropdown now includes the most useful models for each backend (Llama 3.3 70B, Llama 3.1 8B Instant, Mixtral 8x7B for Groq; GPT-4o + GPT-4o mini for OpenAI; etc.). Free-form Custom model field overrides as before.
+
+`detectBackend()` recognizes all the new domains and auto-selects the right preset when editing an existing profile.
+
+### Multilingual AI prompts
+
+Every AI system prompt used to declare "English, concise" or "English, no quotes" as an output constraint. With non-Anthropic models (especially Llama 3.3 on Groq), the Italian JSON schema keys (`contraddizioni`, `descrizione`, `motivazione`, `presupposizioniA/B`) acted as a stronger language signal than the English instructions, and the model replied in Italian even when the user's vault was English.
+
+Fixed by rewriting all six system prompts (CLASSIFY, TITLE, PRESUPPOSTI, FREE_INPUT, PRINCIPLE, HUNTER) with an explicit language directive:
+
+> Detect the dominant language of THE USER'S input content (notes / tension / substrate) and write every text value in THAT language. The JSON keys are in Italian for historical reasons — they are NOT a language signal.
+
+Enum-style values that are technical labels (`tipo: "tension" | "substrate" | "principle" | "defeated" | "meta_note"`) remain in English, since the parser depends on them. Free-text fields (`descrizione`, `motivazione`, `presupposizioniA/B`, `ifA`/`thenA`/`ifB`/`thenB`/`greyZone`, `title`, `statementA`/`statementB`/`contenuto`) follow the user's language.
+
+The TITLE_SYSTEM prompt now also includes an Italian few-shot example alongside the two English ones, so the model has explicit precedent for both languages.
+
+### Status bar Italian residue
+
+Hunter run status bar said `esaminate X/X note in Yms con MODEL` (Italian). Now `examined X/X notes in Yms with MODEL`.
+
+---
+
 ## v1.2.8 (June 2, 2026) — One-click install + auto-configure Front Matter Title
 
 Onboarding overhaul focused on the single biggest friction point: getting Front Matter Title (FMT) installed and configured to read the `title` frontmatter field. Without this, the File Explorer shows timestamp basenames (`T-20260530-091416.md`) instead of human titles. Until this release, the user had to find the plugin manually in the Community Browser, install it, then navigate to its settings tab and set `path = title` + enable the Explorer feature by hand.

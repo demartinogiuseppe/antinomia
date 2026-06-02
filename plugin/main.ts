@@ -242,12 +242,44 @@ const BACKEND_PRESETS: BackendPreset[] = [
     helpKey: "Create the key at console.anthropic.com.",
   },
   {
+    id: "groq",
+    label: "Groq Cloud (free tier)",
+    baseUrl: "https://api.groq.com/openai/v1",
+    defaultModel: "llama-3.3-70b-versatile",
+    defaultKey: "",
+    helpKey: "Free tier with generous rate limits. Create the key at console.groq.com.",
+  },
+  {
+    id: "openai",
+    label: "OpenAI",
+    baseUrl: "https://api.openai.com/v1",
+    defaultModel: "gpt-4o-mini",
+    defaultKey: "",
+    helpKey: "Create the key at platform.openai.com (paid, $5 credit on new accounts).",
+  },
+  {
+    id: "openrouter",
+    label: "OpenRouter",
+    baseUrl: "https://openrouter.ai/api/v1",
+    defaultModel: "meta-llama/llama-3.1-8b-instruct:free",
+    defaultKey: "",
+    helpKey: "Aggregator with some free models. Create the key at openrouter.ai.",
+  },
+  {
     id: "lmstudio",
-    label: "LM Studio (local)",
-    baseUrl: "http://localhost:1234",
+    label: "LM Studio (local, free)",
+    baseUrl: "http://localhost:1234/v1",
     defaultModel: "qwen/qwen3.5-9b",
     defaultKey: "lmstudio",
     helpKey: "LM Studio ignores the key but the plugin requires it.",
+  },
+  {
+    id: "ollama",
+    label: "Ollama (local, free)",
+    baseUrl: "http://localhost:11434/v1",
+    defaultModel: "llama3.2",
+    defaultKey: "ollama",
+    helpKey: "Ollama ignores the key but the plugin requires it.",
   },
 ];
 
@@ -255,13 +287,25 @@ const MODEL_PRESETS: Array<{ id: string; label: string }> = [
   { id: "claude-sonnet-4-6", label: "Sonnet 4.6 (Anthropic)" },
   { id: "claude-opus-4-6", label: "Opus 4.6 (Anthropic)" },
   { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5 (Anthropic)" },
+  { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq, free)" },
+  { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B (Groq, free, faster)" },
+  { id: "mixtral-8x7b-32768", label: "Mixtral 8x7B (Groq, free)" },
+  { id: "gpt-4o-mini", label: "GPT-4o mini (OpenAI)" },
+  { id: "gpt-4o", label: "GPT-4o (OpenAI)" },
+  { id: "meta-llama/llama-3.1-8b-instruct:free", label: "Llama 3.1 8B free (OpenRouter)" },
   { id: "qwen/qwen3.5-9b", label: "Qwen 3.5 9B (LM Studio)" },
 ];
 
 function detectBackend(baseUrl: string): string {
-  if (baseUrl.includes("anthropic.com")) return "anthropic";
-  if (baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1"))
+  const u = baseUrl.toLowerCase();
+  if (u.includes("anthropic.com")) return "anthropic";
+  if (u.includes("groq.com")) return "groq";
+  if (u.includes("openai.com")) return "openai";
+  if (u.includes("openrouter.ai")) return "openrouter";
+  if (u.includes("localhost:1234") || u.includes("127.0.0.1:1234"))
     return "lmstudio";
+  if (u.includes("localhost:11434") || u.includes("127.0.0.1:11434"))
+    return "ollama";
   return "custom";
 }
 
@@ -2098,6 +2142,22 @@ interface ClaudeResponse {
   stop_reason?: string;
   usage?: { input_tokens: number; output_tokens: number };
 }
+/**
+ * Detect which API "wire format" a base URL speaks. We support two:
+ *  - "anthropic": POST /v1/messages with { system, messages, max_tokens },
+ *    header "anthropic-version" — used by api.anthropic.com.
+ *  - "openai":    POST /chat/completions with { messages: [{role:"system"}, ...],
+ *    max_tokens } — used by OpenAI, Groq, OpenRouter, LM Studio, Ollama, and
+ *    any OpenAI-compatible gateway.
+ * LM Studio at localhost defaults to OpenAI format too.
+ */
+function detectApiFormat(baseUrl: string): "anthropic" | "openai" {
+  const u = baseUrl.toLowerCase();
+  if (u.includes("anthropic.com")) return "anthropic";
+  // Everything else (groq, openai, openrouter, lmstudio, ollama, custom) → OpenAI-compatible
+  return "openai";
+}
+
 async function callAI(opts: {
   baseUrl: string;
   apiKey: string;
@@ -2116,20 +2176,41 @@ async function callAI(opts: {
 }): Promise<{ text: string; usage?: ClaudeResponse["usage"] }> {
   if (!opts.apiKey) throw new Error("API key mancante.");
   if (!opts.baseUrl) throw new Error("Base URL mancante.");
-  const url = `${opts.baseUrl.replace(/\/$/, "")}/v1/messages`;
-  const body = {
-    model: opts.model,
-    max_tokens: opts.maxTokens ?? 1024,
-    system: opts.system,
-    messages: opts.messages,
-  };
+
+  const apiFormat = detectApiFormat(opts.baseUrl);
+  const baseClean = opts.baseUrl.replace(/\/$/, "");
+  const url =
+    apiFormat === "anthropic"
+      ? `${baseClean}/v1/messages`
+      : `${baseClean}/chat/completions`;
+
+  // Build the request body in the right shape for each API style.
+  const body: any =
+    apiFormat === "anthropic"
+      ? {
+          model: opts.model,
+          max_tokens: opts.maxTokens ?? 1024,
+          system: opts.system,
+          messages: opts.messages,
+        }
+      : {
+          model: opts.model,
+          max_tokens: opts.maxTokens ?? 1024,
+          messages: [
+            { role: "system", content: opts.system },
+            ...opts.messages,
+          ],
+        };
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "x-api-key": opts.apiKey,
     authorization: `Bearer ${opts.apiKey}`,
-    "anthropic-version": "2023-06-01",
-    "anthropic-dangerous-direct-browser-access": "true",
   };
+  if (apiFormat === "anthropic") {
+    headers["x-api-key"] = opts.apiKey;
+    headers["anthropic-version"] = "2023-06-01";
+    headers["anthropic-dangerous-direct-browser-access"] = "true";
+  }
 
   // Detect local backend: localhost, 127.0.0.1, or any *.local hostname.
   // For local backends we use native fetch() so AbortSignal actually closes
@@ -2212,12 +2293,8 @@ async function callAI(opts: {
           `AI errore ${result.status} (${url}): ${result.text.slice(0, 500)}`
         );
       }
-      const data = JSON.parse(result.text) as ClaudeResponse;
-      const text = (data.content || [])
-        .filter((b) => b.type === "text" && typeof b.text === "string")
-        .map((b) => b.text!)
-        .join("\n");
-      return { text, usage: data.usage };
+      const data = JSON.parse(result.text);
+      return parseAIResponse(data, apiFormat);
     } catch (e) {
       if ((e as Error).message === "hunter_aborted") throw e;
       if ((e as Error).message === "node_http_unavailable") {
@@ -2247,12 +2324,38 @@ async function callAI(opts: {
     } catch {}
     throw new Error(`AI errore ${res.status} (${url}): ${detail}`);
   }
-  const data = res.json as ClaudeResponse;
-  const text = (data.content || [])
-    .filter((b) => b.type === "text" && typeof b.text === "string")
-    .map((b) => b.text!)
-    .join("\n");
-  return { text, usage: data.usage };
+  const data = res.json;
+  return parseAIResponse(data, apiFormat);
+}
+
+/**
+ * Normalize the response of either API style into a uniform `{ text, usage }`.
+ * Anthropic returns `{ content: [{type:"text", text}], usage:{input_tokens, output_tokens}}`.
+ * OpenAI-compatible returns `{ choices:[{message:{content}}], usage:{prompt_tokens, completion_tokens}}`.
+ */
+function parseAIResponse(
+  data: any,
+  apiFormat: "anthropic" | "openai"
+): { text: string; usage?: ClaudeResponse["usage"] } {
+  if (apiFormat === "anthropic") {
+    const text = (data?.content || [])
+      .filter((b: any) => b.type === "text" && typeof b.text === "string")
+      .map((b: any) => b.text!)
+      .join("\n");
+    return { text, usage: data?.usage };
+  }
+  // OpenAI-compatible
+  const text =
+    data?.choices?.[0]?.message?.content ??
+    data?.choices?.[0]?.text ??
+    "";
+  const usage = data?.usage
+    ? {
+        input_tokens: data.usage.prompt_tokens ?? 0,
+        output_tokens: data.usage.completion_tokens ?? 0,
+      }
+    : undefined;
+  return { text, usage };
 }
 
 // ---------- prompts ----------
@@ -2265,8 +2368,10 @@ const CLASSIFY_SYSTEM = `You are the Antinomia analyst. Classify a note as ONE o
 4. **defeated** — defeated belief (archive)
 5. **meta_note** — reflection on the user-system relationship
 
+LANGUAGE: detect the dominant language of THE USER'S NOTE CONTENT and write the \`motivazione\` value in THAT language. The JSON keys (\`tipo\`, \`motivazione\`) are Italian for historical reasons — do NOT treat them as a language signal. The \`tipo\` value MUST remain one of the five English type names above (tension, substrate, principle, defeated, meta_note) regardless of user language.
+
 Reply with ONLY valid JSON, no fence:
-{"tipo": "<one of the 5>", "motivazione": "<1-2 sentences>"}`;
+{"tipo": "<one of the 5 type names above>", "motivazione": "<1-2 sentences in the user's language>"}`;
 
 interface ClassifyResult {
   tipo: string;
@@ -2281,22 +2386,24 @@ ABSOLUTE RULES:
 - DO NOT write any text before or after the JSON.
 - Output starts with { and ends with }.
 
+LANGUAGE: write the title in the SAME LANGUAGE as the user's input. The examples below are in English to illustrate the FORMAT only — they are NOT a language signal. If the user writes in Italian, the title is in Italian. If in English, in English. The JSON key \`title\` is fixed.
+
 TITLE CONSTRAINTS:
 - MAXIMUM 7 words. MAXIMUM 60 characters.
-- English, neutral terms, no quotes, no final punctuation.
-- Capture THE THEME, not the position. For tensions use "X vs Y" form.
+- Neutral terms, no quotes, no final punctuation.
+- Capture THE THEME, not the position. For tensions use "X vs Y" form (or the equivalent in the user's language).
 
-EXAMPLE 1
+EXAMPLE 1 (English input → English title)
 Input: I'm creating a tension. Statement A: I want to focus on my own work. Statement B: I want to be available to my team.
 Output: {"title": "Focus vs Availability"}
 
-EXAMPLE 2
+EXAMPLE 2 (English input → English title)
 Input: I'm creating a tension. Statement A: We should ship fast. Statement B: We should test thoroughly.
 Output: {"title": "Speed vs Quality"}
 
-EXAMPLE 3
-Input: I'm creating a substrate from this YouTube video on cognitive biases.
-Output: {"title": "YouTube notes on cognitive biases"}
+EXAMPLE 3 (Italian input → Italian title)
+Input: Sto creando una tensione. Affermazione A: Voglio concentrarmi sul mio lavoro. Affermazione B: Voglio essere disponibile per il team.
+Output: {"title": "Concentrazione vs Disponibilità"}
 
 Now produce the JSON for the user's input. JSON ONLY.`;
 
@@ -2308,15 +2415,17 @@ const PRESUPPOSTI_SYSTEM = `You are the Antinomia assistant. You are helping the
 
 A tension has statement A and statement B that contradict each other. PRESUPPOSITIONS are the epistemic / metaphysical / value assumptions that A and B take for granted (often unspoken). Mapping them makes explicit why A and B cannot coexist without trade-offs.
 
+LANGUAGE: write the \`presupposizioniA\` and \`presupposizioniB\` values in the SAME LANGUAGE as the user's tension input. The JSON keys are Italian for historical reasons — do NOT treat them as a language signal.
+
 Constraints:
-- English, concise
+- Concise
 - DO NOT reformulate A and B — describe the BASE ASSUMPTIONS that make them possible
 - Typical presupposition examples: "X is the primary epistemic authority", "Y is universal/contextual", "Z is separable from W", "C is a non-negotiable value", "D is measurable/unmeasurable"
 - A tension can have 1 or more presuppositions per side. Compact list or single sentence.
 - Identify the presuppositions that, if changed, would dissolve the tension.
 
 Reply with ONLY valid JSON, no comments, no markdown fence:
-{"presupposizioniA": "<presuppositions of side A>", "presupposizioniB": "<presuppositions of side B>"}`;
+{"presupposizioniA": "<presuppositions of side A, in the user's language>", "presupposizioniB": "<presuppositions of side B, in the user's language>"}`;
 
 interface PresuppostiFields {
   presupposizioniA?: string;
@@ -2328,6 +2437,8 @@ const FREE_INPUT_SYSTEM = `You are the Antinomia analyst. The user gives you a r
 1. Determine if it's a TENSION or a SUBSTRATE.
 2. Extract the relevant fields.
 3. Propose a neutral title (3-7 words).
+
+LANGUAGE: detect the language of the user's input and write \`title\`, \`statementA\`, \`statementB\`, \`contenuto\` in THAT language. The JSON keys are fixed. The \`tipo\` value remains either "tension" or "substrate" (English) regardless.
 
 Criteria:
 - TENSION if the input contains or implies TWO conflicting positions (even just sketched).
@@ -2356,14 +2467,16 @@ What you must produce:
 - For each, formulate the OUTCOME (rule/action/conclusion)
 - GREY ZONE: edge cases where A and B touch and the rule isn't enough. You can leave it empty if nothing solid comes to mind.
 
+LANGUAGE: write \`ifA\`, \`thenA\`, \`ifB\`, \`thenB\`, \`greyZone\` in the SAME LANGUAGE as the user's tension input. The JSON keys are fixed.
+
 Constraints:
-- English, concise
+- Concise
 - IF must describe a verifiable context, not repeat the thesis
 - THEN must be operational (what to do/conclude), not abstract
 - Do not resolve the tension by "picking a side" — the principle must absorb both sides as cases
 
 Reply with ONLY valid JSON, no markdown fence:
-{"ifA": "<context where A holds>", "thenA": "<outcome A>", "ifB": "<context where B holds>", "thenB": "<outcome B>", "greyZone": "<edge cases, can be empty string>"}`;
+{"ifA": "<context where A holds, in the user's language>", "thenA": "<outcome A, in the user's language>", "ifB": "<context where B holds, in the user's language>", "thenB": "<outcome B, in the user's language>", "greyZone": "<edge cases, can be empty string, in the user's language>"}`;
 
 /**
  * Wrap an async operation behind a button: disables it, ticks a live
@@ -2481,6 +2594,8 @@ function renderTensionContext(parent: HTMLElement, rawContent: string): void {
 }
 
 const HUNTER_SYSTEM = `You are the Antinomia Contradiction Hunter.
+
+LANGUAGE: detect the dominant language of THE USER'S NOTES (the actual note content submitted to you, NOT these instructions) and write every \`descrizione\` value in THAT language. The JSON keys are in Italian for historical reasons — ignore them as a language signal. If the user's notes are in English, reply in English. If in Italian, in Italian. If mixed, follow the dominant language.
 
 YOUR TASK: identify PAIRS of notes that contradict each other.
 
@@ -4234,7 +4349,7 @@ class HunterResultsView extends ItemView {
     const metaEl = container.createEl("p");
     metaEl.style.fontSize = "0.85em";
     metaEl.style.opacity = "0.7";
-    let metaTxt = `${meta.timestamp} — esaminate ${meta.notesExamined}/${meta.totalCandidates} note in ${meta.durationMs}ms con ${meta.model}`;
+    let metaTxt = `${meta.timestamp} — examined ${meta.notesExamined}/${meta.totalCandidates} notes in ${meta.durationMs}ms with ${meta.model}`;
     if (meta.inputTokens !== undefined)
       metaTxt += ` (${meta.inputTokens}->${meta.outputTokens} tok)`;
     if (meta.dismissedFiltered > 0)
