@@ -87,6 +87,9 @@ interface AntinomiaSettings {
   // Stile grafico del Graph View. "custom" usa graphCustomColors.
   graphStyleName: string;
   graphCustomColors: GraphColors;
+  // Experimental: spread nodes further apart so edges are less likely to
+  // cross unrelated nodes. Slower initial layout, cleaner visual result.
+  graphSpaciousLayout?: boolean;
 }
 
 interface GraphColors {
@@ -205,6 +208,7 @@ const DEFAULT_SETTINGS: AntinomiaSettings = {
   autoOpenGraph: true,
   elevationMode: "split",
   graphStyleName: "neon",
+  graphSpaciousLayout: false,
   graphCustomColors: {
     tensione_aperta: "#ff8c42",
     tensione_risolta: "#fbc02d",
@@ -1156,6 +1160,20 @@ class AntinomiaSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
           this.plugin.refreshOpenGraphViews();
           this.display(); // ridisegna per mostrare/nascondere i color picker
+        });
+      });
+
+    new Setting(containerEl)
+      .setName("Spacious layout (experimental)")
+      .setDesc(
+        "Spread nodes much further apart so edges are less likely to cross unrelated nodes. Slower initial layout, cleaner visual. Toggle off to revert to the standard layout."
+      )
+      .addToggle((tg) => {
+        tg.setValue(!!this.plugin.settings.graphSpaciousLayout);
+        tg.onChange(async (v) => {
+          this.plugin.settings.graphSpaciousLayout = v;
+          await this.plugin.saveSettings();
+          this.plugin.refreshOpenGraphViews();
         });
       });
 
@@ -2491,14 +2509,14 @@ class ClassifyConfirmModal extends Modal {
     contentEl.createEl("p").createEl("em", { text: this.motivazione });
     new Setting(contentEl)
       .addButton((b) =>
-        b.setButtonText("Rifiuta").onClick(() => {
+        b.setButtonText("Reject").onClick(() => {
           this.onConfirm(false);
           this.close();
         })
       )
       .addButton((b) =>
         b
-          .setButtonText("Applica")
+          .setButtonText("Apply")
           .setCta()
           .onClick(() => {
             this.onConfirm(true);
@@ -2517,7 +2535,11 @@ class TitleEditModal extends Modal {
     private initialValue: string,
     private headerText: string,
     private hintText: string,
-    private onConfirm: (value: string | null) => void
+    private onConfirm: (value: string | null) => void,
+    // Optional AI-suggest hook. When provided, an extra "Propose title (AI)"
+    // button is rendered above the input. It must return the proposed title
+    // (string) or null on failure.
+    private aiSuggestFn?: () => Promise<string | null>
   ) {
     super(app);
   }
@@ -2551,6 +2573,32 @@ class TitleEditModal extends Modal {
       input.focus();
       input.select();
     }, 0);
+
+    // Optional AI suggestion button
+    if (this.aiSuggestFn) {
+      const aiBtn = contentEl.createEl("button", {
+        text: "Propose title (AI)",
+      });
+      aiBtn.style.marginBottom = "10px";
+      aiBtn.style.padding = "4px 10px";
+      aiBtn.style.cursor = "pointer";
+      aiBtn.title =
+        "Ask the configured AI model to propose a title from the note's content.";
+      aiBtn.onclick = async () => {
+        const proposed = await withLoadingButton(
+          aiBtn,
+          "⏳ Generating...",
+          () => this.aiSuggestFn!()
+        );
+        if (proposed) {
+          input.value = proposed;
+          currentValue = proposed;
+          input.focus();
+          input.select();
+        }
+      };
+    }
+
     new Setting(contentEl)
       .addButton((b) =>
         b.setButtonText("Cancel").onClick(() => {
@@ -2686,7 +2734,7 @@ class DefeatedReasonModal extends Modal {
 // ---------- templates ----------
 
 interface TensionFields {
-  titolo?: string;
+  title?: string;
   statementA?: string;
   statementB?: string;
 }
@@ -2717,15 +2765,15 @@ links: []
 }
 
 interface SubstrateFields {
-  titolo?: string;
-  contenuto?: string;
+  title?: string;
+  content?: string;
 }
 function substrateTemplate(fields: SubstrateFields = {}): string {
   const date = todayISO();
   const titoloLine = fields.title
     ? `title: ${yamlQuote(fields.title)}`
     : "title:";
-  const c = fields.contenuto?.trim() ?? "";
+  const c = fields.content?.trim() ?? "";
   return `---
 antinomia_type: ${TYPE.substrate}
 ${titoloLine}
@@ -3163,7 +3211,7 @@ class NewTensionModal extends Modal {
           .setButtonText("Create")
           .setCta()
           .onClick(() => {
-            this.onSubmit({ titolo, statementA, statementB }, false);
+            this.onSubmit({ title: titolo, statementA, statementB }, false);
             this.close();
           })
       );
@@ -3285,7 +3333,7 @@ class NewSubstrateModal extends Modal {
           .setButtonText("Create")
           .setCta()
           .onClick(() => {
-            this.onSubmit({ titolo, contenuto }, false);
+            this.onSubmit({ title: titolo, content: contenuto }, false);
             this.close();
           })
       );
@@ -3803,7 +3851,7 @@ class OpenTensionsView extends ItemView {
       }).open();
     };
 
-    const freeBtn = toolbar.createEl("button", { text: "✨ Libero" });
+    const freeBtn = toolbar.createEl("button", { text: "✨ Free" });
     freeBtn.style.padding = "4px 10px";
     freeBtn.style.fontSize = "0.85em";
     freeBtn.style.cursor = "pointer";
@@ -3899,7 +3947,7 @@ class OpenTensionsView extends ItemView {
         return b;
       };
 
-      mkBtn("Titolo", "Imposta o modifica il titolo della nota", () => {
+      mkBtn("Title", "Set or edit the note title", () => {
         void this.plugin.setTitleOnActiveNote(file);
       });
       mkBtn("Link", "Link this tension to another note", () => {
@@ -3922,7 +3970,7 @@ class OpenTensionsView extends ItemView {
       mkBtn("✓ Resolved", "Mark this tension as resolved", () => {
         void this.plugin.markResolved(file);
       });
-      mkBtn("× Defeated", "Archivia come defeated (apre modal motivo)", () => {
+      mkBtn("× Defeated", "Archive as defeated (opens motive modal)", () => {
         void this.plugin.archiveAsDefeated(file);
       });
     }
@@ -3996,7 +4044,7 @@ class HunterResultsView extends ItemView {
       "background:rgba(220,53,69,0.08); border-left:3px solid #dc3545; " +
       "padding:6px 10px; margin-bottom:8px; border-radius:4px; font-size:0.78em; opacity:0.9;";
     warn.setText(
-      "⚠ Spunti riflessivi, non verita'. L'AI puo' allucinare. Non usare per decidere in situazioni reali."
+      "⚠ Reflective prompts, not truths. The AI can hallucinate. Do not use to decide in real situations."
     );
 
     // ---- First-time hint banner ----
@@ -4459,18 +4507,18 @@ function renderNoteCard(
     };
   };
 
-  mkBtn("Titolo", "Imposta o modifica il titolo", () => {
+  mkBtn("Title", "Set or edit the title", () => {
     void plugin.setTitleOnActiveNote(file);
   });
   if (options.showCollega !== false) {
-    mkBtn("Collega", "Collega questa nota a un'altra", () => {
+    mkBtn("Link", "Link this note to another one", () => {
       new NotePickerModal(app, file, (target) => {
         void plugin.linkActiveTo(file, target);
       }).open();
     });
   }
   if (options.showDefeated) {
-    mkBtn("× Defeated", "Archivia come defeated (apre modal motivo)", () => {
+    mkBtn("× Defeated", "Archive as defeated (opens motive modal)", () => {
       void plugin.archiveAsDefeated(file);
     });
   }
@@ -5564,7 +5612,7 @@ class UnclassifiedNotesView extends ItemView {
       note.style.fontSize = "0.78em";
       note.style.opacity = "0.7";
       note.setText(
-        `Mostrate le prime ${MAX} di ${items.length}. Classificale (o ignorale) per veder comparire le successive.`
+        `Showing the first ${MAX} of ${items.length}. Classify (or ignore) them to see the next ones.`
       );
     }
 
@@ -5950,13 +5998,24 @@ class AntinomiaGraphView extends ItemView {
       const t = fm?.antinomia_type;
       if (t === TYPE.tension) {
         const stato = fm?.status;
+        // Legacy: tension+status=elevated (rare; the normal Design C flow
+        // converts an elevated tension into a defeated+motive=elevated +
+        // a new principle).
         if (stato === "elevated") return "tensione_elevata";
         if (stato === "resolved") return "tensione_risolta";
         return "tensione_aperta";
       }
       if (t === TYPE.substrate) return "substrate";
       if (t === TYPE.principle) return "principle";
-      if (t === TYPE.defeated) return "defeated";
+      if (t === TYPE.defeated) {
+        // A defeated with motive=elevated is the *original* tension that
+        // gave birth to a principle (Design C). Treat it as the "elevated"
+        // layer so the "Elevated" filter checkbox shows these notes — the
+        // ones that have actually been elevated, not the rare legacy state.
+        const motive = fm?.motive;
+        if (motive === "elevated") return "tensione_elevata";
+        return "defeated";
+      }
       if (t === TYPE.meta_nota) return "meta_note";
       return null;
     };
@@ -6342,8 +6401,8 @@ class AntinomiaGraphView extends ItemView {
         if (!label) return;
         const pos = node.renderedPosition();
         if (!pos) return;
-        // Bottom of the node disc in screen pixels (node is 44 graph-units)
-        const halfHeight = 22 * zoom;
+        // Bottom of the node disc in screen pixels (node is 32 graph-units)
+        const halfHeight = 16 * zoom;
         const textY = pos.y + halfHeight + 4 + 9; // +text-margin-y +font-ascender
         const isHighlight =
           node.hasClass("hover-focus") || node.hasClass("hover-neighbor");
@@ -6544,18 +6603,18 @@ class AntinomiaGraphView extends ItemView {
             "text-wrap": "ellipsis",
             "text-max-width": "120px",
             "min-zoomed-font-size": 8,
-            width: 44,
-            height: 44,
-            // Transparent border to expand the hit-area by 10px on each
-            // side without changing the visible disc. Makes hovering the
-            // node easier without enlarging its appearance.
-            "border-width": 10,
+            width: 32,
+            height: 32,
+            // Transparent border to expand the hit-area by 18px on each
+            // side without changing the visible disc. Total hoverable
+            // diameter = 32 + 18*2 = 68px while the visible pallino is 32.
+            "border-width": 18,
             "border-color": "rgba(0,0,0,0)",
             "border-opacity": 0,
-            // Base: glow rendered at 80% — boosted to 100% on hover for a
-            // gradual "brighten" effect (background-image-opacity animates,
-            // background-image swaps do not).
-            "background-image-opacity": 0.8,
+            // Base: glow rendered at full opacity. Hover state still
+            // brightens further by switching to the glowBright SVG variant
+            // (more opaque gradient stops + larger inner disc).
+            "background-image-opacity": 1,
             "transition-property":
               "opacity, text-opacity, background-image-opacity, width, height, color",
             "transition-duration": 130,
@@ -6575,8 +6634,8 @@ class AntinomiaGraphView extends ItemView {
             width: 0.8,
             "line-color": C.edge,
             "curve-style": "bezier",
-            "source-distance-from-node": -13,
-            "target-distance-from-node": -13,
+            "source-distance-from-node": -11,
+            "target-distance-from-node": -11,
             visibility: "hidden",
           },
         },
@@ -6950,23 +7009,28 @@ class AntinomiaGraphView extends ItemView {
 
   private layoutOptions(): any {
     if (this.layoutName === "fcose") {
+      // Spacious mode: much stronger repulsion + longer edges → nodes
+      // spread far apart so edges are less likely to cross unrelated
+      // nodes. Slower initial layout, cleaner visual. Toggle in Settings.
+      const spacious = !!this.plugin.settings.graphSpaciousLayout;
       return {
         name: "fcose",
         animate: true,
         animationDuration: 1000,
-        nodeRepulsion: 8000,
-        idealEdgeLength: 120,
-        edgeElasticity: 0.45,
-        nodeSeparation: 80,
-        gravity: 0.25,
+        nodeRepulsion: spacious ? 55000 : 18000,
+        idealEdgeLength: spacious ? 340 : 190,
+        edgeElasticity: spacious ? 0.50 : 0.55,
+        nodeSeparation: spacious ? 280 : 160,
+        numIter: spacious ? 6500 : 5000,
+        gravity: spacious ? 0.10 : 0.18,
         gravityRangeCompound: 1.5,
         gravityCompound: 1.0,
-        gravityRange: 3.8,
+        gravityRange: spacious ? 4.5 : 3.8,
         packComponents: true,
         randomize: true,
         fit: true,
-        padding: 50,
-        quality: "default",
+        padding: 60,
+        quality: "proof",
       };
     }
     if (this.layoutName === "concentric") {
@@ -7008,7 +7072,87 @@ class AntinomiaGraphView extends ItemView {
       this.applyClustersLayout();
       return;
     }
-    this.cy.layout(this.layoutOptions()).run();
+    const layout = this.cy.layout(this.layoutOptions());
+    // Hook a post-processing edge-node repulsion pass if the user
+    // enabled the spacious-layout experimental toggle. This runs AFTER
+    // fcose converges and nudges nodes away from edges that don't touch
+    // them — the only way to get true edge-node repulsion in fcose.
+    if (this.plugin.settings.graphSpaciousLayout) {
+      (layout as any).on?.("layoutstop", () => {
+        try {
+          this.applyEdgeNodeRepulsion();
+        } catch (e) {
+          console.warn("[Antinomia] edge-node repulsion failed:", e);
+        }
+      });
+    }
+    layout.run();
+  }
+
+  /**
+   * Post-layout pass: nudges each node away from edges that do NOT touch
+   * it. cytoscape-fcose has no native edge-node repulsion; we simulate it
+   * with a few iterations of perpendicular pushes. Stops early if no node
+   * needed to move.
+   */
+  private applyEdgeNodeRepulsion(): void {
+    if (!this.cy) return;
+    const cy = this.cy;
+    const MIN_DIST = 70; // graph-units: minimum allowed node-edge distance
+    const MAX_ITER = 40;
+    const PUSH_FACTOR = 0.6; // 0..1 how much of the deficit to apply per iter
+
+    type Pt = { x: number; y: number };
+    const distPointToSegment = (
+      p: Pt,
+      a: Pt,
+      b: Pt
+    ): { dist: number; cx: number; cy: number } => {
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const lenSq = dx * dx + dy * dy;
+      if (lenSq < 0.0001) {
+        return { dist: Math.hypot(p.x - a.x, p.y - a.y), cx: a.x, cy: a.y };
+      }
+      let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq;
+      t = Math.max(0, Math.min(1, t));
+      const cx = a.x + t * dx;
+      const cy2 = a.y + t * dy;
+      return { dist: Math.hypot(p.x - cx, p.y - cy2), cx, cy: cy2 };
+    };
+
+    const nodes = cy.nodes().toArray();
+    const edges = cy.edges().toArray();
+    for (let iter = 0; iter < MAX_ITER; iter++) {
+      let totalMoved = 0;
+      for (const n of nodes) {
+        const np = n.position() as Pt;
+        let pushX = 0;
+        let pushY = 0;
+        for (const e of edges) {
+          const s = e.source();
+          const t = e.target();
+          if (s.id() === n.id() || t.id() === n.id()) continue;
+          const sp = s.position() as Pt;
+          const tp = t.position() as Pt;
+          const { dist, cx, cy: cyClosest } = distPointToSegment(np, sp, tp);
+          if (dist < MIN_DIST && dist > 0.0001) {
+            // Push perpendicular to the edge, away from the closest point
+            const deficit = MIN_DIST - dist;
+            const nx = (np.x - cx) / dist;
+            const ny = (np.y - cyClosest) / dist;
+            pushX += nx * deficit * PUSH_FACTOR;
+            pushY += ny * deficit * PUSH_FACTOR;
+          }
+        }
+        if (Math.abs(pushX) > 0.1 || Math.abs(pushY) > 0.1) {
+          n.position({ x: np.x + pushX, y: np.y + pushY });
+          totalMoved += Math.hypot(pushX, pushY);
+        }
+      }
+      if (totalMoved < 1) break;
+    }
+    cy.fit(undefined, 60);
   }
 
   // Backward-compatible alias used by toolbar dropdown
@@ -8645,7 +8789,7 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
     }
     new PdfPickerModal(this.app, pdfs, (pdf) => {
       const titoloSuggerito = `Note di lettura — ${pdf.basename}`;
-      const contenutoIniziale = `> Vedi PDF: [[${pdf.basename}]]\n\n(Aggiungi qui i tuoi appunti / citazioni / osservazioni dalla lettura.)`;
+      const contenutoIniziale = `> See PDF: [[${pdf.basename}]]\n\n(Add here your notes / quotes / observations from reading.)`;
       new NewSubstrateModal(
         this.app,
         this,
@@ -8981,7 +9125,7 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
   async archiveAsDefeated(file: TFile): Promise<void> {
     new DefeatedReasonModal(this.app, file, async (data) => {
       if (!data) {
-        new Notice("Archiviazione annullata.");
+        new Notice("Archiving cancelled.");
         return;
       }
       const { motivo, replaced_by } = data;
@@ -9008,7 +9152,7 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
         }
         const subMsg = replaced_by ? `, sostituita da ${replaced_by}` : "";
         new Notice(
-          `Archiviata defeated (${motivo}${subMsg}): ${file.basename}`
+          `Archived as defeated (${motivo}${subMsg}): ${file.basename}`
         );
       } catch (e) {
         new Notice(`Errore: ${(e as Error).message}`);
@@ -9069,7 +9213,7 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
   private async classifyActiveNote(file: TFile): Promise<void> {
     const profile = this.profileFor("default");
     if (!profile.apiKey) {
-      new Notice("API key mancante nel profilo attivo. Impostazioni -> Antinomia.");
+      new Notice("API key missing in the active profile. Settings -> Antinomia.");
       return;
     }
     const raw = await this.app.vault.read(file);
@@ -9139,8 +9283,8 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
     new TitleEditModal(
       this.app,
       current,
-      `Titolo per ${file.basename}`,
-      "3-7 parole che catturino il TEMA. Lascia vuoto per rimuovere.",
+      `Title for ${file.basename}`,
+      "3-7 words capturing the THEME. Leave empty to remove.",
       async (value) => {
         if (value === null) return;
         try {
@@ -9149,9 +9293,18 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
             else frontm.title = value;
             frontm.modified_date = todayISO();
           });
-          new Notice(value ? `Titolo: ${value}` : "Titolo rimosso");
+          new Notice(value ? `Title: ${value}` : "Title removed");
         } catch (e) {
-          new Notice(`Errore: ${(e as Error).message}`);
+          new Notice(`Error: ${(e as Error).message}`);
+        }
+      },
+      // AI suggestion: read the note body and ask the AI to propose a title
+      async () => {
+        try {
+          const body = await this.app.vault.read(file);
+          return await this.proposeTitleFromContent(body);
+        } catch {
+          return null;
         }
       }
     ).open();
@@ -9160,11 +9313,11 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
   async proposeTitleAI(file: TFile): Promise<void> {
     const profile = this.profileFor("default");
     if (!profile.apiKey) {
-      new Notice("API key mancante nel profilo attivo. Impostazioni -> Antinomia.");
+      new Notice("API key missing in the active profile. Settings -> Antinomia.");
       return;
     }
     const raw = await this.app.vault.read(file);
-    new Notice("Antinomia: proponi titolo (AI) in corso...");
+    new Notice("Antinomia: proposing title (AI)...");
     let result: { text: string; usage?: ClaudeResponse["usage"] };
     try {
       result = await callAI({
@@ -9199,7 +9352,7 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
       this.app,
       proposed,
       `Titolo proposto per ${file.basename}`,
-      "Suggerimento AI. Modifica liberamente prima di salvare.",
+      "AI suggestion. Edit freely before saving.",
       async (value) => {
         if (value === null || value === "") return;
         try {
@@ -9222,7 +9375,7 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
   async proposeTitleFromContent(content: string): Promise<string | null> {
     const profile = this.profileFor("default");
     if (!profile.apiKey) {
-      new Notice("API key mancante nel profilo attivo. Impostazioni -> Antinomia.");
+      new Notice("API key missing in the active profile. Settings -> Antinomia.");
       return null;
     }
     try {
@@ -9327,7 +9480,7 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
   async proposeIfThenFromContent(content: string): Promise<PrincipleFields | null> {
     const profile = this.profileFor("default");
     if (!profile.apiKey) {
-      new Notice("API key mancante nel profilo attivo. Impostazioni -> Antinomia.");
+      new Notice("API key missing in the active profile. Settings -> Antinomia.");
       return null;
     }
     try {
@@ -9362,7 +9515,7 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
     const profile = this.profileFor("default");
     console.log("[Antinomia] presupposti START profile:", profile.name, profile.format, profile.model);
     if (!profile.apiKey) {
-      new Notice("API key mancante nel profilo attivo. Impostazioni -> Antinomia.");
+      new Notice("API key missing in the active profile. Settings -> Antinomia.");
       return null;
     }
     try {
@@ -9408,7 +9561,7 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
   async analyzeFreeInput(text: string): Promise<FreeInputAnalysis | null> {
     const profile = this.profileFor("default");
     if (!profile.apiKey) {
-      new Notice("API key mancante nel profilo attivo. Impostazioni -> Antinomia.");
+      new Notice("API key missing in the active profile. Settings -> Antinomia.");
       return null;
     }
     try {

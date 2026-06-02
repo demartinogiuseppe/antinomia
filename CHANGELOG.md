@@ -1,5 +1,59 @@
 # Changelog
 
+## v1.2.7 (June 2, 2026) — Title-field bug fix, more graph polish, AI suggest on title modal, Italian residues sweep
+
+### Critical bug fix: titles always empty in newly-created notes (Front Matter Title showed timestamps)
+
+The `TensionFields` / `SubstrateFields` interfaces declared `titolo` / `contenuto` (Italian), but `tensionTemplate` / `substrateTemplate` read `fields.title` / `fields.content` (English). Result: the title field in the frontmatter was always empty when creating a new note from either modal, including the "Propose title (AI)" path — Front Matter Title therefore had nothing to read and displayed the timestamp basename `T-20260602-165351` instead of a human title.
+
+Fix: renamed interface keys to English (`title`, `content`), updated the two modal callbacks to pass `{ title: titolo, ... }` and `{ title: titolo, content: contenuto }`, and the substrate template now reads `fields.content`.
+
+### "Elevated" graph filter now actually matches notes
+
+The `Elevated` checkbox in the graph toolbar previously looked for `tension + status=elevated` — an edge-case state that the Design C elevation flow never produces. Now it matches `defeated + motive=elevated`, i.e. the *original* tensions that have been elevated into principles. Spunting the checkbox in a vault with elevated tensions finally shows them.
+
+### Graph view polish
+
+- **Smaller, brighter nodes**: base disc 44 → 32px, glow at 100% opacity by default (was 0.8).
+- **Larger hit-area**: 18px transparent border on every node — hovering is much easier without enlarging the visible pallino.
+- **Hover focus enlarged**: 50 → 60px on the hovered node (the connected neighbors stay at 32px and only brighten).
+- **Snappier animations**: hover transition duration 220ms → 130ms.
+- **No more dimming on hover**: the previous "fade everything else" behavior was removed. Focus is communicated only by the hovered/neighbor nodes brightening, the rest of the graph stays at full opacity.
+- **No more purple ring around the hovered node**: the accent border that Cytoscape painted on `.highlight` is gone.
+- **Default fcose params tuned for fewer edge crossings**: `nodeRepulsion: 18000`, `idealEdgeLength: 190`, `nodeSeparation: 160`, `quality: "proof"`, `numIter: 5000`.
+
+### New experimental setting: "Spacious layout"
+
+Settings → Antinomia → Graph View style → **Spacious layout (experimental)**. When enabled:
+- fcose runs with much stronger repulsion (`nodeRepulsion: 55000`, `idealEdgeLength: 340`, `nodeSeparation: 280`).
+- After fcose converges, a post-processing pass nudges every node away from edges that do not touch it, until the minimum node-edge distance reaches 70 graph-units. This is the only way to get *true* edge-node repulsion since fcose has no native support for it.
+- Slower initial layout, much cleaner result — edges rarely cross unrelated nodes.
+
+Default is OFF (reverts to the standard layout if disabled).
+
+### "Propose title (AI)" available in the title-edit modal
+
+The "Set / edit title" modal (button on every note card, or via command palette) now has a **Propose title (AI)** button that reads the note body and asks the configured AI model for a suggestion. Same loader UI as in the New Tension / New Substrate modals. The model output is run through `sanitizeTitle()` so the result is always capped at 7 words / 60 chars.
+
+### AI "Propose title" — robustness against verbose local models (continued)
+
+Title prompt rewritten as a strict JSON-only generator with three few-shot examples. The response parser now tries (in order): JSON, embedded `"title": "..."` anywhere in the text, `Title: ...` / `Titolo: ...` labels, any quoted substring, finally the first short non-reasoning line. Every result capped at 7 words / 60 chars.
+
+### Italian residues sweep (continued)
+
+Strings still in Italian, now in English:
+- Contradiction Hunter sidebar safety warning.
+- Card action buttons: `Titolo` → `Title`, `Collega` → `Link` (with tooltips).
+- Toolbar: `✨ Libero` → `✨ Free`.
+- Free-input modal buttons: `Rifiuta` → `Reject`, `Applica` → `Apply`.
+- Defeated archiving tooltip: `Archivia come defeated (apre modal motivo)` → `Archive as defeated (opens motive modal)`.
+- Unclassified pagination hint: `Mostrate le prime N…` → `Showing the first N…`.
+- PDF substrate template: Italian "Vedi PDF / Aggiungi…" → "See PDF / Add here…".
+- Notices: `Archiviazione annullata` → `Archiving cancelled`; `Archiviata defeated` → `Archived as defeated`; `API key mancante…` → `API key missing…` (6 occurrences); `Suggerimento AI. Modifica liberamente…` → `AI suggestion. Edit freely…`; `Antinomia: proponi titolo (AI) in corso…` → `Antinomia: proposing title (AI)…`.
+- TitleEditModal header / hint / notices: `Titolo per…` → `Title for…`, `3-7 parole che catturino il TEMA…` → `3-7 words capturing the THEME…`, `Titolo: X` / `Titolo rimosso` / `Errore: …` translated.
+
+---
+
 ## v1.2.6 (June 2, 2026) — Zenodo bootstrap
 
 Tag-only release to trigger Zenodo archival for the first time. No code changes vs v1.2.5.
