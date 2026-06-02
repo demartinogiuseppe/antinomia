@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.6 (June 2, 2026) — Zenodo bootstrap
+
+Tag-only release to trigger Zenodo archival for the first time. No code changes vs v1.2.5.
+
+- `CITATION.cff` updated to v1.2.6 with English layer names (tension, substrate, principle, defeated, meta_note) and a placeholder for the Zenodo DOI (filled in once Zenodo generates one for this release).
+- Tag published as `1.2.6` (no `v` prefix) to comply with the Obsidian community plugin store naming requirement.
+
+---
+
 ## v1.2.5 (June 2, 2026) — Graph visual overhaul (neon glow nodes + edges + labels) + bug fixes + Italian residues
 
 Visual overhaul of the Graph view plus a handful of bug fixes. No breaking changes, no schema changes.

@@ -13,8 +13,8 @@ abstract: >
   not on explicit knowledge but on cognitive tensions: contradictions,
   tradeoffs, anomalies, persistent doubts, weak signals, and conflicts
   between goals. Distributed as a plugin for Obsidian, it organizes
-  notes into five layers (tensione, substrate, principio, defeated,
-  meta-nota) managed via YAML frontmatter, with an AI-powered
+  notes into five layers (tension, substrate, principle, defeated,
+  meta_note) managed via YAML frontmatter, with an AI-powered
   Contradiction Hunter for identifying hidden contradictions across
   vault notes.
 keywords:
@@ -28,5 +28,11 @@ keywords:
   - epistemology
   - note-taking
 license: MIT
-version: "1.1.0"
-date-released: "2026-06-01"
+version: "1.2.6"
+date-released: "2026-06-02"
+# DOI will be filled in after Zenodo generates one for this release.
+# Uncomment and replace once available:
+# identifiers:
+#   - type: doi
+#     value: "10.5281/zenodo.XXXXXXX"
+#     description: "Concept DOI (always resolves to the latest version)"
