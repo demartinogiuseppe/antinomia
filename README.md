@@ -8,7 +8,7 @@
 [![Version](https://img.shields.io/badge/version-1.2.6--beta-orange)](CHANGELOG.md)
 [![Obsidian](https://img.shields.io/badge/Obsidian-1.4%2B-7c3aed)](https://obsidian.md)
 [![Paper DOI](https://img.shields.io/badge/Paper%20DOI-10.5281%2Fzenodo.20369124-blue)](https://doi.org/10.5281/zenodo.20369124)
-[![Software DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20506815.svg)](https://doi.org/10.5281/zenodo.20506815)
+[![Software DOI](https://img.shields.io/badge/Software%20DOI-10.5281%2Fzenodo.20506815-blue)](https://doi.org/10.5281/zenodo.20506815)
 
 ---
 
