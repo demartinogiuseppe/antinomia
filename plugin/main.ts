@@ -2595,7 +2595,7 @@ function renderTensionContext(parent: HTMLElement, rawContent: string): void {
 
 const HUNTER_SYSTEM = `You are the Antinomia Contradiction Hunter.
 
-LANGUAGE: detect the dominant language of THE USER'S NOTES (the actual note content submitted to you, NOT these instructions) and write every \`descrizione\` value in THAT language. The JSON keys are in Italian for historical reasons — ignore them as a language signal. If the user's notes are in English, reply in English. If in Italian, in Italian. If mixed, follow the dominant language.
+LANGUAGE: detect the dominant language of THE USER'S NOTE CONTENT (English, Italian, or other) and write every \`description\` value in THAT language. The \`confidence\` value stays as one of: high / medium / low.
 
 YOUR TASK: identify PAIRS of notes that contradict each other.
 
@@ -2630,8 +2630,8 @@ What does NOT count:
 **PRECISION > RECALL**: better to say "no contradiction" than to produce weak pairs. The Hunter's purpose is to show you REAL conflicts, not to give you the illusion of depth.
 
 **EXAMPLES OF VALID CONTRADICTIONS (frontal, on the SAME criterion):**
-- A: "gut decisions are reliable, instinct rarely fails" ↔ B: "data shows that impulse decisions have an error rate 3x higher than deliberated ones" → confidence alta, explicit opposition on the same object (quality of intuitive decisions).
-- A: "talent is everything, without natural gift you stay mediocre" ↔ B: "discipline matters more than talent, effort beats the lazy prodigy" → confidence alta, opposition on which factor determines success.
+- A: "gut decisions are reliable, instinct rarely fails" ↔ B: "data shows that impulse decisions have an error rate 3x higher than deliberated ones" → confidence high, explicit opposition on the same object (quality of intuitive decisions).
+- A: "talent is everything, without natural gift you stay mediocre" ↔ B: "discipline matters more than talent, effort beats the lazy prodigy" → confidence high, opposition on which factor determines success.
 
 **EXAMPLES NOT TO PAIR:**
 - A note on "office productivity" and one on "economic savings": different topics, not a contradiction.
@@ -2639,14 +2639,14 @@ What does NOT count:
 - Two notes both mentioning "time" but one about productivity-time and the other about philosophy-of-time: close topic, different substance.
 
 Confidence:
-- "alta" — clear contradiction, on presuppositions or explicit
-- "media" — exists but requires interpretation
-- "bassa" — weak suspicion
+- "high" — clear contradiction, on presuppositions or explicit
+- "medium" — exists but requires interpretation
+- "low" — weak suspicion
 
 Reply with ONLY valid JSON, no fence:
-{"contraddizioni": [{"nota_a": "<basename>", "nota_b": "<basename>", "descrizione": "<2-3 sentences on WHAT, not on HOW to resolve>", "confidence": "alta|media|bassa"}]}
+{"pairs": [{"note_a": "<basename>", "note_b": "<basename>", "description": "<2-3 sentences on WHAT, not on HOW to resolve, in the user's language>", "confidence": "high|medium|low"}]}
 
-If none: {"contraddizioni": []}`;
+If none: {"pairs": []}`;
 
 /**
  * Build the Hunter system prompt for a given style. "concise" appends a strict
@@ -2657,7 +2657,7 @@ function buildHunterSystem(style: "concise" | "verbose"): string {
   if (style === "verbose") return HUNTER_SYSTEM;
   return (
     HUNTER_SYSTEM +
-    `\n\nAdditional constraint: descrizione in 2-3 sentences MAX, straight to the point. NO exposed reasoning, NO phrases like "let's review", "let's consider", "however, let's see if", "although... while...". Go straight to the final conclusion on the contradiction.`
+    `\n\nAdditional constraint: description in 2-3 sentences MAX, straight to the point. NO exposed reasoning, NO phrases like "let's review", "let's consider", "however, let's see if", "although... while...". Go straight to the final conclusion on the contradiction.`
   );
 }
 
@@ -6059,10 +6059,28 @@ class AntinomiaGraphView extends ItemView {
       cb.onchange = () => {
         this.filters[key] = cb.checked;
         this.rebuildGraph();
-        // After toggling a filter, re-apply the layout so newly visible nodes
-        // get spread out instead of stacking at (0,0). Without this, enabling
-        // a filter that has nodes at (0,0) appears to "freeze" the graph.
-        this.applyLayoutToCy();
+        // rebuildGraph() now adds new nodes at layer-specific positions
+        // (not at (0,0)) and the existing continuous physics simulation
+        // integrates them naturally. No full fcose re-layout — that was
+        // causing the "pallini swarm to center then expand" effect because
+        // fcose internally repositions all nodes when run with animation.
+        (this as any).startContinuousPhysics?.();
+        // Run edge-node repulsion immediately to push nodes off the new
+        // edges. Then a second pass after the physics has briefly settled
+        // to clean up any residual overlaps the physics may have re-created.
+        // Physics keeps running so movement stays smooth (no freeze).
+        try {
+          (this as any).applyEdgeNodeRepulsion?.();
+        } catch {
+          /* ignore */
+        }
+        window.setTimeout(() => {
+          try {
+            (this as any).applyEdgeNodeRepulsion?.();
+          } catch {
+            /* ignore */
+          }
+        }, 600);
       };
     };
 
@@ -6226,7 +6244,7 @@ class AntinomiaGraphView extends ItemView {
         if (motive === "elevated") return "tensione_elevata";
         return "defeated";
       }
-      if (t === TYPE.meta_nota) return "meta_note";
+      if (t === TYPE.meta) return "meta_note";
       return null;
     };
 
@@ -6639,8 +6657,25 @@ class AntinomiaGraphView extends ItemView {
       });
     };
 
-    // Keep the overlay in sync with Cytoscape's viewport and node positions
-    this.cy.on("render pan zoom position", update);
+    // Keep the overlay in sync with Cytoscape's viewport and node positions.
+    // Throttle through requestAnimationFrame so we redraw at most once per
+    // browser frame (~16ms / 60fps). Without this, with many edges the SVG
+    // overlay re-renders multiple times per frame as the physics simulation
+    // updates positions, causing visible lag.
+    let rafPending = false;
+    const scheduledUpdate = (): void => {
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => {
+        rafPending = false;
+        try {
+          update();
+        } catch {
+          /* ignore */
+        }
+      });
+    };
+    this.cy.on("render pan zoom position", scheduledUpdate);
     // First draw
     window.setTimeout(update, 50);
   }
@@ -7115,11 +7150,11 @@ class AntinomiaGraphView extends ItemView {
     });
 
     const REPULSE = 5500;     // forza repulsiva tra nodi (dimezzata)
-    const SPRING_K = 0.012;   // attrazione lungo edge
+    const SPRING_K = 0.018;   // attrazione lungo edge (più rapida)
     const IDEAL_LEN = 55;     // distanza target lungo edge (dimezzata)
     const GRAVITY = 0.002;    // gravita' al centro piu' forte per cluster compatti
-    const DAMPING = 0.86;     // smorzamento velocita'
-    const MAX_SPEED = 3.5;
+    const DAMPING = 0.78;     // smorzamento velocita' (meno smorzato = più snap)
+    const MAX_SPEED = 6.0;    // velocità massima (raddoppiata per movimenti rapidi)
 
     const step = (): void => {
       if (!this.cy) return;
@@ -7223,6 +7258,47 @@ class AntinomiaGraphView extends ItemView {
       // spread far apart so edges are less likely to cross unrelated
       // nodes. Slower initial layout, cleaner visual. Toggle in Settings.
       const spacious = !!this.plugin.settings.graphSpaciousLayout;
+      // Detect: is this the FIRST layout (no existing positions) or a
+      // RE-LAYOUT after a filter toggle / change? In re-layout mode the
+      // user expects existing nodes to STAY PUT — only new nodes should
+      // get positioned, and the viewport should not snap-zoom.
+      const hasExistingPositions =
+        !!this.cy &&
+        this.cy.nodes().length > 0 &&
+        this.cy
+          .nodes()
+          .some((n: any) => {
+            const p = n.position();
+            return p && (p.x !== 0 || p.y !== 0);
+          });
+      if (hasExistingPositions) {
+        // INCREMENTAL re-layout: minimal disturbance.
+        // - randomize: false → start from existing positions
+        // - fit: false → don't re-zoom the viewport (no "centering" effect)
+        // - packComponents: false → don't recompact disconnected clusters
+        // - few iterations → just enough to integrate new nodes
+        // - quality "default" → faster, no need for full convergence
+        return {
+          name: "fcose",
+          animate: true,
+          animationDuration: 400,
+          nodeRepulsion: spacious ? 55000 : 18000,
+          idealEdgeLength: spacious ? 340 : 190,
+          edgeElasticity: spacious ? 0.50 : 0.55,
+          nodeSeparation: spacious ? 280 : 160,
+          numIter: 800,
+          gravity: 0,
+          gravityRangeCompound: 1.5,
+          gravityCompound: 1.0,
+          gravityRange: 0,
+          packComponents: false,
+          randomize: false,
+          fit: false,
+          padding: 60,
+          quality: "default",
+        };
+      }
+      // FIRST layout: full fcose run, picks positions from scratch.
       return {
         name: "fcose",
         animate: true,
@@ -7308,9 +7384,9 @@ class AntinomiaGraphView extends ItemView {
   private applyEdgeNodeRepulsion(): void {
     if (!this.cy) return;
     const cy = this.cy;
-    const MIN_DIST = 70; // graph-units: minimum allowed node-edge distance
-    const MAX_ITER = 40;
-    const PUSH_FACTOR = 0.6; // 0..1 how much of the deficit to apply per iter
+    const MIN_DIST = 85; // graph-units: minimum allowed node-edge distance
+    const MAX_ITER = 8;
+    const PUSH_FACTOR = 0.9; // 0..1 how much of the deficit to apply per iter
 
     type Pt = { x: number; y: number };
     const distPointToSegment = (
@@ -7333,8 +7409,11 @@ class AntinomiaGraphView extends ItemView {
 
     const nodes = cy.nodes().toArray();
     const edges = cy.edges().toArray();
+    // Wrap all position updates in cy.batch() so Cytoscape renders ONCE
+    // per iteration instead of per-node — much smoother visually.
     for (let iter = 0; iter < MAX_ITER; iter++) {
       let totalMoved = 0;
+      cy.batch(() => {
       for (const n of nodes) {
         const np = n.position() as Pt;
         let pushX = 0;
@@ -7360,9 +7439,12 @@ class AntinomiaGraphView extends ItemView {
           totalMoved += Math.hypot(pushX, pushY);
         }
       }
+      });
       if (totalMoved < 1) break;
     }
-    cy.fit(undefined, 60);
+    // No cy.fit() here: keep the user's current viewport. fit() would
+    // re-zoom and create the "swarm to center" effect we explicitly want
+    // to avoid in re-layout after a filter toggle.
   }
 
   // Backward-compatible alias used by toolbar dropdown
@@ -7630,12 +7712,33 @@ export default class AntinomiaPlugin extends Plugin {
     this.hunterAbortController = null;
     const durationMs = Date.now() - t0;
 
-    const parsed = extractJson<HunterResult>(result.text);
-    if (!parsed || !Array.isArray(parsed.contraddizioni)) {
+    const parsedRaw = extractJson<any>(result.text);
+    // Normalize: the AI is now asked for English keys (pairs/note_a/note_b/
+    // description/confidence: high|medium|low) because Italian keys were
+    // signaling "respond in Italian" to non-Anthropic models. We accept
+    // either schema and remap to the internal Italian shape used downstream.
+    const normalizePair = (c: any): any => ({
+      nota_a: c?.note_a ?? c?.nota_a ?? "",
+      nota_b: c?.note_b ?? c?.nota_b ?? "",
+      descrizione: c?.description ?? c?.descrizione ?? "",
+      confidence: ((): HunterConfidence | undefined => {
+        const raw = String(c?.confidence ?? "").toLowerCase().trim();
+        if (raw === "high") return "alta";
+        if (raw === "medium") return "media";
+        if (raw === "low") return "bassa";
+        if (raw === "alta" || raw === "media" || raw === "bassa") return raw as HunterConfidence;
+        return undefined;
+      })(),
+    });
+    let rawPairs: any[] | null = null;
+    if (parsedRaw && Array.isArray(parsedRaw.pairs)) rawPairs = parsedRaw.pairs;
+    else if (parsedRaw && Array.isArray(parsedRaw.contraddizioni)) rawPairs = parsedRaw.contraddizioni;
+    if (!rawPairs) {
       console.error("[Antinomia] hunter unparseable:", result.text);
       new Notice("Hunter: response not parseable. See console.");
       return;
     }
+    const parsed: HunterResult = { contraddizioni: rawPairs.map(normalizePair) };
 
     // Validazione anti-hallucinazione: scarta basename inventati, self-pair, descrizioni vuote
     const realBasenames = new Set(selected.map((f) => f.basename));

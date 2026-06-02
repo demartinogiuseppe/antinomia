@@ -1,5 +1,49 @@
 # Changelog
 
+## v1.3.0 (June 2, 2026) — Multilingual Hunter, Meta filter fix, smoother graph interactions
+
+A focused polish release: the Hunter now adapts its output language to the user's notes (no more forced Italian on Llama/Groq), the Meta filter in the graph view finally matches notes (had a latent typo bug), and the graph re-layout after toggling filters is smooth and respects existing node positions instead of swarming everything to the center.
+
+### Hunter: English-keyed JSON schema to suppress Italian language bias
+
+In v1.2.9 the system prompts told the AI to "detect the user's language and reply in that language", but Llama 3.3 on Groq kept responding in Italian. Root cause: the JSON schema keys (`contraddizioni`, `nota_a`, `nota_b`, `descrizione`, `confidence: alta|media|bassa`) were stronger language signals than the English instructions in the prompt.
+
+Fix: the AI is now asked to reply with English keys (`pairs`, `note_a`, `note_b`, `description`, `confidence: high|medium|low`). The parser accepts both schemas (new English + legacy Italian) and normalizes everything to the internal Italian shape used downstream, so existing saved runs, dismiss lists, and the sidebar UI keep working unchanged.
+
+### Bug fix: Meta filter in the graph view matched zero notes
+
+`layerKey()` checked `t === TYPE.meta_nota`, but the `TYPE` constant only exposes `TYPE.meta` (= `"meta_note"`). So `TYPE.meta_nota` was always `undefined`, every meta note was filtered out, and the "Meta" checkbox in the graph toolbar appeared broken. Fix: one-character change to `TYPE.meta`. Latent since v1.2.0.
+
+### Smoother graph re-layout after filter toggle
+
+Previously, toggling a filter checkbox triggered a full fcose re-layout with `animate: true` + `randomize: true` + `fit: true`. Result: all existing nodes scattered briefly toward the center, then re-spread — visually jarring.
+
+Now the flow is:
+1. `rebuildGraph()` adds new nodes at layer-specific positions (not at (0,0)), existing nodes stay put.
+2. The continuous physics simulation runs at higher speed (MAX_SPEED 3.5 → 6.0, DAMPING 0.86 → 0.78, SPRING_K 0.012 → 0.018) to integrate new nodes quickly without lag.
+3. An edge-node repulsion pass runs immediately to push nodes off lines they don't belong to, then a second pass at 600ms cleans residual overlaps.
+
+Result: nodes that were already placed don't move; new nodes slide into position; lines rarely cross unrelated nodes.
+
+### SVG overlay throttled to one repaint per frame
+
+The SVG overlay that draws edges and labels was re-rendering on every Cytoscape `position` event (multiple times per frame as the physics moved nodes). With many edges (large vault), this caused visible lag. The overlay update is now wrapped in `requestAnimationFrame` so it redraws at most once per browser frame (~60fps), regardless of how many Cytoscape events fire.
+
+### Hover interaction: simpler & snappier
+
+- Animation duration 220ms → 130ms (snappier).
+- Removed the "fade the rest of the graph" behavior — hover now only brightens the hovered node + its direct neighbors, the rest of the graph stays untouched.
+- Hovered node grows 32 → 60px; connected neighbors stay at 32px but brighten via `background-image-opacity`.
+- Hit-area expanded to 68px diameter (visible disc 32 + transparent 18px border on each side) — much easier to hover.
+
+### Other small fixes
+
+- Status bar Italian residue `esaminate X/X note in Yms con MODEL` → `examined X/X notes in Yms with MODEL`.
+- `applyEdgeNodeRepulsion()` wraps position updates in `cy.batch()` so Cytoscape re-renders once per iteration instead of per node.
+- No more `cy.fit()` at the end of edge-node repulsion — viewport stays where the user left it.
+
+---
+
 ## v1.2.9 (June 2, 2026) — Multi-backend AI (Groq / OpenAI / OpenRouter / Ollama) + multilingual AI prompts
 
 Two correlated changes that finally match what the README and Substack posts have been promising.
