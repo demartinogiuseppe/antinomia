@@ -1,5 +1,36 @@
 # Changelog
 
+## v1.2.8 (June 2, 2026) — One-click install + auto-configure Front Matter Title
+
+Onboarding overhaul focused on the single biggest friction point: getting Front Matter Title (FMT) installed and configured to read the `title` frontmatter field. Without this, the File Explorer shows timestamp basenames (`T-20260530-091416.md`) instead of human titles. Until this release, the user had to find the plugin manually in the Community Browser, install it, then navigate to its settings tab and set `path = title` + enable the Explorer feature by hand.
+
+### One-click install via `obsidian://` URL scheme
+
+The "Install Front Matter Title" button — in both the Welcome modal banner and Settings → Antinomia → Recommended plugin — now opens the FMT plugin page **directly** in the Obsidian community plugin browser via the `obsidian://show-plugin?id=obsidian-front-matter-title-plugin` URL scheme. The user only has to press Install + Enable on the page that opens. Fallback to the generic Community Plugins tab if the URL scheme fails on older Obsidian versions.
+
+### Auto-configure FMT for Antinomia (smart 3-state button)
+
+A new helper `configureFrontMatterTitleForAntinomia()` accesses the FMT plugin instance via `app.plugins.plugins[...]`, merges into its settings:
+
+- `rules.items.title = { path: "title", enabled: true }`
+- `features.explorer / graph / tab → enabled: true`
+
+…then calls FMT's own `saveSettings()` (or writes `data.json` directly as fallback) and disable/re-enables the plugin so the changes take effect immediately. No restart required.
+
+The banner / settings button now has three states:
+
+| FMT state | Button label | Action |
+|---|---|---|
+| Not installed | "Install Front Matter Title" | Opens FMT page in community browser |
+| Installed, not configured for Antinomia | "Configure FMT for Antinomia" | Smart configure (see below) |
+| Configured | "✓ Front Matter Title configured" (disabled) | — |
+
+**Smart configure** behavior: if FMT has no meaningful existing settings, the configuration is applied directly. If the user already has custom FMT settings, a confirmation dialog spells out exactly what will change (`Resolver path → title`, features enabled) and asks before overwriting. This respects users who have customized FMT for other workflows.
+
+Detection (`isFrontMatterTitleConfiguredForAntinomia()`) sniffs the FMT settings JSON for `"path": "title"` plus `"explorer" ... "enabled": true`, so the banner disappears once FMT is properly set up.
+
+---
+
 ## v1.2.7 (June 2, 2026) — Title-field bug fix, more graph polish, AI suggest on title modal, Italian residues sweep
 
 ### Critical bug fix: titles always empty in newly-created notes (Front Matter Title showed timestamps)

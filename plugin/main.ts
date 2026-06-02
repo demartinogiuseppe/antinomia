@@ -413,26 +413,70 @@ class WelcomeModal extends Modal {
       "This tool exists to help you understand the evolution of your own thinking by mapping tensions and contradictions you already carry inside. It is NOT a decision-support system. Do not use it to decide in real situations (work, health, finance, relationships). The pairs the Hunter proposes are prompts for reflection, not truths: the AI model can hallucinate, oversimplify, misinterpret. Any use other than 'personal reflective practice' is improper."
     );
 
-    // Banner avviso se Front Matter Title non e' installato/attivo
-    if (!this.plugin.isFrontMatterTitleEnabled()) {
+    // Banner Front Matter Title: 3 states
+    //   1. not installed → "Install Front Matter Title" button
+    //   2. installed but not configured for Antinomia → "Configure FMT" button
+    //   3. installed and configured → no banner
+    const fmtEnabled = this.plugin.isFrontMatterTitleEnabled();
+    const fmtConfigured = this.plugin.isFrontMatterTitleConfiguredForAntinomia();
+    if (!fmtEnabled || !fmtConfigured) {
       const banner = contentEl.createDiv();
       banner.style.cssText =
         "background:rgba(255,193,7,0.12); border-left:3px solid #ffc107; " +
         "padding:10px 12px; margin-bottom:12px; border-radius:4px; font-size:0.9em;";
-      banner.createEl("strong", { text: "Recommended plugin missing: Front Matter Title" });
+      const headerText = !fmtEnabled
+        ? "Recommended plugin missing: Front Matter Title"
+        : "Front Matter Title not yet configured for Antinomia";
+      banner.createEl("strong", { text: headerText });
       const p = banner.createEl("p");
       p.style.margin = "6px 0";
       p.setText(
-        "Without this plugin, the File Explorer shows technical basenames (T-20260530-091416) instead of the human titles of your notes. Antinomia still works, but seeing them is much more convenient."
+        !fmtEnabled
+          ? "Without this plugin, the File Explorer shows technical basenames (T-20260530-091416) instead of the human titles of your notes. Antinomia still works, but seeing them is much more convenient."
+          : "FMT is installed but doesn't read the `title` frontmatter field yet. One click configures it for Antinomia (Explorer + Graph + Tab features enabled, path = title)."
       );
-      const btn = banner.createEl("button", { text: "Open Community Plugins" });
+      const btn = banner.createEl("button", {
+        text: !fmtEnabled ? "Install Front Matter Title" : "Configure FMT for Antinomia",
+      });
       btn.style.cssText = "margin-top:4px; padding:4px 10px; cursor:pointer;";
-      btn.onclick = () => {
-        const setting = (this.app as any).setting;
-        if (setting?.open) {
-          setting.open();
-          if (setting.openTabById) setting.openTabById("community-plugins");
+      btn.onclick = async () => {
+        if (!fmtEnabled) {
+          // Open the FMT plugin page directly in the community browser
+          try {
+            (window as any).open(
+              "obsidian://show-plugin?id=obsidian-front-matter-title-plugin"
+            );
+          } catch {
+            const setting = (this.app as any).setting;
+            if (setting?.open) {
+              setting.open();
+              if (setting.openTabById)
+                setting.openTabById("community-plugins");
+            }
+          }
+          return;
         }
+        // Smart configure: if FMT was never set up for Antinomia, apply
+        // directly. If it has any other configuration, ask for confirmation.
+        const fmt = (this.plugin as any).getFrontMatterTitlePlugin?.();
+        const hasCustomSettings =
+          fmt?.settings &&
+          Object.keys(fmt.settings).length > 0 &&
+          JSON.stringify(fmt.settings).length > 50;
+        if (hasCustomSettings) {
+          const ok = confirm(
+            "Configure Front Matter Title for Antinomia?\n\n" +
+              "This will set:\n" +
+              "• Resolver path → `title`\n" +
+              "• Features Explorer / Graph / Tab → enabled\n\n" +
+              "Any existing FMT settings for these fields will be overwritten. Continue?"
+          );
+          if (!ok) return;
+        }
+        await this.plugin.configureFrontMatterTitleForAntinomia();
+        // Reopen the welcome modal to refresh the banner
+        this.close();
+        new WelcomeModal(this.app, this.plugin).open();
       };
     }
 
@@ -1066,6 +1110,57 @@ class AntinomiaSettingTab extends PluginSettingTab {
     recText.setText(
       "Antinomia notes have timestamp basenames for ID stability. To see the human title also in the File Explorer, install 'Front Matter Title' from the community and configure it to read the 'title' property."
     );
+    const fmtEnabledNow = this.plugin.isFrontMatterTitleEnabled();
+    const fmtConfiguredNow =
+      this.plugin.isFrontMatterTitleConfiguredForAntinomia();
+    const fmtBtn = recBox.createEl("button", {
+      text: !fmtEnabledNow
+        ? "Install Front Matter Title"
+        : !fmtConfiguredNow
+        ? "Configure FMT for Antinomia"
+        : "✓ Front Matter Title configured",
+    });
+    fmtBtn.style.cssText =
+      "margin-top:8px; padding:4px 10px; cursor:pointer; font-size:0.85em;";
+    if (fmtEnabledNow && fmtConfiguredNow) {
+      fmtBtn.disabled = true;
+      fmtBtn.style.opacity = "0.7";
+    }
+    fmtBtn.onclick = async () => {
+      if (!fmtEnabledNow) {
+        try {
+          (window as any).open(
+            "obsidian://show-plugin?id=obsidian-front-matter-title-plugin"
+          );
+        } catch {
+          const setting = (this.app as any).setting;
+          if (setting?.open) {
+            setting.open();
+            if (setting.openTabById) setting.openTabById("community-plugins");
+          }
+        }
+        return;
+      }
+      if (fmtConfiguredNow) return;
+      // Smart configure (see WelcomeModal for the same logic)
+      const fmt = (this.plugin as any).getFrontMatterTitlePlugin?.();
+      const hasCustomSettings =
+        fmt?.settings &&
+        Object.keys(fmt.settings).length > 0 &&
+        JSON.stringify(fmt.settings).length > 50;
+      if (hasCustomSettings) {
+        const ok = confirm(
+          "Configure Front Matter Title for Antinomia?\n\n" +
+            "This will set:\n" +
+            "• Resolver path → `title`\n" +
+            "• Features Explorer / Graph / Tab → enabled\n\n" +
+            "Any existing FMT settings for these fields will be overwritten. Continue?"
+        );
+        if (!ok) return;
+      }
+      await this.plugin.configureFrontMatterTitleForAntinomia();
+      this.display(); // refresh the settings tab
+    };
 
     new Setting(containerEl)
       .setName("Attachments folder (PDF, images, audio)")
@@ -7191,6 +7286,113 @@ export default class AntinomiaPlugin extends Plugin {
       if (!ep) return false;
       return ep.has("obsidian-front-matter-title-plugin");
     } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Return the FMT plugin instance if installed+enabled, else null.
+   */
+  private getFrontMatterTitlePlugin(): any | null {
+    try {
+      const plugins = (this.app as any).plugins?.plugins;
+      return plugins?.["obsidian-front-matter-title-plugin"] ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Returns true when FMT is already configured for Antinomia: the resolver
+   * path/rule contains "title" and at least the explorer feature is on.
+   * We use this to skip the confirm dialog when nothing meaningful would change.
+   */
+  isFrontMatterTitleConfiguredForAntinomia(): boolean {
+    try {
+      const fmt = this.getFrontMatterTitlePlugin();
+      if (!fmt?.settings) return false;
+      const s = fmt.settings;
+      // Different FMT versions store the path in different places. Sniff for
+      // any key/value pair that mentions "title" in the resolver rules.
+      const json = JSON.stringify(s);
+      const hasTitlePath = /"path"\s*:\s*"title"/i.test(json);
+      const explorerOn = /"explorer"[\s\S]*?"enabled"\s*:\s*true/i.test(json);
+      return hasTitlePath && explorerOn;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Configure Front Matter Title for Antinomia: set the resolver path to
+   * `title` and enable the Explorer / Graph / Tab features so the human
+   * title (in the frontmatter) replaces the timestamp basename everywhere.
+   *
+   * Strategy: merge into the existing FMT settings (don't blindly overwrite),
+   * save through FMT's own saveSettings if available, then disable+reenable
+   * the plugin so changes take effect. If FMT is not reachable, fall back
+   * to writing data.json directly.
+   *
+   * Returns: true on success, false on error (a Notice is shown).
+   */
+  async configureFrontMatterTitleForAntinomia(): Promise<boolean> {
+    const fmt = this.getFrontMatterTitlePlugin();
+    if (!fmt) {
+      new Notice("Front Matter Title is not installed/enabled.");
+      return false;
+    }
+    try {
+      // Path A: mutate the live settings object on the plugin instance,
+      // then call its own saveSettings() if exposed.
+      const s = fmt.settings ?? {};
+      // --- resolver rule: read the `title` frontmatter field ---
+      s.rules = s.rules ?? {};
+      s.rules.items = s.rules.items ?? {};
+      // FMT v3.x stores the active rule under `rules.items.title`. Adding
+      // this key (or overwriting it) is the canonical way to set the path.
+      s.rules.items.title = {
+        ...(s.rules.items.title ?? {}),
+        path: "title",
+        enabled: true,
+      };
+      // --- features ---
+      s.features = s.features ?? {};
+      for (const f of ["explorer", "graph", "tab"]) {
+        s.features[f] = { ...(s.features[f] ?? {}), enabled: true };
+      }
+      fmt.settings = s;
+      // Try the plugin's own saveSettings (best path — it triggers UI refresh)
+      if (typeof fmt.saveSettings === "function") {
+        await fmt.saveSettings();
+      } else {
+        // Fallback: write data.json directly via the vault adapter
+        const dataPath =
+          ".obsidian/plugins/obsidian-front-matter-title-plugin/data.json";
+        const adapter = (this.app.vault as any).adapter;
+        if (adapter?.write) {
+          await adapter.write(dataPath, JSON.stringify(s, null, 2));
+        }
+      }
+      // Disable + reenable to apply the new settings (FMT reads them on boot)
+      const pluginsApi = (this.app as any).plugins;
+      if (
+        pluginsApi?.disablePlugin &&
+        pluginsApi?.enablePlugin
+      ) {
+        await pluginsApi.disablePlugin(
+          "obsidian-front-matter-title-plugin"
+        );
+        await pluginsApi.enablePlugin(
+          "obsidian-front-matter-title-plugin"
+        );
+      }
+      new Notice("Front Matter Title configured for Antinomia ✓");
+      return true;
+    } catch (e) {
+      console.error("[Antinomia] FMT auto-config failed:", e);
+      new Notice(
+        `Could not auto-configure Front Matter Title: ${(e as Error).message}. Configure manually via Settings → Front Matter Title.`
+      );
       return false;
     }
   }
