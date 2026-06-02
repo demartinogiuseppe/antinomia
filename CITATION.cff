@@ -30,9 +30,10 @@ keywords:
 license: MIT
 version: "1.2.6"
 date-released: "2026-06-02"
-# DOI will be filled in after Zenodo generates one for this release.
-# Uncomment and replace once available:
-# identifiers:
-#   - type: doi
-#     value: "10.5281/zenodo.XXXXXXX"
-#     description: "Concept DOI (always resolves to the latest version)"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.20369124"
+    description: "Conceptual paper introducing Personal Tension Management"
+  - type: doi
+    value: "10.5281/zenodo.20506815"
+    description: "Software concept DOI (always resolves to the latest plugin version)"

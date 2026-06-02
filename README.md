@@ -5,14 +5,16 @@
 **Antinomia** is an Obsidian plugin for **Personal Tension Management (PTM)** — the in-tension counterpart of Personal Knowledge Management. If **PKM** organizes explicit knowledge (*what I know*), **PTM** organizes where things don't fit (*where something jars*): contradictions, tradeoffs, anomalies, persistent doubts, weak signals, conflicts between goals. Clean ideas emerge later — as operational principles derived from resolving a tension, not before.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.1.0--beta-orange)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.2.6--beta-orange)](CHANGELOG.md)
 [![Obsidian](https://img.shields.io/badge/Obsidian-1.4%2B-7c3aed)](https://obsidian.md)
+[![Paper DOI](https://img.shields.io/badge/Paper%20DOI-10.5281%2Fzenodo.20369124-blue)](https://doi.org/10.5281/zenodo.20369124)
+[![Software DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20506815.svg)](https://doi.org/10.5281/zenodo.20506815)
 
 ---
 
-## ⚠️ Status: research preview (v1.1.0 beta)
+## ⚠️ Status: research preview (v1.2.6 beta)
 
-Antinomia is in **public beta** distributed via BRAT. Features are stable, but a few edge-case flows (e.g., duplicate Eleva modal in certain conditions) are under observation. Please open an issue if you find anything odd.
+Antinomia is in **public beta** distributed via BRAT. Features are stable, but a few edge-case flows (e.g., duplicate Elevate modal in certain conditions) are under observation. Please open an issue if you find anything odd.
 
 **Antinomia is not a decision-support system.** The pairs the Contradiction Hunter proposes are prompts for thinking, **not truths on which to base real decisions** (work, health, finance, relationships). AI models can hallucinate, oversimplify, misinterpret. Use Antinomia as a reflective practice.
 
@@ -20,19 +22,17 @@ Antinomia is in **public beta** distributed via BRAT. Features are stable, but a
 
 ## The 5 layers
 
-Every Antinomia note has a frontmatter field `antinomia_tipo` that places it in one of five layers:
+Every Antinomia note has a frontmatter field `antinomia_type` that places it in one of five layers:
 
 | Type | What it is | Key fields |
 |---|---|---|
-| `tensione` | A contradiction between two positions A and B | `stato`, `collegamenti` |
-| `substrate` | Raw material (quotes, facts, observations) | `fonte`, `lingua_originale` |
-| `principio` | An operational IF/THEN rule derived from a tension | `origine_tensione` |
-| `defeated` | A defeated belief (historical memory) | `motivo`, `sostituita_da` |
-| `meta_nota` | Reflection on using the system | `data` |
+| `tension` | A contradiction between two positions A and B | `status`, `links` |
+| `substrate` | Raw material (quotes, facts, observations) | `source`, `original_language` |
+| `principle` | An operational IF/THEN rule derived from a tension | `origin_tension` |
+| `defeated` | A defeated belief (historical memory) | `motive`, `replaced_by` |
+| `meta_note` | Reflection on using the system | `date` |
 
 **Design invariant:** the layer of a note lives exclusively in its frontmatter. Files never move between folders when a layer changes.
-
-> The schema field names are intentionally kept in Italian (the project originated in Italian and treats the schema as a stable contract). The plugin's UI strings and AI prompts are also in Italian. An English UI is on the V2 roadmap.
 
 ---
 
@@ -105,13 +105,17 @@ When you understand a tension well enough to formulate it as an operational prin
 
 ## Citation
 
-If you use Antinomia in an academic context or write about it, please cite as:
+If you use Antinomia in academic or research contexts, please cite both:
 
-> De Martino, G. (2026). *Antinomia: an Obsidian plugin for Personal Tension Management* (version 1.1.0) [Software]. https://github.com/demartinogiuseppe/antinomia
+**The conceptual paper** (the idea behind Personal Tension Management):
 
-See [CITATION.cff](CITATION.cff) for the structured format.
+> De Martino, G. (2026). *Antinomia: Personal Tension Management*. Zenodo. https://doi.org/10.5281/zenodo.20369124
 
-A Zenodo DOI will be associated with future releases for stable academic references.
+**The software** (this plugin):
+
+> De Martino, G. (2026). *Antinomia: an Obsidian plugin for Personal Tension Management* (version 1.2.6) [Software]. Zenodo. https://doi.org/10.5281/zenodo.20506815
+
+This is a *concept DOI* — it always resolves to the latest archived version. See [CITATION.cff](CITATION.cff) for the structured format.
 
 ---
 
