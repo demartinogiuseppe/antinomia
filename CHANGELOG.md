@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.2.4 (June 2, 2026) — Graph visual overhaul (neon glow nodes + edges + labels) + bug fixes + Italian residues
+## v1.2.5 (June 2, 2026) — Graph visual overhaul (neon glow nodes + edges + labels) + bug fixes + Italian residues
 
 Visual overhaul of the Graph view plus a handful of bug fixes. No breaking changes, no schema changes.
 
@@ -14,7 +14,30 @@ Cytoscape's canvas renderer can't draw per-edge gaussian blur, so the Graph view
 
 ### Node labels rendered in the SVG overlay (always on top)
 
-Labels were previously painted by Cytoscape on the same canvas as the edges, which means after the edge-overlay change above they ended up *underneath* the glowing lines. They are now drawn as `<text>` elements in a second `<g>` of the SVG overlay (above the paths group), forced white (`#ffffff`) with a black semi-transparent stroke for legibility over any colored line. The hovered node's label keeps full opacity and bold weight; non-hover labels dim to ~0.3 opacity to match the Cytoscape `.faded` behavior on nodes.
+Labels were previously painted by Cytoscape on the same canvas as the edges, which means after the edge-overlay change above they ended up *underneath* the glowing lines. They are now drawn as `<text>` elements in a dedicated labels SVG (`zIndex 10`, appended to the container), forced white (`#ffffff`) with a black semi-transparent stroke for legibility over any colored line. Bold weight on hovered/connected nodes.
+
+### Z-order: edges behind nodes, labels above everything
+
+The overlay was split in two SVGs to get the right stacking:
+- **`edgePathsSvg`** — `zIndex: 0`, DOM-prepended → renders BEHIND the Cytoscape canvases (nodes appear on top of the lines, with clean disc edges).
+- **`edgeLabelsSvg`** — `zIndex: 10`, DOM-appended → renders ABOVE everything (labels are never covered by lines or nodes).
+
+### Edge endpoints trimmed to the visible disc
+
+The SVG paths now stop at the outer edge of each node's visible disc rather than running to the center. Endpoint inset is computed dynamically per node based on its current state (normal, hover-neighbor, hover-focus) and the active Cytoscape zoom — so the line stays attached to the disc edge at every zoom level.
+
+### Hover interaction overhaul
+
+The previous "fade everything else" behavior was replaced with a focused-brighten model:
+- **Hovered node (`.hover-focus`)** — grows from 44px → 60px, switches to the brighter glow SVG variant (more opaque gradient stops, larger inner disc), label goes white + bold.
+- **Connected neighbors (`.hover-neighbor`)** — stay at 44px, get the normal glow at full opacity (boost without size change), label white + bold.
+- **Everything else** — completely untouched, no dimming.
+
+All animated via Cytoscape transitions (`width`, `height`, `background-image-opacity`, `color`) with `transition-duration: 130ms ease-out` for a snappy feel.
+
+### Hit-area expanded by 10px
+
+A transparent 10px border was added to every node (`border-color: rgba(0,0,0,0)`) so the hoverable / clickable area extends 10 pixels beyond the visible disc on every side, without changing the visual size of the node. Makes hovering much easier without enlarging the pallini.
 
 ### Auto-open Dashboard + Graph on startup (Bug A)
 

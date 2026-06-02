@@ -6000,6 +6000,7 @@ class AntinomiaGraphView extends ItemView {
           color: nodeColor,
           shape: LAYER_SHAPES[ck] || "ellipse",
           glow: this.glowSvgDataUri(nodeColor),
+          glowBright: this.glowSvgDataUri(nodeColor, true),
         },
       });
     }
@@ -6102,38 +6103,49 @@ class AntinomiaGraphView extends ItemView {
    * out to r=50. Combined with `background-clip: none` and a 300% bg width,
    * the visible disc stays ~18px while the glow spreads ~27px beyond.
    */
-  private glowSvgDataUri(color: string): string {
+  private glowSvgDataUri(color: string, bright = false): string {
     // Explicit width/height (not just viewBox) so Cytoscape rasterizes the
     // SVG at a stable pixel size and the halo stays centered during zoom.
     // Quadratic falloff (1-t)^2 with many stops, so the gradient blends
     // smoothly into the background without creating a perceived dark ring
     // (Mach band) where the alpha approaches zero.
+    // `bright` variant: stronger stops + larger inner disc, used on hover.
+    const stops = bright
+      ? [
+          [0, 1], [15, 0.92], [30, 0.72], [45, 0.50],
+          [60, 0.32], [75, 0.18], [90, 0.06], [100, 0],
+        ]
+      : [
+          [0, 1], [15, 0.72], [30, 0.49], [45, 0.30],
+          [60, 0.16], [75, 0.06], [90, 0.01], [100, 0],
+        ];
+    const innerR = bright ? 16 : 14;
+    const stopXml = stops
+      .map(
+        ([o, a]) =>
+          `<stop offset="${o}%" stop-color="${color}" stop-opacity="${a}"/>`
+      )
+      .join("");
     const svg =
       '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">' +
       '<defs><radialGradient id="g" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">' +
-      `<stop offset="0%" stop-color="${color}" stop-opacity="1"/>` +
-      `<stop offset="15%" stop-color="${color}" stop-opacity="0.72"/>` +
-      `<stop offset="30%" stop-color="${color}" stop-opacity="0.49"/>` +
-      `<stop offset="45%" stop-color="${color}" stop-opacity="0.30"/>` +
-      `<stop offset="60%" stop-color="${color}" stop-opacity="0.16"/>` +
-      `<stop offset="75%" stop-color="${color}" stop-opacity="0.06"/>` +
-      `<stop offset="90%" stop-color="${color}" stop-opacity="0.01"/>` +
-      `<stop offset="100%" stop-color="${color}" stop-opacity="0"/>` +
+      stopXml +
       '</radialGradient></defs>' +
       '<circle cx="50" cy="50" r="50" fill="url(#g)"/>' +
-      `<circle cx="50" cy="50" r="14" fill="${color}"/>` +
-      '</svg>';
-    // Encode for use in a data URI. encodeURIComponent handles all special
-    // characters in hex colors and SVG markup.
+      `<circle cx="50" cy="50" r="${innerR}" fill="${color}"/>` +
+      "</svg>";
     return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
   }
 
   /**
-   * Tracks the SVG overlay used to render principle-related edges with a
-   * real gaussian glow. The Cytoscape canvas can't draw per-color blur on
-   * edges, so we render them ourselves on top of the cy canvases.
+   * Two SVG overlays:
+   *  - edgePathsSvg: lives BELOW the Cytoscape canvases (so edges appear
+   *    behind the nodes), holds the gradient/blur defs and the edge paths.
+   *  - edgeLabelsSvg: lives ABOVE the canvases, holds only the node labels
+   *    so they are never covered by edges or nodes.
    */
-  private edgeGlowSvg: SVGSVGElement | null = null;
+  private edgePathsSvg: SVGSVGElement | null = null;
+  private edgeLabelsSvg: SVGSVGElement | null = null;
 
   /**
    * Create an absolutely-positioned SVG inside graphContainer that re-draws
@@ -6153,18 +6165,29 @@ class AntinomiaGraphView extends ItemView {
       this.graphContainer.style.position = "relative";
     }
 
-    // (Re)create the overlay element
-    if (this.edgeGlowSvg && this.edgeGlowSvg.parentNode) {
-      this.edgeGlowSvg.parentNode.removeChild(this.edgeGlowSvg);
+    // (Re)create both overlays
+    if (this.edgePathsSvg && this.edgePathsSvg.parentNode) {
+      this.edgePathsSvg.parentNode.removeChild(this.edgePathsSvg);
     }
-    const svg = document.createElementNS(SVG_NS, "svg");
-    svg.style.position = "absolute";
-    svg.style.top = "0";
-    svg.style.left = "0";
-    svg.style.width = "100%";
-    svg.style.height = "100%";
-    svg.style.pointerEvents = "none";
-    svg.style.zIndex = "5";
+    if (this.edgeLabelsSvg && this.edgeLabelsSvg.parentNode) {
+      this.edgeLabelsSvg.parentNode.removeChild(this.edgeLabelsSvg);
+    }
+    const mkOverlaySvg = (zIndex: string): SVGSVGElement => {
+      const s = document.createElementNS(SVG_NS, "svg");
+      s.style.position = "absolute";
+      s.style.top = "0";
+      s.style.left = "0";
+      s.style.width = "100%";
+      s.style.height = "100%";
+      s.style.pointerEvents = "none";
+      s.style.zIndex = zIndex;
+      return s;
+    };
+    // Paths SVG (BEHIND Cytoscape canvases): zIndex 0, prepended in DOM
+    const pathsSvg = mkOverlaySvg("0");
+    // Labels SVG (ABOVE Cytoscape canvases): zIndex 10, appended
+    const labelsSvg = mkOverlaySvg("10");
+    const svg = pathsSvg;
     // Two shared gaussian-blur filters (strong + mild). Per-edge color
     // comes from the linearGradient we generate dynamically below.
     const defs = document.createElementNS(SVG_NS, "defs");
@@ -6184,55 +6207,82 @@ class AntinomiaGraphView extends ItemView {
     defs.appendChild(mkBlur("ant-edge-blur-strong", "7"));
     defs.appendChild(mkBlur("ant-edge-blur-mild", "2.5"));
     svg.appendChild(defs);
-    // <g> for edge paths (drawn first → behind labels)
+    // <g> for edge paths inside pathsSvg
     const g = document.createElementNS(SVG_NS, "g");
     g.setAttribute("id", "ant-edge-paths");
-    svg.appendChild(g);
-    // <g> for node labels (drawn after → on top of paths)
+    pathsSvg.appendChild(g);
+    // <g> for node labels inside labelsSvg
     const gLabels = document.createElementNS(SVG_NS, "g");
     gLabels.setAttribute("id", "ant-node-labels");
-    svg.appendChild(gLabels);
+    labelsSvg.appendChild(gLabels);
 
-    this.graphContainer.appendChild(svg);
-    this.edgeGlowSvg = svg;
+    // pathsSvg goes BEFORE the Cytoscape canvases in DOM order (so it renders behind)
+    this.graphContainer.insertBefore(pathsSvg, this.graphContainer.firstChild);
+    // labelsSvg goes AFTER (so it renders on top of nodes)
+    this.graphContainer.appendChild(labelsSvg);
+    this.edgePathsSvg = pathsSvg;
+    this.edgeLabelsSvg = labelsSvg;
 
     const update = (): void => {
-      if (!this.cy || !this.edgeGlowSvg) return;
-      const defsEl = this.edgeGlowSvg.querySelector("#ant-edge-defs");
-      const group = this.edgeGlowSvg.querySelector("#ant-edge-paths");
+      if (!this.cy || !this.edgePathsSvg || !this.edgeLabelsSvg) return;
+      const defsEl = this.edgePathsSvg.querySelector("#ant-edge-defs");
+      const group = this.edgePathsSvg.querySelector("#ant-edge-paths");
       if (!defsEl || !group) return;
-      // Resize SVG to match container
+      // Resize both SVGs to match container
       const w = this.graphContainer!.clientWidth;
       const h = this.graphContainer!.clientHeight;
-      this.edgeGlowSvg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+      this.edgePathsSvg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+      this.edgeLabelsSvg.setAttribute("viewBox", `0 0 ${w} ${h}`);
       // Clear existing per-edge gradients and paths
       Array.from(defsEl.querySelectorAll("linearGradient")).forEach((el) =>
         el.remove()
       );
       while (group.firstChild) group.removeChild(group.firstChild);
+      // Compute the visible disc radius (in screen pixels) for a node,
+      // based on its current state. The inner disc in our glow SVG is
+      // r=14 normally and r=16 in the bright variant (hover-focus only).
+      const cyZoom = this.cy.zoom();
+      const discRadiusOf = (n: any): number => {
+        const innerR = n.hasClass("hover-focus") ? 16 : 14;
+        const nodeWidth = n.width() || 44;
+        return (innerR / 100) * nodeWidth * cyZoom;
+      };
+
       // Re-draw every edge with src->tgt linear gradient
       let i = 0;
       this.cy.edges().forEach((edge: any) => {
-        const sp = edge.source().renderedPosition();
-        const tp = edge.target().renderedPosition();
+        const src = edge.source();
+        const tgt = edge.target();
+        const sp = src.renderedPosition();
+        const tp = tgt.renderedPosition();
         if (!sp || !tp) return;
-        const srcColor =
-          edge.source().data("color") || "#9e9e9e";
-        const tgtColor =
-          edge.target().data("color") || "#9e9e9e";
-        // When the cy graph sets the .faded class on edges (hover on a
-        // non-connected node), dim the SVG paths so they visually match
-        // the cy fade behavior on nodes.
-        const fadeFactor = edge.hasClass("faded") ? 0.08 : 1;
+        const srcColor = src.data("color") || "#9e9e9e";
+        const tgtColor = tgt.data("color") || "#9e9e9e";
+        // Shrink the line so it stops at the outer edge of each disc
+        // instead of running into the node centers.
+        const dx = tp.x - sp.x;
+        const dy = tp.y - sp.y;
+        const dist = Math.hypot(dx, dy);
+        const rSrc = discRadiusOf(src);
+        const rTgt = discRadiusOf(tgt);
+        if (dist <= rSrc + rTgt + 1) return; // nodes overlap, skip
+        const ux = dx / dist;
+        const uy = dy / dist;
+        const sx = sp.x + ux * rSrc;
+        const sy = sp.y + uy * rSrc;
+        const tx = tp.x - ux * rTgt;
+        const ty = tp.y - uy * rTgt;
+        // No more dimming on hover — every edge stays at full brightness.
+        const fadeFactor = 1;
         const gradId = `ant-grad-${i++}`;
         // Linear gradient running along the edge line
         const grad = document.createElementNS(SVG_NS, "linearGradient");
         grad.setAttribute("id", gradId);
         grad.setAttribute("gradientUnits", "userSpaceOnUse");
-        grad.setAttribute("x1", String(sp.x));
-        grad.setAttribute("y1", String(sp.y));
-        grad.setAttribute("x2", String(tp.x));
-        grad.setAttribute("y2", String(tp.y));
+        grad.setAttribute("x1", String(sx));
+        grad.setAttribute("y1", String(sy));
+        grad.setAttribute("x2", String(tx));
+        grad.setAttribute("y2", String(ty));
         const stop1 = document.createElementNS(SVG_NS, "stop");
         stop1.setAttribute("offset", "0%");
         stop1.setAttribute("stop-color", srcColor);
@@ -6243,7 +6293,7 @@ class AntinomiaGraphView extends ItemView {
         grad.appendChild(stop2);
         defsEl.appendChild(grad);
 
-        const d = `M ${sp.x} ${sp.y} L ${tp.x} ${tp.y}`;
+        const d = `M ${sx} ${sy} L ${tx} ${ty}`;
         // Strong outer halo (large blur, semi-transparent)
         const haloOuter = document.createElementNS(SVG_NS, "path");
         haloOuter.setAttribute("d", d);
@@ -6251,7 +6301,7 @@ class AntinomiaGraphView extends ItemView {
         haloOuter.setAttribute("stroke-width", "10");
         haloOuter.setAttribute("stroke-linecap", "round");
         haloOuter.setAttribute("fill", "none");
-        haloOuter.setAttribute("opacity", String(0.55 * fadeFactor));
+        haloOuter.setAttribute("opacity", String(0.40 * fadeFactor));
         haloOuter.setAttribute("filter", "url(#ant-edge-blur-strong)");
         group.appendChild(haloOuter);
         // Inner halo (small blur, brighter)
@@ -6261,7 +6311,7 @@ class AntinomiaGraphView extends ItemView {
         haloInner.setAttribute("stroke-width", "4");
         haloInner.setAttribute("stroke-linecap", "round");
         haloInner.setAttribute("fill", "none");
-        haloInner.setAttribute("opacity", String(0.75 * fadeFactor));
+        haloInner.setAttribute("opacity", String(0.55 * fadeFactor));
         haloInner.setAttribute("filter", "url(#ant-edge-blur-mild)");
         group.appendChild(haloInner);
         // Core (sharp, opaque)
@@ -6271,12 +6321,12 @@ class AntinomiaGraphView extends ItemView {
         core.setAttribute("stroke-width", "1.4");
         core.setAttribute("stroke-linecap", "round");
         core.setAttribute("fill", "none");
-        core.setAttribute("opacity", String(1 * fadeFactor));
+        core.setAttribute("opacity", String(0.85 * fadeFactor));
         group.appendChild(core);
       });
 
-      // ---- Pass 2: node labels on TOP of edge paths ----
-      const labelsGroup = this.edgeGlowSvg.querySelector("#ant-node-labels");
+      // ---- Pass 2: node labels in the ABOVE SVG (always on top) ----
+      const labelsGroup = this.edgeLabelsSvg.querySelector("#ant-node-labels");
       if (!labelsGroup) return;
       while (labelsGroup.firstChild) labelsGroup.removeChild(labelsGroup.firstChild);
       // Labels are forced white so they stay legible on the dark canvas
@@ -6292,13 +6342,13 @@ class AntinomiaGraphView extends ItemView {
         if (!label) return;
         const pos = node.renderedPosition();
         if (!pos) return;
-        // Bottom of the node disc in screen pixels (node is 54 graph-units)
-        const halfHeight = 27 * zoom;
+        // Bottom of the node disc in screen pixels (node is 44 graph-units)
+        const halfHeight = 22 * zoom;
         const textY = pos.y + halfHeight + 4 + 9; // +text-margin-y +font-ascender
-        const isFaded = node.hasClass("faded");
-        const isHighlight = node.hasClass("highlight");
-        // The hovered/neighbor node stays at full opacity; others dim.
-        const opacity = isFaded ? 0.3 : isHighlight ? 1 : 1;
+        const isHighlight =
+          node.hasClass("hover-focus") || node.hasClass("hover-neighbor");
+        // No more fade on hover — all labels stay at full opacity.
+        const opacity = 1;
         const text = document.createElementNS(SVG_NS, "text");
         text.setAttribute("x", String(pos.x));
         text.setAttribute("y", String(textY));
@@ -6365,6 +6415,7 @@ class AntinomiaGraphView extends ItemView {
             label: el.data.label,
             fullTitle: el.data.fullTitle,
             glow: el.data.glow,
+            glowBright: el.data.glowBright,
           });
         }
       }
@@ -6493,21 +6544,22 @@ class AntinomiaGraphView extends ItemView {
             "text-wrap": "ellipsis",
             "text-max-width": "120px",
             "min-zoomed-font-size": 8,
-            width: 54,
-            height: 54,
-            "border-width": 0,
-            "background-image-opacity": 1,
+            width: 44,
+            height: 44,
+            // Transparent border to expand the hit-area by 10px on each
+            // side without changing the visible disc. Makes hovering the
+            // node easier without enlarging its appearance.
+            "border-width": 10,
+            "border-color": "rgba(0,0,0,0)",
+            "border-opacity": 0,
+            // Base: glow rendered at 80% — boosted to 100% on hover for a
+            // gradual "brighten" effect (background-image-opacity animates,
+            // background-image swaps do not).
+            "background-image-opacity": 0.8,
             "transition-property":
-              "opacity, text-opacity, background-image-opacity, border-color, border-width",
-            "transition-duration": 250,
+              "opacity, text-opacity, background-image-opacity, width, height, color",
+            "transition-duration": 130,
             "transition-timing-function": "ease-out",
-          },
-        },
-        // Faded nodes: dim the halo too so it doesn't bleed
-        {
-          selector: "node.faded",
-          style: {
-            "background-image-opacity": 0.25,
           },
         },
         // All edges are kept in the graph (for the layout engine and
@@ -6523,8 +6575,8 @@ class AntinomiaGraphView extends ItemView {
             width: 0.8,
             "line-color": C.edge,
             "curve-style": "bezier",
-            "source-distance-from-node": -16,
-            "target-distance-from-node": -16,
+            "source-distance-from-node": -13,
+            "target-distance-from-node": -13,
             visibility: "hidden",
           },
         },
@@ -6537,19 +6589,28 @@ class AntinomiaGraphView extends ItemView {
             "font-weight": 600,
           },
         },
-        // Hover: nodi/edge non vicini si sbiadiscono (come Obsidian default)
+        // Note: the previous Obsidian-like ".faded" fade-the-rest behavior
+        // has been removed. Focus is now communicated by the hovered node
+        // brightening (.highlight) instead of dimming everything else.
+        // Hover focus: the node directly under the cursor — bigger + brighter
         {
-          selector: ".faded",
+          selector: "node.hover-focus",
           style: {
-            opacity: 0.35,
-            "text-opacity": 0.25,
+            "background-image": "data(glowBright)",
+            "background-image-opacity": 1,
+            width: 60,
+            height: 60,
+            color: TEXT_NORMAL,
+            "font-weight": 600,
           },
         },
+        // Hover neighbor: nodes connected to the focus — same size as base,
+        // brighter glow than normal but kept BELOW the focus brightness
+        // (uses the normal glow image at full opacity, not the bright one).
         {
-          selector: "node.highlight",
+          selector: "node.hover-neighbor",
           style: {
-            "border-width": 2,
-            "border-color": ACCENT,
+            "background-image-opacity": 1,
             color: TEXT_NORMAL,
             "font-weight": 600,
           },
@@ -6565,7 +6626,7 @@ class AntinomiaGraphView extends ItemView {
         // Hide edges in EVERY cy state — the SVG overlay is the only
         // renderer of edges in this graph view.
         {
-          selector: "edge:selected, edge:active, edge.faded",
+          selector: "edge:selected, edge:active",
           style: {
             visibility: "hidden",
           },
@@ -6689,18 +6750,16 @@ class AntinomiaGraphView extends ItemView {
       if (this.graphContainer)
         this.graphContainer.title = `${fullTitle}\n[${layer}]`;
       if (!this.cy) return;
-      const neighborhood = node.closedNeighborhood();
-      this.cy.batch(() => {
-        this.cy.elements().addClass("faded");
-        neighborhood.removeClass("faded").addClass("highlight");
-      });
+      // The hovered node gets `hover-focus` (size bump + brighter glow);
+      // its connected neighbors get `hover-neighbor` (brighter glow only,
+      // no size change). The rest of the graph stays untouched.
+      node.addClass("hover-focus");
+      node.openNeighborhood().nodes().addClass("hover-neighbor");
     });
     this.cy.on("mouseout", "node", () => {
       if (this.graphContainer) this.graphContainer.title = "";
       if (!this.cy) return;
-      this.cy.batch(() => {
-        this.cy.elements().removeClass("faded highlight");
-      });
+      this.cy.elements().removeClass("hover-focus hover-neighbor");
     });
   }
 
