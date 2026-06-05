@@ -310,6 +310,371 @@ function detectBackend(baseUrl: string): string {
 }
 
 /**
+ * Compact, consistent Notice shown after every successful AI call. Surfaces
+ * the token usage and elapsed time so the user can see at a glance how
+ * expensive each operation was (cloud cost / local time).
+ *
+ * If `context` is provided, the Notice becomes CLICKABLE: clicking it opens
+ * an `ErrorAckModal` with full details (profile, model, URL, tokens, duration)
+ * and a Copy button — useful for sharing/diagnosing without losing the info
+ * when the Notice auto-dismisses.
+ *
+ * Examples:
+ *   "Antinomia · Title · ↓ 42 in / ↑ 18 out · 2.1s"
+ *   "Antinomia · Hunter · ↓ 1284 in / ↑ 312 out · 14.7s"
+ *   "Antinomia · Title · 2.1s"           (when usage unavailable)
+ */
+function notifyAIUsage(
+  operation: string,
+  usage?: { input_tokens?: number; output_tokens?: number },
+  durationMs?: number,
+  context?: { app: App; profile?: string; model?: string; url?: string },
+  attachToButton?: HTMLButtonElement
+): void {
+  const parts: string[] = [`Antinomia · ${operation}`];
+  if (usage && (usage.input_tokens != null || usage.output_tokens != null)) {
+    parts.push(`↓ ${usage.input_tokens ?? "?"} in / ↑ ${usage.output_tokens ?? "?"} out`);
+  }
+  if (typeof durationMs === "number") {
+    parts.push(`${(durationMs / 1000).toFixed(1)}s`);
+  }
+  const summary = parts.join(" · ");
+  const notice = new Notice(summary, 5000);
+
+  // Inline persistent badge next to the triggering button — survives the
+  // Notice auto-dismiss so the user can see the cost at a glance for as
+  // long as the parent modal is open. Click to open the full details modal.
+  if (attachToButton && usage) {
+    // Remove any previous badge attached to this button
+    const prev = attachToButton.parentElement?.querySelector(
+      ".antinomia-ai-usage-badge"
+    );
+    if (prev) prev.remove();
+
+    const badge = document.createElement("span");
+    badge.className = "antinomia-ai-usage-badge";
+    badge.style.marginLeft = "8px";
+    badge.style.fontSize = "0.72em";
+    badge.style.opacity = "0.75";
+    badge.style.padding = "2px 7px";
+    badge.style.background = "var(--background-secondary)";
+    badge.style.color = "var(--text-muted)";
+    badge.style.borderRadius = "10px";
+    badge.style.fontFamily = "var(--font-monospace, monospace)";
+    badge.style.userSelect = "text";
+    (badge.style as any).webkitUserSelect = "text";
+
+    const dur =
+      typeof durationMs === "number" ? `${(durationMs / 1000).toFixed(1)}s` : "—";
+    badge.textContent = `Tokens: ↓${usage.input_tokens ?? "?"} ↑${usage.output_tokens ?? "?"} · ${dur}`;
+
+    if (context?.app) {
+      badge.style.cursor = "pointer";
+      badge.title = "Click for full AI call details";
+      badge.addEventListener("click", () => {
+        const inTok = usage.input_tokens ?? null;
+        const outTok = usage.output_tokens ?? null;
+        const totalTok = (inTok ?? 0) + (outTok ?? 0);
+        const tokPerSec =
+          typeof durationMs === "number" && durationMs > 0 && outTok != null
+            ? (outTok / (durationMs / 1000)).toFixed(1) + " tok/s"
+            : "—";
+        const details = [
+          `Operation:     ${operation}`,
+          `Profile:       ${context.profile ?? "—"}`,
+          `Model:         ${context.model ?? "—"}`,
+          `URL:           ${context.url ?? "—"}`,
+          ``,
+          `Input tokens:  ${inTok ?? "—"}`,
+          `Output tokens: ${outTok ?? "—"}`,
+          `Total tokens:  ${totalTok || "—"}`,
+          ``,
+          `Duration:      ${dur}`,
+          `Throughput:    ${tokPerSec}`,
+        ].join("\n");
+        const message =
+          totalTok > 1000
+            ? `This call used ${totalTok} tokens. Likely a reasoning model burning tokens on internal <think>. For short tasks, a non-reasoning model (Llama 3.x, Mistral, Phi) would use ~50 tokens.`
+            : `Call completed in ${dur}.`;
+        new ErrorAckModal(
+          context.app,
+          `Antinomia — AI call · ${operation}`,
+          message,
+          details
+        ).open();
+      });
+    }
+
+    attachToButton.parentElement?.insertBefore(
+      badge,
+      attachToButton.nextSibling
+    );
+  }
+
+  if (context?.app) {
+    const el = (notice as any).noticeEl as HTMLElement | undefined;
+    if (el) {
+      el.style.cursor = "pointer";
+      el.title = "Click for full AI call details";
+      el.addEventListener("click", () => {
+        const inTok = usage?.input_tokens ?? null;
+        const outTok = usage?.output_tokens ?? null;
+        const totalTok = (inTok ?? 0) + (outTok ?? 0);
+        const dur = typeof durationMs === "number" ? (durationMs / 1000).toFixed(2) + "s" : "—";
+        const tokPerSec =
+          typeof durationMs === "number" && durationMs > 0 && outTok != null
+            ? (outTok / (durationMs / 1000)).toFixed(1) + " tok/s"
+            : "—";
+
+        const details = [
+          `Operation:     ${operation}`,
+          `Profile:       ${context.profile ?? "—"}`,
+          `Model:         ${context.model ?? "—"}`,
+          `URL:           ${context.url ?? "—"}`,
+          ``,
+          `Input tokens:  ${inTok ?? "—"}`,
+          `Output tokens: ${outTok ?? "—"}`,
+          `Total tokens:  ${totalTok || "—"}`,
+          ``,
+          `Duration:      ${dur}`,
+          `Throughput:    ${tokPerSec}`,
+        ].join("\n");
+
+        const message =
+          totalTok > 1000
+            ? `Heads-up: this call used ${totalTok} tokens. If this was a short task (title, classification) the model is likely a reasoning distill (Qwen3, DeepSeek-R1) burning tokens on internal <think>. For short tasks, a non-reasoning model (Llama 3.x, Mistral, Phi) would use ~50 tokens.`
+            : `Call completed in ${dur}.`;
+
+        new ErrorAckModal(
+          context.app,
+          `Antinomia — AI call · ${operation}`,
+          message,
+          details
+        ).open();
+      });
+    }
+  }
+}
+
+/**
+ * Render a small info banner at the top of a modal that was pre-filled from
+ * an AI call (e.g. NewTensionModal / NewSubstrateModal after a Free input
+ * classification). Shows operation, tokens, and duration; click opens the
+ * full ErrorAckModal-style details view.
+ *
+ * The banner persists for as long as the parent modal stays open — fixing
+ * the UX hole where the badge attached to the Free input button vanished
+ * the instant that modal closed to spawn the next one.
+ */
+function renderUsageMetaBanner(
+  parent: HTMLElement,
+  meta: AIUsageMeta,
+  app?: App
+): void {
+  const u = meta.usage;
+  const dur =
+    typeof meta.durationMs === "number"
+      ? `${(meta.durationMs / 1000).toFixed(1)}s`
+      : "—";
+  const tokTxt =
+    u && (u.input_tokens != null || u.output_tokens != null)
+      ? `Tokens: ↓${u.input_tokens ?? "?"} ↑${u.output_tokens ?? "?"}`
+      : "Tokens: —";
+
+  const wrap = parent.createEl("div");
+  wrap.style.display = "flex";
+  wrap.style.alignItems = "center";
+  wrap.style.gap = "8px";
+  wrap.style.padding = "6px 10px";
+  wrap.style.margin = "4px 0 12px 0";
+  wrap.style.background = "var(--background-secondary)";
+  wrap.style.borderRadius = "6px";
+  wrap.style.fontSize = "0.78em";
+  wrap.style.color = "var(--text-muted)";
+  wrap.style.fontFamily = "var(--font-monospace, monospace)";
+  wrap.style.userSelect = "text";
+  (wrap.style as any).webkitUserSelect = "text";
+
+  const label = wrap.createEl("span");
+  label.style.opacity = "0.7";
+  label.setText(`Pre-filled by ${meta.operation ?? "AI"} ·`);
+
+  const tokSpan = wrap.createEl("span");
+  tokSpan.setText(tokTxt);
+
+  const durSpan = wrap.createEl("span");
+  durSpan.style.opacity = "0.7";
+  durSpan.setText(`· ${dur}`);
+
+  if (app) {
+    wrap.style.cursor = "pointer";
+    wrap.title = "Click for full AI call details";
+    wrap.addEventListener("click", () => {
+      const inTok = u?.input_tokens ?? null;
+      const outTok = u?.output_tokens ?? null;
+      const totalTok = (inTok ?? 0) + (outTok ?? 0);
+      const tokPerSec =
+        typeof meta.durationMs === "number" && meta.durationMs > 0 && outTok != null
+          ? (outTok / (meta.durationMs / 1000)).toFixed(1) + " tok/s"
+          : "—";
+      const details = [
+        `Operation:     ${meta.operation ?? "AI"}`,
+        `Profile:       ${meta.profile ?? "—"}`,
+        `Model:         ${meta.model ?? "—"}`,
+        `URL:           ${meta.url ?? "—"}`,
+        ``,
+        `Input tokens:  ${inTok ?? "—"}`,
+        `Output tokens: ${outTok ?? "—"}`,
+        `Total tokens:  ${totalTok || "—"}`,
+        ``,
+        `Duration:      ${dur}`,
+        `Throughput:    ${tokPerSec}`,
+      ].join("\n");
+      new ErrorAckModal(
+        app,
+        `Antinomia — AI call · ${meta.operation ?? "AI"}`,
+        `Call completed in ${dur}.`,
+        details
+      ).open();
+    });
+  }
+}
+
+/**
+ * Persistent error modal — replaces transient Notices for errors that the
+ * user needs to actually read and acknowledge (failed AI calls, unreachable
+ * backends, unparseable responses). Shows a clear human-readable message
+ * plus a collapsible "Technical details" block with the raw error / payload.
+ *
+ * Use Notices for success/info ("Hunter: 3 pairs in 4s"); use this for
+ * errors that require attention.
+ */
+class ErrorAckModal extends Modal {
+  constructor(
+    app: App,
+    private heading: string,
+    private message: string,
+    private details?: string
+  ) {
+    super(app);
+  }
+  onOpen(): void {
+    const { contentEl, titleEl } = this;
+    titleEl.setText(this.heading);
+
+    // Force the whole modal content to be text-selectable. Obsidian's default
+    // modal stylesheet sometimes applies `user-select: none` which prevents
+    // users from copying the error message — defeats the purpose of an ack
+    // modal that exists exactly to let people read & share the error.
+    contentEl.style.userSelect = "text";
+    (contentEl.style as any).webkitUserSelect = "text";
+    contentEl.style.cursor = "text";
+
+    const msg = contentEl.createEl("p");
+    msg.style.whiteSpace = "pre-wrap";
+    msg.style.lineHeight = "1.5";
+    msg.style.fontSize = "0.95em";
+    msg.style.userSelect = "text";
+    (msg.style as any).webkitUserSelect = "text";
+    msg.style.cursor = "text";
+    msg.setText(this.message);
+
+    if (this.details && this.details.trim()) {
+      const det = contentEl.createEl("details");
+      det.style.marginTop = "12px";
+      const sum = det.createEl("summary", { text: "Technical details" });
+      sum.style.cursor = "pointer";
+      sum.style.fontSize = "0.8em";
+      sum.style.opacity = "0.65";
+      sum.style.marginBottom = "6px";
+      sum.style.userSelect = "none"; // summary stays click-only
+      const pre = det.createEl("pre");
+      pre.style.fontSize = "0.75em";
+      pre.style.maxHeight = "240px";
+      pre.style.overflow = "auto";
+      pre.style.padding = "8px";
+      pre.style.background = "var(--background-secondary)";
+      pre.style.borderRadius = "4px";
+      pre.style.whiteSpace = "pre-wrap";
+      pre.style.wordBreak = "break-word";
+      pre.style.userSelect = "text";
+      (pre.style as any).webkitUserSelect = "text";
+      pre.style.cursor = "text";
+      pre.setText(this.details);
+
+      // "Copy details" button so the user can quickly share the technical
+      // info on GitHub/Discord without manually selecting + Ctrl+C.
+      const copyBtn = det.createEl("button", { text: "Copy details" });
+      copyBtn.style.marginTop = "6px";
+      copyBtn.style.fontSize = "0.75em";
+      copyBtn.style.padding = "2px 8px";
+      copyBtn.style.cursor = "pointer";
+      copyBtn.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(this.details ?? "");
+          copyBtn.setText("Copied ✓");
+          setTimeout(() => copyBtn.setText("Copy details"), 1500);
+        } catch {
+          copyBtn.setText("Copy failed");
+          setTimeout(() => copyBtn.setText("Copy details"), 1500);
+        }
+      };
+    }
+
+    new Setting(contentEl)
+      .addButton((b) => {
+        b.setButtonText("Copy message").onClick(async () => {
+          const payload =
+            this.heading +
+            "\n\n" +
+            this.message +
+            (this.details && this.details.trim()
+              ? "\n\n--- Technical details ---\n" + this.details
+              : "");
+          try {
+            await navigator.clipboard.writeText(payload);
+            const btnEl = (b as any).buttonEl as HTMLButtonElement;
+            const orig = btnEl.textContent ?? "Copy message";
+            btnEl.textContent = "Copied ✓";
+            setTimeout(() => {
+              btnEl.textContent = orig;
+            }, 1500);
+          } catch {
+            const btnEl = (b as any).buttonEl as HTMLButtonElement;
+            btnEl.textContent = "Copy failed";
+            setTimeout(() => {
+              btnEl.textContent = "Copy message";
+            }, 1500);
+          }
+        });
+      })
+      .addButton((b) =>
+        b
+          .setButtonText("OK")
+          .setCta()
+          .onClick(() => this.close())
+      );
+  }
+  onClose(): void {
+    this.contentEl.empty();
+  }
+}
+
+/**
+ * Helper: show a persistent error modal anywhere in the plugin. Title is
+ * always prefixed with "Antinomia — ". Use for AI errors, network failures,
+ * unparseable responses, missing config.
+ */
+function showErrorModal(
+  app: App,
+  heading: string,
+  message: string,
+  details?: string
+): void {
+  new ErrorAckModal(app, `Antinomia — ${heading}`, message, details).open();
+}
+
+/**
  * Modal to edit an AI profile (name, baseUrl, apiKey, model). Has a Backend
  * preset dropdown at the top that quickly populates the standard endpoints.
  */
@@ -2158,24 +2523,421 @@ function detectApiFormat(baseUrl: string): "anthropic" | "openai" {
   return "openai";
 }
 
+// ---------- PDF text extraction via pdfjsLib (bundled in Obsidian) ----------
+
+/**
+ * Max characters of PDF text we feed to the AI in a single call (MVP — no
+ * chunking yet). PDFs larger than this trigger a warning to the user; we
+ * still process the first N characters and skip the rest.
+ */
+const PDF_TEXT_HARD_CAP_CHARS = 30_000;
+
+interface PdfExtractResult {
+  text: string;
+  pageCount: number;
+  truncated: boolean;
+  totalChars: number;
+}
+
+/**
+ * Extract plain text from a PDF binary using Obsidian's bundled pdfjsLib.
+ *
+ * pdfjsLib is lazy-loaded by Obsidian — it's only present after the user has
+ * opened a PDF at least once in the current session. We check for it and
+ * throw a friendly error if missing so we can guide the user.
+ *
+ * Returns concatenated page text with "\n\n--- Page N ---\n\n" separators
+ * (helpful for debugging). Truncated to PDF_TEXT_HARD_CAP_CHARS to keep
+ * the AI call cost predictable on very long documents.
+ */
+async function extractPdfText(
+  binary: ArrayBuffer
+): Promise<PdfExtractResult> {
+  const pdfjsLib = (window as any).pdfjsLib;
+  if (!pdfjsLib || typeof pdfjsLib.getDocument !== "function") {
+    throw new Error(
+      "pdfjs_not_loaded:Obsidian's PDF library is not loaded yet. Open any PDF in Obsidian once (just opening it is enough), then retry."
+    );
+  }
+
+  const loadingTask = pdfjsLib.getDocument({ data: binary });
+  const doc = await loadingTask.promise;
+  const pageCount: number = doc.numPages;
+
+  const pageTexts: string[] = [];
+  let totalChars = 0;
+  let truncated = false;
+
+  for (let p = 1; p <= pageCount; p++) {
+    const page = await doc.getPage(p);
+    const content = await page.getTextContent();
+    const pageText = content.items
+      .map((it: any) => (typeof it.str === "string" ? it.str : ""))
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (pageText.length === 0) continue;
+
+    if (totalChars + pageText.length > PDF_TEXT_HARD_CAP_CHARS) {
+      // Take only what fits, then stop
+      const remaining = PDF_TEXT_HARD_CAP_CHARS - totalChars;
+      if (remaining > 0) {
+        pageTexts.push(`--- Page ${p} (truncated) ---\n${pageText.slice(0, remaining)}`);
+        totalChars += remaining;
+      }
+      truncated = true;
+      break;
+    }
+
+    pageTexts.push(`--- Page ${p} ---\n${pageText}`);
+    totalChars += pageText.length;
+  }
+
+  return {
+    text: pageTexts.join("\n\n"),
+    pageCount,
+    truncated,
+    totalChars,
+  };
+}
+
+// ---------- Model capability detection (autoadaptive AI behavior) ----------
+
+/**
+ * Identified model "families" we adapt to. Used to pick the right reasoning
+ * vocabulary, sensible max_tokens budget per task class, and to warn the
+ * user when a heavy reasoning model is used for trivial tasks.
+ *
+ * "unknown" = safe conservative defaults (no reasoning controls, mid-size
+ * token budgets). Add a new family only when its reasoning vocabulary or
+ * token-spending profile differs materially from the existing ones.
+ */
+type ModelFamily =
+  | "anthropic"            // Claude — non-reasoning by default
+  | "openai-reasoning"     // o1/o3/o4 family, GPT-5
+  | "openai-instruct"      // GPT-4o/4/3.5 — non-reasoning
+  | "qwen3-reasoning"      // Qwen3 thinking / distill / QwQ
+  | "qwen-instruct"        // Qwen 2.5 / Qwen3 base (toggle-able)
+  | "deepseek-reasoning"   // DeepSeek-R1 and distills
+  | "llama"                // Llama 3.x Instruct, etc.
+  | "mistral"              // Mistral / Mixtral
+  | "phi"                  // Microsoft Phi
+  | "gemma"                // Google Gemma
+  | "unknown";
+
+/**
+ * "Reasoning vocabulary" — the set of values the backend accepts for the
+ * `reasoning_effort` field. Sending the wrong vocabulary either errors
+ * (OpenAI rejects "off") or silently does the opposite (LM Studio Qwen3
+ * promotes unknown values back to "on").
+ */
+type ReasoningVocab = "openai" | "on_off" | "none";
+
+interface ModelCapabilities {
+  family: ModelFamily;
+  isReasoning: boolean;
+  reasoningVocab: ReasoningVocab;
+  /** Suggested `max_tokens` per task category. */
+  recommended: {
+    short: number;   // titles, classification, free-input analysis
+    medium: number;  // IF/THEN proposal, presuppositions
+    deep: number;    // Hunter, long syntheses
+  };
+}
+
+/**
+ * Pure function: classify a model by its name string. Operates on
+ * `lowercase(model)` and uses ordered pattern matching — the most specific
+ * patterns (e.g. `qwen3-reasoning`) come BEFORE the generic ones
+ * (`qwen-instruct`) so they win.
+ *
+ * This is intentionally heuristic. If a model is misclassified, the user
+ * can override `maxTokens` and `disableThinking` explicitly in their call
+ * site; the helper is a sensible default, not a contract.
+ */
+function detectModelCapabilities(modelName: string): ModelCapabilities {
+  const m = (modelName || "").toLowerCase();
+
+  // Anthropic Claude — non-reasoning by default (extended thinking opt-in)
+  if (/^claude/.test(m)) {
+    return {
+      family: "anthropic",
+      isReasoning: false,
+      reasoningVocab: "none",
+      recommended: { short: 200, medium: 800, deep: 2000 },
+    };
+  }
+
+  // OpenAI reasoning: o-series, GPT-5
+  if (/^(o\d+(?:-|$)|gpt-5)/.test(m)) {
+    return {
+      family: "openai-reasoning",
+      isReasoning: true,
+      reasoningVocab: "openai",
+      recommended: { short: 4000, medium: 6000, deep: 12000 },
+    };
+  }
+
+  // OpenAI instruct (GPT-4o/4/3.5, GPT-4.1, etc.)
+  if (/^gpt-(4o|4\.1|4(?:-|$)|3\.5)/.test(m)) {
+    return {
+      family: "openai-instruct",
+      isReasoning: false,
+      reasoningVocab: "none",
+      recommended: { short: 200, medium: 800, deep: 2000 },
+    };
+  }
+
+  // Qwen3 reasoning — IMPORTANT: Qwen3 (3.x and 3.5) has extended thinking
+  // ENABLED by default in its chat template, regardless of model name.
+  // Treating it as reasoning gives a big enough max_tokens budget AND
+  // injects the reasoning_effort=off signal. If the user has a non-thinking
+  // variant they can override `maxTokens` explicitly at the call site.
+  //
+  // Explicit reasoning distills (QwQ, R1-distill) are an even stronger case.
+  if (
+    /qwen\d?.*(reason|thinking|distill|r1)/.test(m) ||
+    /\bqwq\b/.test(m) ||
+    /qwen3/.test(m)
+  ) {
+    return {
+      family: "qwen3-reasoning",
+      isReasoning: true,
+      reasoningVocab: "on_off",
+      recommended: { short: 4000, medium: 6000, deep: 10000 },
+    };
+  }
+
+  // DeepSeek reasoning
+  if (/deepseek[-_]?r1|^r1[-_]|deepseek.*reason/.test(m)) {
+    return {
+      family: "deepseek-reasoning",
+      isReasoning: true,
+      reasoningVocab: "on_off",
+      recommended: { short: 4000, medium: 6000, deep: 10000 },
+    };
+  }
+
+  // Qwen 2.5 and earlier — non-reasoning instruct family.
+  // (Qwen3.x was already captured above and routed to qwen3-reasoning.)
+  if (/qwen/.test(m)) {
+    return {
+      family: "qwen-instruct",
+      isReasoning: false,
+      reasoningVocab: "none",
+      recommended: { short: 200, medium: 800, deep: 2000 },
+    };
+  }
+
+  if (/llama/.test(m)) {
+    return {
+      family: "llama",
+      isReasoning: false,
+      reasoningVocab: "none",
+      recommended: { short: 200, medium: 800, deep: 2000 },
+    };
+  }
+  if (/mistral|mixtral/.test(m)) {
+    return {
+      family: "mistral",
+      isReasoning: false,
+      reasoningVocab: "none",
+      recommended: { short: 200, medium: 800, deep: 2000 },
+    };
+  }
+  if (/phi/.test(m)) {
+    return {
+      family: "phi",
+      isReasoning: false,
+      reasoningVocab: "none",
+      recommended: { short: 200, medium: 800, deep: 2000 },
+    };
+  }
+  if (/gemma/.test(m)) {
+    // IMPORTANT: Gemma 3+ and Gemma 4 ship with extended thinking ENABLED
+    // by default in the chat template, similar to Qwen3 distills. They
+    // write the actual output into `reasoning_content` and return an
+    // empty `content` when truncated by max_tokens.
+    //
+    // Detect the major version from the model name: gemma-[34]+ → reasoning,
+    // gemma-2 and earlier → plain instruct.
+    const isGemma3Plus = /gemma[-_ ]?[34-9]\b|gemma[-_ ]?1[0-9]/.test(m);
+    if (isGemma3Plus) {
+      return {
+        family: "gemma",
+        isReasoning: true,
+        reasoningVocab: "on_off", // gemma supports enable_thinking template signal
+        recommended: { short: 4000, medium: 6000, deep: 10000 },
+      };
+    }
+    return {
+      family: "gemma",
+      isReasoning: false,
+      reasoningVocab: "none",
+      recommended: { short: 200, medium: 800, deep: 2000 },
+    };
+  }
+
+  // Unknown — safe conservative defaults, no reasoning controls injected
+  return {
+    family: "unknown",
+    isReasoning: false,
+    reasoningVocab: "none",
+    recommended: { short: 500, medium: 1500, deep: 3000 },
+  };
+}
+
+// One-shot per-session warning so we don't spam the user on every short
+// task call. Key: `${profile}|${task}`.
+const _reasoningWarningShown = new Set<string>();
+
+/**
+ * Reachability cache for local AI backends (LM Studio, Ollama). Positive
+ * results live for 30s; negative for 5s (so the user gets fast feedback
+ * right after starting the local server).
+ */
+interface PingResult {
+  ok: boolean;
+  error?: string;
+}
+const _pingCache = new Map<string, PingResult & { expiresAt: number }>();
+const PING_TIMEOUT_MS = 2000;
+const PING_TTL_OK_MS = 30_000;
+const PING_TTL_FAIL_MS = 5_000;
+
+/**
+ * Hit `<baseUrl>/v1/models` with a short timeout. Any HTTP response (even
+ * 4xx) means the backend is alive — only network errors / timeouts mean
+ * "not running". Uses Node http when available (bypasses CORS), falls back
+ * to Obsidian's requestUrl otherwise.
+ */
+async function pingLocalBackend(baseUrl: string): Promise<PingResult> {
+  // Strip trailing slash AND a trailing `/v1` (common in OpenAI-compat base
+  // URLs like `http://localhost:1234/v1`) so we don't end up requesting
+  // `/v1/v1/models` — LM Studio used to log this as an error before being
+  // lenient about it.
+  const cleanBase = baseUrl.replace(/\/$/, "").replace(/\/v1$/, "");
+  const cached = _pingCache.get(cleanBase);
+  if (cached && Date.now() < cached.expiresAt) {
+    return { ok: cached.ok, error: cached.error };
+  }
+
+  const url = `${cleanBase}/v1/models`;
+  let result: PingResult;
+
+  try {
+    const u = new URL(url);
+    let nodeMod: any = null;
+    try {
+      nodeMod = (window as any).require
+        ? (window as any).require(u.protocol === "https:" ? "https" : "http")
+        : null;
+    } catch {
+      nodeMod = null;
+    }
+
+    if (nodeMod) {
+      result = await new Promise<PingResult>((resolve) => {
+        let resolved = false;
+        const done = (r: PingResult) => {
+          if (resolved) return;
+          resolved = true;
+          resolve(r);
+        };
+        const req = nodeMod.request(
+          {
+            hostname: u.hostname,
+            port: u.port || (u.protocol === "https:" ? 443 : 80),
+            path: u.pathname + u.search,
+            method: "GET",
+            timeout: PING_TIMEOUT_MS,
+          },
+          (res: any) => {
+            res.on("data", () => undefined);
+            res.on("end", () => undefined);
+            // Any HTTP response = server alive (even 401/404)
+            done({ ok: true });
+          }
+        );
+        req.on("error", (e: Error) => done({ ok: false, error: e.message }));
+        req.on("timeout", () => {
+          try {
+            req.destroy();
+          } catch {
+            /* ignore */
+          }
+          done({ ok: false, error: "timeout" });
+        });
+        req.end();
+      });
+    } else {
+      try {
+        const r = await requestUrl({ url, method: "GET", throw: false });
+        result = { ok: r.status > 0 && r.status < 600 };
+      } catch (e) {
+        result = { ok: false, error: (e as Error).message };
+      }
+    }
+  } catch (e) {
+    result = { ok: false, error: (e as Error).message };
+  }
+
+  const ttl = result.ok ? PING_TTL_OK_MS : PING_TTL_FAIL_MS;
+  _pingCache.set(cleanBase, { ...result, expiresAt: Date.now() + ttl });
+  return result;
+}
+
 async function callAI(opts: {
   baseUrl: string;
   apiKey: string;
   model: string;
   system: string;
   messages: ClaudeMessage[];
+  /**
+   * Explicit `max_tokens` cap. If omitted AND `taskClass` is provided, the
+   * recommended value for the detected model family is used. If both are
+   * omitted, falls back to 1024.
+   */
   maxTokens?: number;
   /**
-   * Optional AbortSignal. When provided AND the backend is a localhost URL
-   * (LM Studio, Ollama, etc.), we use native fetch() so that aborting closes
-   * the TCP socket and the local model actually stops generating.
-   * For remote (Anthropic Cloud) we keep requestUrl to bypass CORS — abort
-   * still rejects the promise but the HTTP request can't be cancelled mid-flight.
+   * "Task category" used by the autoadaptive layer to derive sensible
+   * `max_tokens` per model family (titles: small, Hunter: large) and to
+   * decide whether to inject `disableThinking` automatically. Reasoning
+   * models get a generous budget on short tasks because their internal
+   * <think> burns tokens before producing the JSON output.
    */
+  taskClass?: "short" | "medium" | "deep";
   signal?: AbortSignal;
+  /**
+   * Explicit override of the autoadaptive reasoning disable. When omitted,
+   * we default to `taskClass === "short" || "medium"` (i.e. short and
+   * medium tasks turn thinking off, deep tasks leave it on).
+   *
+   * The actual `reasoning_effort` vocabulary sent depends on the detected
+   * model family — OpenAI o-series gets "low", LM Studio Qwen3 / DeepSeek
+   * gets "off" (sending the wrong vocabulary either errors out or — worse —
+   * silently promotes the value back to "on").
+   *
+   * Backup signals are always sent alongside:
+   *  - `chat_template_kwargs.enable_thinking: false`  (Qwen3 via vLLM)
+   *  - `extra_body.enable_thinking: false`            (Ollama)
+   *
+   * No-op for the Anthropic format.
+   */
+  disableThinking?: boolean;
 }): Promise<{ text: string; usage?: ClaudeResponse["usage"] }> {
-  if (!opts.apiKey) throw new Error("API key mancante.");
-  if (!opts.baseUrl) throw new Error("Base URL mancante.");
+  if (!opts.apiKey) throw new Error("API key missing.");
+  if (!opts.baseUrl) throw new Error("Base URL missing.");
+
+  // Autoadaptive: classify the model once, then derive everything from it.
+  const caps = detectModelCapabilities(opts.model);
+  const effectiveMaxTokens =
+    opts.maxTokens ??
+    (opts.taskClass ? caps.recommended[opts.taskClass] : 1024);
+  const shouldDisableThinking =
+    opts.disableThinking ??
+    (opts.taskClass === "short" || opts.taskClass === "medium");
 
   const apiFormat = detectApiFormat(opts.baseUrl);
   const baseClean = opts.baseUrl.replace(/\/$/, "");
@@ -2189,18 +2951,68 @@ async function callAI(opts: {
     apiFormat === "anthropic"
       ? {
           model: opts.model,
-          max_tokens: opts.maxTokens ?? 1024,
+          max_tokens: effectiveMaxTokens,
           system: opts.system,
           messages: opts.messages,
         }
       : {
           model: opts.model,
-          max_tokens: opts.maxTokens ?? 1024,
+          max_tokens: effectiveMaxTokens,
           messages: [
             { role: "system", content: opts.system },
             ...opts.messages,
           ],
         };
+
+  // Autoadaptive reasoning disable.
+  //
+  // `reasoning_effort` is a minefield across runtimes:
+  //   - OpenAI cloud o-series:        "low" | "medium" | "high"  (rejects others)
+  //   - LM Studio OLD (~0.3.x):       "on" | "off"               (silently promotes unknowns → "on")
+  //   - LM Studio NEW (0.4.x+):       "none" | "minimal" | "low" | "medium" | "high" | "xhigh"  (rejects "off" with 400)
+  //   - Ollama / vLLM:                varies by model, often ignored
+  //
+  // Strategy:
+  //   - For OpenAI cloud reasoning models (o-series, GPT-5) we send "low" —
+  //     safe and supported.
+  //   - For everything else (local Qwen3, DeepSeek-R1, etc.) we DO NOT send
+  //     `reasoning_effort` at all. Any value we pick will be wrong on some
+  //     version of LM Studio. Instead we rely on `chat_template_kwargs.
+  //     enable_thinking: false` which Qwen3 honors at the template level
+  //     regardless of runtime version. Harmless on backends that ignore it.
+  if (shouldDisableThinking && apiFormat !== "anthropic") {
+    if (caps.reasoningVocab === "openai") {
+      body.reasoning_effort = "low";
+    }
+    // Template-level signal — survives LM Studio version churn:
+    body.chat_template_kwargs = {
+      ...(body.chat_template_kwargs ?? {}),
+      enable_thinking: false,
+    };
+    // Ollama / some vLLM deployments use extra_body:
+    body.extra_body = {
+      ...(body.extra_body ?? {}),
+      enable_thinking: false,
+    };
+  }
+
+  // Friendly heads-up the first time per session: reasoning model used for
+  // a short task is almost always wasted tokens (the model burns reasoning
+  // on something the user just wanted a 5-word answer for).
+  if (
+    caps.isReasoning &&
+    opts.taskClass === "short" &&
+    !_reasoningWarningShown.has(`${opts.model}|short`)
+  ) {
+    _reasoningWarningShown.add(`${opts.model}|short`);
+    console.warn(
+      `[Antinomia] Heads-up: model "${opts.model}" is a reasoning model ` +
+        `(${caps.family}). For short tasks (titles, classification) it will ` +
+        `burn many tokens on internal <think>. Consider creating a "Fast" ` +
+        `profile with a non-reasoning model (Llama 3.x, Mistral, Phi) for ` +
+        `short calls and keeping the reasoning model for Hunter / deep tasks.`
+    );
+  }
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -2225,6 +3037,17 @@ async function callAI(opts: {
       u.hostname.endsWith(".local");
   } catch {
     /* malformed URL — fall back to requestUrl */
+  }
+
+  // Pre-check: for local backends, ping the server first so we fail fast with
+  // a friendly message instead of a cryptic ECONNREFUSED deep in the request.
+  if (isLocal) {
+    const ping = await pingLocalBackend(baseClean);
+    if (!ping.ok) {
+      throw new Error(
+        `Local AI backend not reachable at ${baseClean}. Start LM Studio / Ollama (Local Server) and try again. [${ping.error || "no response"}]`
+      );
+    }
   }
 
   if (isLocal && opts.signal) {
@@ -2290,7 +3113,7 @@ async function callAI(opts: {
 
       if (result.status < 200 || result.status >= 300) {
         throw new Error(
-          `AI errore ${result.status} (${url}): ${result.text.slice(0, 500)}`
+          `AI error ${result.status} (${url}): ${result.text.slice(0, 500)}`
         );
       }
       const data = JSON.parse(result.text);
@@ -2322,7 +3145,7 @@ async function callAI(opts: {
     try {
       detail = res.text.slice(0, 500);
     } catch {}
-    throw new Error(`AI errore ${res.status} (${url}): ${detail}`);
+    throw new Error(`AI error ${res.status} (${url}): ${detail}`);
   }
   const data = res.json;
   return parseAIResponse(data, apiFormat);
@@ -2345,10 +3168,38 @@ function parseAIResponse(
     return { text, usage: data?.usage };
   }
   // OpenAI-compatible
-  const text =
-    data?.choices?.[0]?.message?.content ??
-    data?.choices?.[0]?.text ??
+  const msg = data?.choices?.[0]?.message ?? {};
+  const primary = msg.content ?? data?.choices?.[0]?.text ?? "";
+
+  // FALLBACK for reasoning models that put their output in `reasoning_content`
+  // (Qwen3 distills via LM Studio, DeepSeek-R1, some Ollama models). If they
+  // hit max_tokens mid-thinking, `content` is "" but `reasoning_content` holds
+  // the entire chain-of-thought — and the final answer is usually written in
+  // the last lines. We surface it as `text` so the downstream parsers
+  // (parseTitleFromAIResponse etc.) can fish out a JSON or pattern.
+  const reasoning =
+    msg.reasoning_content ??
+    msg.reasoning ??
+    data?.choices?.[0]?.reasoning_content ??
     "";
+
+  let text: string = primary;
+  if ((!primary || !String(primary).trim()) && reasoning && String(reasoning).trim()) {
+    text = String(reasoning);
+    console.warn(
+      "[Antinomia] AI content empty — falling back to reasoning_content (" +
+        text.length +
+        " chars). Likely a reasoning model truncated by max_tokens."
+    );
+  }
+
+  const finishReason = data?.choices?.[0]?.finish_reason;
+  if (finishReason === "length") {
+    console.warn(
+      "[Antinomia] AI finish_reason=length — response was truncated. Raise max_tokens."
+    );
+  }
+
   const usage = data?.usage
     ? {
         input_tokens: data.usage.prompt_tokens ?? 0,
@@ -2411,6 +3262,113 @@ interface TitleProposal {
   title: string;
 }
 
+/**
+ * Parses a title out of an AI response that may be:
+ *   - Clean JSON {"title": "..."}
+ *   - JSON wrapped in markdown code fences ```json ... ```
+ *   - Reasoning model output with <think>...</think> blocks (Qwen3, DeepSeek-R1)
+ *   - Bold/markdown-wrapped labels like **Title:** "..."
+ *   - Plain-text labeled "Title: ..." or "Titolo: ..."
+ *   - A quoted string anywhere (including smart quotes)
+ *   - Plain prose where the first short line is the title
+ *
+ * Returns the sanitized title (max 7 words / 60 chars), or null if nothing
+ * usable can be extracted.
+ *
+ * Designed to be resilient to local backends (LM Studio / Ollama) and
+ * reasoning models which often ignore the JSON-only instruction.
+ */
+function parseTitleFromAIResponse(rawText: string): string | null {
+  if (!rawText || !rawText.trim()) return null;
+
+  const sanitizeTitle = (raw: string): string => {
+    let t = raw.trim();
+    // Strip surrounding quotes/backticks (ASCII + smart quotes)
+    t = t.replace(/^["'`“”‘’]+|["'`“”‘’]+$/g, "").trim();
+    // Strip surrounding markdown bold/italic
+    t = t.replace(/^[*_]+|[*_]+$/g, "").trim();
+    // If multi-sentence, keep only the first sentence
+    const m = t.match(/^[^.!?\n]+/);
+    if (m) t = m[0].trim();
+    // Cap at 7 words
+    const words = t.split(/\s+/);
+    if (words.length > 7) t = words.slice(0, 7).join(" ");
+    // Cap at 60 chars (word boundary if possible)
+    if (t.length > 60) {
+      const cut = t.slice(0, 60);
+      const lastSpace = cut.lastIndexOf(" ");
+      t = lastSpace > 30 ? cut.slice(0, lastSpace) : cut;
+    }
+    // Strip trailing punctuation/quotes
+    t = t.replace(/[.,;:\-—_"'`]+$/, "").trim();
+    return t;
+  };
+
+  // Pre-clean: strip thinking blocks, code fences, markdown emphasis
+  const cleaned = rawText
+    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    // Open <think> with no close: drop everything up to a heuristic end
+    .replace(/<think>[\s\S]*$/gi, "")
+    .replace(/```[a-zA-Z]*\n?|```/g, "")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
+    .trim();
+
+  if (!cleaned) return null;
+
+  // Pattern 1: strict JSON with "title" key
+  try {
+    const parsed = extractJson<TitleProposal>(cleaned);
+    if (parsed && typeof parsed.title === "string" && parsed.title.trim()) {
+      const t = sanitizeTitle(parsed.title);
+      if (t.length > 0) return t;
+    }
+  } catch {
+    /* fall through */
+  }
+
+  // Pattern 2: loose `"title": "..."` anywhere
+  const jsonLike = cleaned.match(/["']title["']\s*:\s*["']([^"'\n]{1,200})["']/i);
+  if (jsonLike) {
+    const t = sanitizeTitle(jsonLike[1]);
+    if (t.length > 0) return t;
+  }
+
+  // Pattern 3: `Title:` / `Titolo:` label line
+  const labeled = cleaned.match(
+    /(?:^|\n)\s*(?:title|titolo|proposed title|titolo proposto)\s*[:\-—]\s*(.+?)(?:\n|$)/i
+  );
+  if (labeled) {
+    const t = sanitizeTitle(labeled[1]);
+    if (t.length > 0) return t;
+  }
+
+  // Pattern 4: any quoted string of reasonable length (ASCII + smart quotes)
+  const quoted = cleaned.match(/["“]([^"”\n]{4,80})["”]/);
+  if (quoted) {
+    const t = sanitizeTitle(quoted[1]);
+    if (t.length > 0) return t;
+  }
+
+  // Pattern 5: skip reasoning/preamble lines, pick first short line
+  const skipPatterns =
+    /^(l'utente|the user|i (think|believe|will|need|should)|let me|here(?:'s| is)|ecco|allora|sto|so |okay|the goal|my task|to (propose|generate|create)|reasoning:|note:|output:|response:|json:)/i;
+  const lines = cleaned
+    .split("\n")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0 && !skipPatterns.test(s));
+  const shortLine = lines.find((s) => s.length <= 80 && s.split(/\s+/).length <= 10);
+  const candidate = shortLine || lines[0];
+  if (candidate) {
+    const stripped = candidate.replace(/^(title|titolo)[:\s\-—]+/i, "").trim();
+    const t = sanitizeTitle(stripped);
+    if (t.length > 0) return t;
+  }
+
+  return null;
+}
+
 const PRESUPPOSTI_SYSTEM = `You are the Antinomia assistant. You are helping the user map the PRESUPPOSITIONS of a tension.
 
 A tension has statement A and statement B that contradict each other. PRESUPPOSITIONS are the epistemic / metaphysical / value assumptions that A and B take for granted (often unspoken). Mapping them makes explicit why A and B cannot coexist without trade-offs.
@@ -2432,6 +3390,34 @@ interface PresuppostiFields {
   presupposizioniB?: string;
 }
 
+const EXTRACT_CONCEPTS_SYSTEM = `You are the Antinomia document analyzer. Your task: extract distinct standalone CONCEPTS from a piece of text (typically a PDF excerpt) suitable as Antinomia substrates.
+
+A SUBSTRATE is raw material: a quote, a fact, an observation, a claim. NOT a summary, NOT an interpretation, NOT a conclusion drawn from multiple parts. Each concept must be self-contained — readable without the surrounding text.
+
+LANGUAGE: detect the dominant language of the input and write each \`title\` and \`content\` in THAT language. JSON keys are fixed.
+
+Constraints:
+- Extract BETWEEN 5 AND 20 concepts. Quality over quantity. If the text is short or thin, return fewer.
+- For each concept:
+  - \`title\`: 3-7 words, neutral, IDENTIFIES the object (does not summarize it).
+  - \`content\`: 1-4 sentences, faithfully reflecting the source. Preserve key wording. Do NOT rephrase aggressively, do NOT add interpretation.
+- SKIP: headers, table of contents, page numbers, bibliography references, generic transition phrases, footnotes about formatting.
+- SKIP DUPLICATES: if two concepts express the same idea, emit ONLY ONE.
+- If the text contains an apparent CONTRADICTION (claim A vs claim not-A), emit those as TWO SEPARATE substrates — Antinomia's Hunter will surface the pair later. Do NOT pre-resolve the contradiction.
+
+Reply with ONLY valid JSON, no fence, no commentary:
+{"concepts": [{"title": "...", "content": "..."}, ...]}
+
+If the text contains no extractable concepts (too short, garbled, irrelevant): {"concepts": []}`;
+
+interface PdfConcept {
+  title: string;
+  content: string;
+}
+interface PdfConceptsResult {
+  concepts: PdfConcept[];
+}
+
 const FREE_INPUT_SYSTEM = `You are the Antinomia analyst. The user gives you a raw input (it can be a quote, an observation, a doubt, a contradiction, a single thought) and you must:
 
 1. Determine if it's a TENSION or a SUBSTRATE.
@@ -2451,6 +3437,21 @@ Reply with ONLY valid JSON, no fence:
 {"tipo": "tension" | "substrate", "title": "...", "statementA": "...", "statementB": "...", "contenuto": "..."}
 
 For tension leave contenuto empty. For substrate leave statementA/statementB empty.`;
+
+/**
+ * Carries the AI usage stats of the call that produced an analysis so the
+ * downstream modal (NewTensionModal / NewSubstrateModal) can show a banner
+ * with the tokens spent. Without this, the user only sees a transient
+ * Notice that gets visually buried under the new modal.
+ */
+interface AIUsageMeta {
+  usage?: { input_tokens?: number; output_tokens?: number };
+  durationMs?: number;
+  profile?: string;
+  model?: string;
+  url?: string;
+  operation?: string;
+}
 
 interface FreeInputAnalysis {
   tipo: "tension" | "substrate";
@@ -2490,6 +3491,13 @@ async function withLoadingButton<T>(
 ): Promise<T | null> {
   const original = btn.textContent ?? "";
   btn.disabled = true;
+  // Wipe any previous AI usage badge attached as sibling so the user
+  // doesn't see stale token counts during the new generation. The badge
+  // will be re-inserted by notifyAIUsage when the call completes.
+  const prevBadge = btn.parentElement?.querySelector(
+    ".antinomia-ai-usage-badge"
+  );
+  if (prevBadge) prevBadge.remove();
   const t0 = Date.now();
   btn.textContent = `${loadingText} 0s`;
   const interval = window.setInterval(() => {
@@ -2623,7 +3631,7 @@ What does NOT count:
 - Notes on different non-incompatible topics
 - Differences of tone/register/length
 - A note more detailed than another
-- Weak/forced pairs (if uncertain, DO NOT include or use confidence: bassa)
+- Weak/forced pairs (if uncertain, DO NOT include or use confidence: low)
 - Weak THEMATIC connections (both talk about "time" but in different non-opposing ways)
 - Pairs where you have to INVENT a common presupposition to justify them: don't write "one assumes X while the other Y" if neither says that explicitly
 
@@ -2661,15 +3669,15 @@ function buildHunterSystem(style: "concise" | "verbose"): string {
   );
 }
 
-type HunterConfidence = "alta" | "media" | "bassa";
+type HunterConfidence = "high" | "medium" | "low";
 interface HunterContradiction {
-  nota_a: string;
-  nota_b: string;
-  descrizione: string;
+  note_a: string;
+  note_b: string;
+  description: string;
   confidence?: HunterConfidence;
 }
 interface HunterResult {
-  contraddizioni: HunterContradiction[];
+  pairs: HunterContradiction[];
 }
 interface HunterRunMetadata {
   timestamp: string;
@@ -2687,14 +3695,14 @@ interface HunterRun {
   result: HunterResult;
 }
 const CONFIDENCE_ORDER: Record<HunterConfidence, number> = {
-  alta: 0,
-  media: 1,
-  bassa: 2,
+  high: 0,
+  medium: 1,
+  low: 2,
 };
 const CONFIDENCE_COLOR: Record<HunterConfidence, string> = {
-  alta: "var(--color-green, #2ecc71)",
-  media: "var(--color-yellow, #f1c40f)",
-  bassa: "var(--color-orange, #e67e22)",
+  high: "var(--color-green, #2ecc71)",
+  medium: "var(--color-yellow, #f1c40f)",
+  low: "var(--color-orange, #e67e22)",
 };
 
 // ---------- modals ----------
@@ -3149,13 +4157,13 @@ class ElevateToPrincipleModal extends Modal {
       const proposed = await withLoadingButton(
         aiBtn,
         "⏳ Generating...",
-        async () => {
+        async (signal) => {
           const raw = await this.app.vault.read(this.file);
           const body = stripFrontmatter(raw).trim();
           const content =
             "I'm elevating this Antinomia tension into an operational IF/THEN/GREY principle. Here is the tension text:\n\n" +
             body;
-          return await this.plugin.proposeIfThenFromContent(content);
+          return await this.plugin.proposeIfThenFromContent(content, signal, aiBtn);
         }
       );
       if (!proposed) return;
@@ -3210,7 +4218,8 @@ class FreeInputModal extends Modal {
     plugin: AntinomiaPlugin,
     private onAnalyzed: (
       analysis: FreeInputAnalysis,
-      originalText: string
+      originalText: string,
+      meta?: AIUsageMeta
     ) => void,
     prefillText = ""
   ) {
@@ -3270,14 +4279,14 @@ class FreeInputModal extends Modal {
               new Notice("Write something before analyzing.");
               return;
             }
-            const analysis = await withLoadingButton(
+            const result = await withLoadingButton(
               b.buttonEl,
-              "⏳ Analizzando...",
-              () => this.plugin.analyzeFreeInput(t)
+              "⏳ Analyzing...",
+              (signal) => this.plugin.analyzeFreeInput(t, signal, b.buttonEl)
             );
-            if (!analysis) return;
+            if (!result) return;
             this.close();
-            this.onAnalyzed(analysis, t);
+            this.onAnalyzed(result.analysis, t, result.meta);
           })
       );
   }
@@ -3289,19 +4298,23 @@ class FreeInputModal extends Modal {
 class NewTensionModal extends Modal {
   private plugin: AntinomiaPlugin;
   private prefill: TensionFields;
+  private prefillUsageMeta?: AIUsageMeta;
   constructor(
     app: App,
     plugin: AntinomiaPlugin,
     private onSubmit: (fields: TensionFields | null, skipped: boolean) => void,
-    prefill: TensionFields = {}
+    prefill: TensionFields = {},
+    prefillUsageMeta?: AIUsageMeta
   ) {
     super(app);
     this.plugin = plugin;
     this.prefill = prefill;
+    this.prefillUsageMeta = prefillUsageMeta;
   }
   onOpen(): void {
     const { contentEl } = this;
     contentEl.createEl("h3", { text: "New tension" });
+    if (this.prefillUsageMeta) renderUsageMetaBanner(contentEl, this.prefillUsageMeta, this.app);
     const intro = contentEl.createEl("p");
     intro.style.fontSize = "0.9em";
     intro.style.opacity = "0.8";
@@ -3369,7 +4382,7 @@ class NewTensionModal extends Modal {
       const proposed = await withLoadingButton(
         aiBtn,
         "⏳ Generating...",
-        () => this.plugin.proposeTitleFromContent(content)
+        (signal) => this.plugin.proposeTitleFromContent(content, signal, aiBtn)
       );
       if (proposed) {
         titleInput.value = proposed;
@@ -3436,19 +4449,23 @@ class NewTensionModal extends Modal {
 class NewSubstrateModal extends Modal {
   private plugin: AntinomiaPlugin;
   private prefill: SubstrateFields;
+  private prefillUsageMeta?: AIUsageMeta;
   constructor(
     app: App,
     plugin: AntinomiaPlugin,
     private onSubmit: (fields: SubstrateFields | null, skipped: boolean) => void,
-    prefill: SubstrateFields = {}
+    prefill: SubstrateFields = {},
+    prefillUsageMeta?: AIUsageMeta
   ) {
     super(app);
     this.plugin = plugin;
     this.prefill = prefill;
+    this.prefillUsageMeta = prefillUsageMeta;
   }
   onOpen(): void {
     const { contentEl } = this;
     contentEl.createEl("h3", { text: "New substrate" });
+    if (this.prefillUsageMeta) renderUsageMetaBanner(contentEl, this.prefillUsageMeta, this.app);
     const intro = contentEl.createEl("p");
     intro.style.fontSize = "0.9em";
     intro.style.opacity = "0.8";
@@ -3505,7 +4522,7 @@ class NewSubstrateModal extends Modal {
       const proposed = await withLoadingButton(
         aiBtn,
         "⏳ Generating...",
-        () => this.plugin.proposeTitleFromContent(content)
+        (signal) => this.plugin.proposeTitleFromContent(content, signal, aiBtn)
       );
       if (proposed) {
         titleInput.value = proposed;
@@ -3560,6 +4577,307 @@ class NewSubstrateModal extends Modal {
  * "link-active-note-to" command. Displays the human title of each note as
  * the primary text and the basename as the secondary (for disambiguation).
  */
+/**
+ * Progress modal shown while the AI is analyzing a PDF and extracting
+ * concepts. Has its own AbortController and a Stop button so the user
+ * can cancel a long call (the source picker has already closed by this
+ * point, so a withLoadingButton on a real button isn't available — this
+ * modal IS the loading button).
+ *
+ * The lifecycle is owned by the caller: the caller opens it, polls
+ * `controller.signal` from inside the async fn, and closes the modal
+ * when done (success, error, or abort).
+ */
+class PdfAnalyzingModal extends Modal {
+  public controller: AbortController = new AbortController();
+  private timerHandle: number | null = null;
+  private elapsedEl: HTMLElement | null = null;
+  private t0: number = Date.now();
+  constructor(
+    app: App,
+    private pdfName: string,
+    private modelName: string
+  ) {
+    super(app);
+  }
+  onOpen(): void {
+    const { contentEl, titleEl } = this;
+    titleEl.setText(`Analyzing "${this.pdfName}" with AI…`);
+
+    const msg = contentEl.createEl("p");
+    msg.style.fontSize = "0.9em";
+    msg.style.lineHeight = "1.5";
+    msg.setText(
+      `Antinomia is asking ${this.modelName} to extract standalone concepts from the PDF. ` +
+        `This usually takes 20–90 seconds depending on the model and PDF length. Click Stop to abort.`
+    );
+
+    this.elapsedEl = contentEl.createEl("div");
+    this.elapsedEl.style.fontFamily = "var(--font-monospace, monospace)";
+    this.elapsedEl.style.fontSize = "1.1em";
+    this.elapsedEl.style.textAlign = "center";
+    this.elapsedEl.style.padding = "12px";
+    this.elapsedEl.style.background = "var(--background-secondary)";
+    this.elapsedEl.style.borderRadius = "6px";
+    this.elapsedEl.style.margin = "8px 0";
+    this.elapsedEl.setText("⏳ 0s");
+
+    this.t0 = Date.now();
+    this.timerHandle = window.setInterval(() => {
+      if (this.elapsedEl) {
+        const s = Math.floor((Date.now() - this.t0) / 1000);
+        this.elapsedEl.setText(`⏳ ${s}s`);
+      }
+    }, 1000);
+
+    new Setting(contentEl).addButton((b) =>
+      b
+        .setButtonText("⛔ Stop")
+        .setWarning()
+        .onClick(() => {
+          this.controller.abort();
+          if (this.elapsedEl) this.elapsedEl.setText("Aborting…");
+        })
+    );
+  }
+  onClose(): void {
+    if (this.timerHandle != null) {
+      window.clearInterval(this.timerHandle);
+      this.timerHandle = null;
+    }
+    this.contentEl.empty();
+  }
+}
+
+/**
+ * Preview & selection modal for PDF concept extraction. Shows each
+ * concept proposed by the AI with a checkbox (default selected), expandable
+ * content, and lets the user pick which to materialize as substrates.
+ *
+ * Banner at the top shows tokens spent + duration of the extraction call.
+ */
+class PdfConceptsPreviewModal extends Modal {
+  private selected: Set<number> = new Set();
+  constructor(
+    app: App,
+    private plugin: AntinomiaPlugin,
+    private pdfFile: TFile,
+    private concepts: PdfConcept[],
+    private extractionMeta: AIUsageMeta,
+    private onConfirm: (selectedConcepts: PdfConcept[]) => void
+  ) {
+    super(app);
+    // Default: all selected.
+    this.concepts.forEach((_, i) => this.selected.add(i));
+  }
+  onOpen(): void {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.style.maxWidth = "780px";
+
+    contentEl.createEl("h3", {
+      text: `Concepts from "${this.pdfFile.basename}"`,
+    });
+
+    // Usage meta banner (persistent, clickable for details).
+    renderUsageMetaBanner(contentEl, this.extractionMeta, this.app);
+
+    const intro = contentEl.createEl("p");
+    intro.style.fontSize = "0.88em";
+    intro.style.opacity = "0.8";
+    intro.style.lineHeight = "1.5";
+    intro.setText(
+      `Antinomia extracted ${this.concepts.length} concept(s) from the PDF. ` +
+        `Pick which ones to save as substrates. They will be created in ` +
+        `notes/from-pdf-${this.pdfFile.basename.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "_")}/.`
+    );
+
+    if (this.concepts.length === 0) {
+      const empty = contentEl.createEl("p");
+      empty.style.fontStyle = "italic";
+      empty.style.opacity = "0.7";
+      empty.setText("No concepts extracted. Try again, or the PDF is too thin / image-only.");
+      new Setting(contentEl).addButton((b) =>
+        b.setButtonText("Close").setCta().onClick(() => this.close())
+      );
+      return;
+    }
+
+    // Toolbar (select all / none + counter).
+    const toolbar = contentEl.createEl("div");
+    toolbar.style.display = "flex";
+    toolbar.style.alignItems = "center";
+    toolbar.style.gap = "8px";
+    toolbar.style.margin = "8px 0";
+
+    const counter = toolbar.createEl("span");
+    counter.style.fontSize = "0.85em";
+    counter.style.fontWeight = "bold";
+    const updateCounter = () => {
+      counter.setText(`${this.selected.size} of ${this.concepts.length} selected`);
+    };
+    updateCounter();
+
+    const selAll = toolbar.createEl("button", { text: "Select all" });
+    selAll.style.fontSize = "0.8em";
+    selAll.style.padding = "2px 8px";
+    selAll.style.cursor = "pointer";
+
+    const deselAll = toolbar.createEl("button", { text: "Deselect all" });
+    deselAll.style.fontSize = "0.8em";
+    deselAll.style.padding = "2px 8px";
+    deselAll.style.cursor = "pointer";
+
+    // Scrollable list of concepts.
+    const list = contentEl.createEl("div");
+    list.style.maxHeight = "420px";
+    list.style.overflowY = "auto";
+    list.style.border = "1px solid var(--background-modifier-border)";
+    list.style.borderRadius = "6px";
+    list.style.padding = "4px";
+
+    const itemEls: HTMLDivElement[] = [];
+
+    this.concepts.forEach((c, i) => {
+      const item = list.createEl("div");
+      itemEls.push(item);
+      item.style.display = "flex";
+      item.style.gap = "8px";
+      item.style.padding = "8px 10px";
+      item.style.borderBottom = "1px solid var(--background-modifier-border)";
+      item.style.alignItems = "flex-start";
+
+      const checkbox = item.createEl("input", { type: "checkbox" });
+      checkbox.checked = true;
+      checkbox.style.marginTop = "4px";
+      checkbox.style.cursor = "pointer";
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) this.selected.add(i);
+        else this.selected.delete(i);
+        updateCounter();
+      });
+
+      const body = item.createEl("div");
+      body.style.flex = "1";
+      body.style.userSelect = "text";
+      (body.style as any).webkitUserSelect = "text";
+
+      const title = body.createEl("div");
+      title.style.fontWeight = "bold";
+      title.style.fontSize = "0.95em";
+      title.style.marginBottom = "3px";
+      title.setText(c.title);
+
+      const content = body.createEl("div");
+      content.style.fontSize = "0.85em";
+      content.style.opacity = "0.85";
+      content.style.lineHeight = "1.45";
+      content.setText(c.content);
+    });
+
+    selAll.onclick = () => {
+      this.concepts.forEach((_, i) => this.selected.add(i));
+      itemEls.forEach((el) => {
+        const cb = el.querySelector("input[type=checkbox]") as HTMLInputElement | null;
+        if (cb) cb.checked = true;
+      });
+      updateCounter();
+    };
+    deselAll.onclick = () => {
+      this.selected.clear();
+      itemEls.forEach((el) => {
+        const cb = el.querySelector("input[type=checkbox]") as HTMLInputElement | null;
+        if (cb) cb.checked = false;
+      });
+      updateCounter();
+    };
+
+    new Setting(contentEl)
+      .addButton((b) =>
+        b.setButtonText("Cancel").onClick(() => this.close())
+      )
+      .addButton((b) =>
+        b
+          .setButtonText("Create selected")
+          .setCta()
+          .onClick(() => {
+            if (this.selected.size === 0) {
+              new Notice("Select at least one concept to create.");
+              return;
+            }
+            const picks: PdfConcept[] = [];
+            this.selected.forEach((i) => picks.push(this.concepts[i]));
+            this.close();
+            this.onConfirm(picks);
+          })
+      );
+  }
+  onClose(): void {
+    this.contentEl.empty();
+  }
+}
+
+/**
+ * Source picker modal for PDF ingest: choose between picking a PDF already
+ * in the vault OR importing a fresh PDF from disk (Electron file dialog,
+ * desktop-only). Either choice ultimately yields a TFile inside the vault
+ * that the AI flow can read.
+ */
+class PdfSourcePickerModal extends Modal {
+  constructor(
+    app: App,
+    private plugin: AntinomiaPlugin,
+    private onPicked: (pdf: TFile) => void
+  ) {
+    super(app);
+  }
+  onOpen(): void {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.createEl("h3", { text: "Choose PDF source" });
+
+    const intro = contentEl.createEl("p");
+    intro.style.fontSize = "0.88em";
+    intro.style.opacity = "0.8";
+    intro.setText(
+      "Antinomia will extract text from the PDF and ask the AI to propose substrate concepts. You'll preview and pick which to save."
+    );
+
+    const vaultPdfs = this.app.vault.getFiles().filter((f) => f.extension === "pdf");
+
+    new Setting(contentEl)
+      .setName("Pick a PDF already in this vault")
+      .setDesc(`${vaultPdfs.length} PDF(s) found in the vault`)
+      .addButton((b) =>
+        b
+          .setButtonText(vaultPdfs.length === 0 ? "No PDFs in vault" : "Pick from vault…")
+          .setDisabled(vaultPdfs.length === 0)
+          .onClick(() => {
+            this.close();
+            new PdfPickerModal(this.app, vaultPdfs, (pdf) => this.onPicked(pdf)).open();
+          })
+      );
+
+    new Setting(contentEl)
+      .setName("Import a PDF from disk")
+      .setDesc("Copies the file into the vault under attachments/, then processes it.")
+      .addButton((b) =>
+        b.setButtonText("Choose file…").onClick(async () => {
+          this.close();
+          const imported = await this.plugin.importPdfFromDisk();
+          if (imported) this.onPicked(imported);
+        })
+      );
+
+    new Setting(contentEl).addButton((b) =>
+      b.setButtonText("Cancel").onClick(() => this.close())
+    );
+  }
+  onClose(): void {
+    this.contentEl.empty();
+  }
+}
+
 /**
  * Picker over all PDF files in the vault. Used by `openSubstrateFromPDF`.
  */
@@ -3909,7 +5227,10 @@ function renderAntinomiaNav(
     m.addSeparator();
     m.addItem((i) =>
       i.setTitle("Free-form input (AI classifies)").setIcon("sparkles")
-        .onClick(() => new FreeInputModal(plugin.app, plugin).open())
+        // Route through the plugin wrapper which supplies the required
+        // `onAnalyzed` callback (otherwise FreeInputModal would crash with
+        // "this.onAnalyzed is not a function" when the user clicks Analyze).
+        .onClick(() => plugin.openFreeInputModal())
     );
     m.addItem((i) =>
       i.setTitle("Substrate from clipboard").setIcon("clipboard")
@@ -4353,17 +5674,17 @@ class HunterResultsView extends ItemView {
     if (meta.inputTokens !== undefined)
       metaTxt += ` (${meta.inputTokens}->${meta.outputTokens} tok)`;
     if (meta.dismissedFiltered > 0)
-      metaTxt += ` — ${meta.dismissedFiltered} coppie nascoste perche' gia' dismessas`;
+      metaTxt += ` — ${meta.dismissedFiltered} pairs hidden (already dismissed)`;
     metaEl.setText(metaTxt);
     if (meta.truncated) {
       const warn = container.createEl("p");
       warn.style.color = "var(--text-warning, orange)";
       warn.setText(
-        `Escluse ${meta.totalCandidates - meta.notesExamined} note (oltre il limite).`
+        `Excluded ${meta.totalCandidates - meta.notesExamined} notes (over the limit).`
       );
     }
 
-    const items = this.currentRun.result.contraddizioni;
+    const items = this.currentRun.result.pairs;
     if (items.length === 0) {
       container.createEl("p", {
         text: "No contradictions detected in this run.",
@@ -4372,10 +5693,10 @@ class HunterResultsView extends ItemView {
     }
 
     const sorted = [...items].sort((a, b) => {
-      const ca = CONFIDENCE_ORDER[a.confidence ?? "media"];
-      const cb = CONFIDENCE_ORDER[b.confidence ?? "media"];
+      const ca = CONFIDENCE_ORDER[a.confidence ?? "medium"];
+      const cb = CONFIDENCE_ORDER[b.confidence ?? "medium"];
       if (ca !== cb) return ca - cb;
-      return a.nota_a.localeCompare(b.nota_a);
+      return a.note_a.localeCompare(b.note_a);
     });
 
     const list = container.createEl("ol");
@@ -4389,7 +5710,7 @@ class HunterResultsView extends ItemView {
       headerLine.style.gap = "6px";
       headerLine.style.flexWrap = "wrap";
 
-      const confidence = c.confidence ?? "media";
+      const confidence = c.confidence ?? "medium";
       const badge = headerLine.createEl("span", { text: confidence });
       badge.style.fontSize = "0.7em";
       badge.style.padding = "1px 6px";
@@ -4399,24 +5720,24 @@ class HunterResultsView extends ItemView {
       badge.style.fontWeight = "bold";
       badge.title = `Confidence: ${confidence}`;
 
-      this.appendNoteLink(headerLine, c.nota_a);
+      this.appendNoteLink(headerLine, c.note_a);
       headerLine.appendText(" ⟷ ");
-      this.appendNoteLink(headerLine, c.nota_b);
+      this.appendNoteLink(headerLine, c.note_b);
 
       const dismissBtn = headerLine.createEl("button", { text: "×" });
       dismissBtn.style.marginLeft = "auto";
       dismissBtn.style.padding = "0 6px";
       dismissBtn.style.cursor = "pointer";
-      dismissBtn.title = "Marca come falso positivo.";
+      dismissBtn.title = "Mark as false positive.";
       dismissBtn.onclick = async () => {
-        await this.plugin.dismissContradiction(c.nota_a, c.nota_b);
+        await this.plugin.dismissContradiction(c.note_a, c.note_b);
         if (this.currentRun) {
-          this.currentRun.result.contraddizioni =
-            this.currentRun.result.contraddizioni.filter(
+          this.currentRun.result.pairs =
+            this.currentRun.result.pairs.filter(
               (x) =>
                 !(
-                  (x.nota_a === c.nota_a && x.nota_b === c.nota_b) ||
-                  (x.nota_a === c.nota_b && x.nota_b === c.nota_a)
+                  (x.note_a === c.note_a && x.note_b === c.note_b) ||
+                  (x.note_a === c.note_b && x.note_b === c.note_a)
                 )
             );
           this.render();
@@ -4426,11 +5747,11 @@ class HunterResultsView extends ItemView {
       const desc = li.createEl("p");
       desc.style.marginTop = "4px";
       desc.style.fontStyle = "italic";
-      desc.setText(c.descrizione);
+      desc.setText(c.description);
 
       // ---- Per-note action rows (rendered only if the note exists) ----
-      this.appendActionRow(li, c.nota_a);
-      this.appendActionRow(li, c.nota_b);
+      this.appendActionRow(li, c.note_a);
+      this.appendActionRow(li, c.note_b);
     }
   }
 
@@ -5914,9 +7235,9 @@ interface GraphFilters {
   tensione_risolta: boolean;
   tensione_elevata: boolean;
   substrate: boolean;
-  principio: boolean;
+  principle: boolean;
   defeated: boolean;
-  meta_nota: boolean;
+  meta_note: boolean;
 }
 
 const DEFAULT_GRAPH_FILTERS: GraphFilters = {
@@ -5924,9 +7245,9 @@ const DEFAULT_GRAPH_FILTERS: GraphFilters = {
   tensione_risolta: true,
   tensione_elevata: true,
   substrate: true,
-  principio: true,
+  principle: true,
   defeated: true,
-  meta_nota: true,
+  meta_note: true,
 };
 
 const LAYER_COLORS: Record<string, string> = {
@@ -5934,9 +7255,9 @@ const LAYER_COLORS: Record<string, string> = {
   tensione_risolta: "#fbc02d",  // giallo
   tensione_elevata: "#4caf50",  // verde (gia\' diventata principio nello stesso file)
   substrate: "#9aa0a6",         // grigio
-  principio: "#2e7d32",         // verde scuro
+  principle: "#2e7d32",         // verde scuro
   defeated: "#e53935",          // rosso
-  meta_nota: "#7e57c2",         // viola
+  meta_note: "#7e57c2",         // viola
   unknown: "#607d8b",
 };
 
@@ -6151,9 +7472,12 @@ class AntinomiaGraphView extends ItemView {
     slider.max = "100";
     slider.step = "1";
     slider.value = "50";
+    // Vertical slider: the legacy `appearance: slider-vertical` keyword is
+    // deprecated in Chromium. Use the standard alternative (vertical
+    // writing-mode + RTL direction) which works in all current browsers.
     slider.style.cssText =
-      "writing-mode:bt-lr; -webkit-appearance:slider-vertical; appearance:slider-vertical; " +
-      "width:8px; height:160px; cursor:pointer; pointer-events:auto;";
+      "writing-mode: vertical-lr; direction: rtl; " +
+      "width: 8px; height: 160px; cursor: pointer; pointer-events: auto;";
     (slider as any).orient = "vertical";
     const minusBtn = sliderWrap.createEl("button", { text: "−" });
     minusBtn.style.cssText =
@@ -6249,16 +7573,8 @@ class AntinomiaGraphView extends ItemView {
     };
 
     const colorKey = (key: keyof GraphFilters): string => {
-      const map: Record<string, string> = {
-        tensione_aperta: "tensione_aperta",
-        tensione_risolta: "tensione_risolta",
-        tensione_elevata: "tensione_elevata",
-        substrate: "substrate",
-        principio: "principle",
-        defeated: "defeated",
-        meta_nota: "meta_note",
-      };
-      return map[String(key)] || "unknown";
+      // Identity mapping (kept as a function for potential future remapping).
+      return String(key);
     };
 
     const allFiles = this.app.vault.getMarkdownFiles();
@@ -6938,7 +8254,7 @@ class AntinomiaGraphView extends ItemView {
         // Suppress Cytoscape's default grab/active overlay on nodes too —
         // it's the dark square halo that shows up when dragging.
         {
-          selector: "node:active, node:grabbing, node:selected",
+          selector: "node:active, node:grabbed, node:selected",
           style: {
             "overlay-opacity": 0,
             "overlay-padding": 0,
@@ -7689,7 +9005,15 @@ export default class AntinomiaPlugin extends Plugin {
         format: profile.format,
         system: buildHunterSystem(this.settings.hunterReasoningStyle),
         messages: [{ role: "user", content: userContent }],
-        maxTokens: 2048,
+        // Hunter is a "deep" task — the model has to compare many notes
+        // pairwise and emit a structured list. Autoadaptive budget per
+        // family (e.g. ~2000 for Llama/Anthropic, ~10000 for reasoning
+        // models that need room for both <think> and the JSON output).
+        taskClass: "deep",
+        // Hunter benefits from reasoning when the model supports it
+        // (substrate↔substrate is genuinely subtle work), so we leave
+        // extended thinking ON for deep tasks.
+        disableThinking: false,
         signal: abortSignal,
       });
       const abortPromise = new Promise<never>((_, reject) => {
@@ -7703,7 +9027,12 @@ export default class AntinomiaPlugin extends Plugin {
         new Notice("Hunter stopped by user.");
         console.log("[Antinomia] hunter aborted by user");
       } else {
-        new Notice(`Hunter error: ${(e as Error).message}`);
+        showErrorModal(
+          this.app,
+          "Hunter error",
+          `The Hunter run failed. ${(e as Error).message.includes("not reachable") ? "Your local AI backend doesn't seem to be running." : "Check that the backend is reachable and the API key is valid."}`,
+          `Profile: ${profile.name} (${profile.model})\nURL: ${profile.baseUrl}\n\n${(e as Error).message}`
+        );
         console.error("[Antinomia] hunter call failed", e);
       }
       return;
@@ -7713,20 +9042,21 @@ export default class AntinomiaPlugin extends Plugin {
     const durationMs = Date.now() - t0;
 
     const parsedRaw = extractJson<any>(result.text);
-    // Normalize: the AI is now asked for English keys (pairs/note_a/note_b/
-    // description/confidence: high|medium|low) because Italian keys were
-    // signaling "respond in Italian" to non-Anthropic models. We accept
-    // either schema and remap to the internal Italian shape used downstream.
-    const normalizePair = (c: any): any => ({
-      nota_a: c?.note_a ?? c?.nota_a ?? "",
-      nota_b: c?.note_b ?? c?.nota_b ?? "",
-      descrizione: c?.description ?? c?.descrizione ?? "",
+    // Normalize: the AI is asked for English keys (pairs/note_a/note_b/
+    // description/confidence: high|medium|low). We accept legacy Italian
+    // keys (contraddizioni/nota_a/nota_b/descrizione/alta|media|bassa) for
+    // backward-compat with older runs and Anthropic responses that still
+    // mirror the older schema.
+    const normalizePair = (c: any): HunterContradiction => ({
+      note_a: c?.note_a ?? c?.nota_a ?? "",
+      note_b: c?.note_b ?? c?.nota_b ?? "",
+      description: c?.description ?? c?.descrizione ?? "",
       confidence: ((): HunterConfidence | undefined => {
         const raw = String(c?.confidence ?? "").toLowerCase().trim();
-        if (raw === "high") return "alta";
-        if (raw === "medium") return "media";
-        if (raw === "low") return "bassa";
-        if (raw === "alta" || raw === "media" || raw === "bassa") return raw as HunterConfidence;
+        if (raw === "high" || raw === "medium" || raw === "low") return raw as HunterConfidence;
+        if (raw === "alta") return "high";
+        if (raw === "media") return "medium";
+        if (raw === "bassa") return "low";
         return undefined;
       })(),
     });
@@ -7735,26 +9065,31 @@ export default class AntinomiaPlugin extends Plugin {
     else if (parsedRaw && Array.isArray(parsedRaw.contraddizioni)) rawPairs = parsedRaw.contraddizioni;
     if (!rawPairs) {
       console.error("[Antinomia] hunter unparseable:", result.text);
-      new Notice("Hunter: response not parseable. See console.");
+      showErrorModal(
+        this.app,
+        "Hunter response not parseable",
+        "The AI replied but didn't return a valid pairs[] structure. This often happens with local reasoning models that spend all tokens on internal <think> blocks, or with very strict JSON-mode responses.",
+        `Profile: ${profile.name} (${profile.model})\nResponse length: ${result.text?.length ?? 0}\n\n--- RAW RESPONSE ---\n${result.text?.slice(0, 3000) ?? "(empty)"}`
+      );
       return;
     }
-    const parsed: HunterResult = { contraddizioni: rawPairs.map(normalizePair) };
+    const parsed: HunterResult = { pairs: rawPairs.map(normalizePair) };
 
-    // Validazione anti-hallucinazione: scarta basename inventati, self-pair, descrizioni vuote
+    // Anti-hallucination validation: discard invented basenames, self-pairs, empty descriptions
     const realBasenames = new Set(selected.map((f) => f.basename));
     let halluFiltered = 0;
-    const validated = parsed.contraddizioni.filter((c) => {
-      const a = String(c.nota_a || "").trim();
-      const b = String(c.nota_b || "").trim();
-      const desc = String(c.descrizione || "").trim();
+    const validated = parsed.pairs.filter((c) => {
+      const a = String(c.note_a || "").trim();
+      const b = String(c.note_b || "").trim();
+      const desc = String(c.description || "").trim();
       if (!a || !b || a === b) { halluFiltered++; return false; }
       if (!desc || desc === "undefined") { halluFiltered++; return false; }
       if (!realBasenames.has(a) || !realBasenames.has(b)) {
         halluFiltered++;
-        console.warn("[Antinomia] hunter: scartata coppia con basename inesistenti:", a, "<->", b);
+        console.warn("[Antinomia] hunter: discarded pair with non-existent basenames:", a, "<->", b);
         return false;
       }
-      // In modalita' focus, scarta coppie che NON coinvolgono il focusFile
+      // In focus mode, discard pairs that do NOT involve the focusFile
       if (focusFile && a !== focusFile.basename && b !== focusFile.basename) {
         halluFiltered++;
         return false;
@@ -7762,10 +9097,10 @@ export default class AntinomiaPlugin extends Plugin {
       return true;
     });
     if (halluFiltered > 0) {
-      console.log(`[Antinomia] hunter: filtrate ${halluFiltered} coppie hallucinate/invalide`);
+      console.log(`[Antinomia] hunter: filtered ${halluFiltered} hallucinated/invalid pairs`);
     }
 
-    // Filtra falsi positivi gia' dismissati
+    // Filter out already-dismissed false positives
     const dismissedSet = new Set<string>();
     for (const f of selected) {
       const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
@@ -7779,7 +9114,7 @@ export default class AntinomiaPlugin extends Plugin {
     }
     let dismissedFiltered = 0;
     const filtered = validated.filter((c) => {
-      const key = [c.nota_a, c.nota_b].sort().join("|");
+      const key = [c.note_a, c.note_b].sort().join("|");
       if (dismissedSet.has(key)) {
         dismissedFiltered++;
         return false;
@@ -7798,7 +9133,7 @@ export default class AntinomiaPlugin extends Plugin {
       outputTokens: result.usage?.output_tokens,
       dismissedFiltered,
     };
-    const run: HunterRun = { meta, result: { contraddizioni: filtered } };
+    const run: HunterRun = { meta, result: { pairs: filtered } };
 
     this.settings.lastHunterRunISO = meta.timestamp;
     this.settings.lastHunterRunCount = filtered.length;
@@ -7806,6 +9141,19 @@ export default class AntinomiaPlugin extends Plugin {
 
     hunterView?.setRun(run);
     new Notice(`Hunter: ${filtered.length} pairs in ${(durationMs / 1000).toFixed(1)}s.`);
+    notifyAIUsage(
+      "Hunter",
+      result.usage
+        ? { input_tokens: result.usage.input_tokens, output_tokens: result.usage.output_tokens }
+        : undefined,
+      durationMs,
+      {
+        app: this.app,
+        profile: profile.name,
+        model: profile.model,
+        url: profile.baseUrl,
+      }
+    );
     console.log("[Antinomia] hunter run", meta);
   }
 
@@ -8793,7 +10141,7 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
     new FreeInputModal(
       this.app,
       this,
-      (analysis, originalText) => {
+      (analysis, originalText, meta) => {
         if (analysis.tipo === "tension") {
           new NewTensionModal(
             this.app,
@@ -8809,7 +10157,8 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
               title: analysis.title,
               statementA: analysis.statementA,
               statementB: analysis.statementB,
-            }
+            },
+            meta
           ).open();
         } else {
           new NewSubstrateModal(
@@ -8825,7 +10174,8 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
             {
               title: analysis.title,
               contenuto: analysis.contenuto || originalText,
-            }
+            },
+            meta
           ).open();
         }
       },
@@ -9199,34 +10549,469 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
    * Open the PDF picker; on selection, create a substrate with a wikilink
    * to the PDF + an empty Contenuto for the user's reading notes.
    */
-  async openSubstrateFromPDF(): Promise<void> {
-    const pdfs = this.app.vault.getFiles().filter((f) => f.extension === "pdf");
-    if (pdfs.length === 0) {
-      new Notice(
-        "Nessun PDF nel vault. Trascina un PDF in Obsidian per importarlo, poi riprova."
-      );
-      return;
-    }
-    new PdfPickerModal(this.app, pdfs, (pdf) => {
-      const titoloSuggerito = `Note di lettura — ${pdf.basename}`;
-      const contenutoIniziale = `> See PDF: [[${pdf.basename}]]\n\n(Add here your notes / quotes / observations from reading.)`;
-      new NewSubstrateModal(
+  /**
+   * AI helper: extract distinct standalone concepts from a chunk of text
+   * (typically PDF body). Returns an array of substrate proposals — title +
+   * content — that the caller can review and bulk-create.
+   *
+   * Uses the EXTRACT_CONCEPTS_SYSTEM prompt, taskClass "deep" (large output),
+   * disableThinking left undefined (defaults to false for "deep" → reasoning
+   * stays on, useful for deduplicating semantically-similar concepts).
+   */
+  async extractConceptsFromPdfText(
+    text: string,
+    signal?: AbortSignal,
+    attachUsageTo?: HTMLButtonElement
+  ): Promise<{ concepts: PdfConcept[]; meta: AIUsageMeta } | null> {
+    const profile = this.profileFor("default");
+    if (!profile.apiKey) {
+      showErrorModal(
         this.app,
-        this,
-        (fields, skipped) => {
-          if (fields === null && !skipped) return;
-          const content = fields
-            ? substrateTemplate(fields)
-            : substrateTemplate();
-          void this.createNote("S", content);
+        "API key missing",
+        "The active AI profile has no API key. Open Settings → Antinomia and add one (or switch profile)."
+      );
+      return null;
+    }
+    const t0 = Date.now();
+    try {
+      const result = await callAI({
+        baseUrl: profile.baseUrl,
+        apiKey: profile.apiKey,
+        model: profile.model,
+        system: EXTRACT_CONCEPTS_SYSTEM,
+        messages: [{ role: "user", content: text }],
+        taskClass: "deep",
+        signal,
+      });
+      notifyAIUsage(
+        "PDF concepts",
+        result.usage,
+        Date.now() - t0,
+        {
+          app: this.app,
+          profile: profile.name,
+          model: profile.model,
+          url: profile.baseUrl,
         },
-        { title: titoloSuggerito, contenuto: contenutoIniziale }
-      ).open();
+        attachUsageTo
+      );
+      if (signal?.aborted) return null;
+      const parsed = extractJson<PdfConceptsResult>(result.text);
+      if (!parsed || !Array.isArray(parsed.concepts)) {
+        console.error("[Antinomia] extractConceptsFromPdfText unparseable:", result.text);
+        showErrorModal(
+          this.app,
+          "AI concept extraction not parseable",
+          "The AI replied but the response wasn't a valid JSON array of concepts. Try again, or shorten the PDF section.",
+          `Profile: ${profile.name} (${profile.model})\n\n--- RAW RESPONSE ---\n${result.text?.slice(0, 2000) ?? "(empty)"}`
+        );
+        return null;
+      }
+      // Sanitize: drop concepts with empty title/content, trim, cap title length.
+      const cleaned = parsed.concepts
+        .map((c) => ({
+          title: String(c.title ?? "").trim().slice(0, 120),
+          content: String(c.content ?? "").trim(),
+        }))
+        .filter((c) => c.title.length > 0 && c.content.length > 0);
+      const meta: AIUsageMeta = {
+        usage: result.usage,
+        durationMs: Date.now() - t0,
+        profile: profile.name,
+        model: profile.model,
+        url: profile.baseUrl,
+        operation: "PDF concepts",
+      };
+      return { concepts: cleaned, meta };
+    } catch (e) {
+      const msg = (e as Error).message;
+      if (msg === "hunter_aborted" || msg === "ai_aborted" || signal?.aborted) {
+        return null;
+      }
+      showErrorModal(
+        this.app,
+        "AI concept extraction error",
+        `Couldn't extract concepts from the PDF. ${msg.includes("not reachable") ? "Your local AI backend doesn't seem to be running." : "Check that the backend is reachable and the API key is valid."}`,
+        `Profile: ${profile.name} (${profile.model})\nURL: ${profile.baseUrl}\n\n${msg}`
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Bulk-create substrate notes from a list of concepts extracted from a
+   * specific PDF. Each substrate goes into a dedicated subfolder
+   * `notes/from-pdf-<basename>/` and is linked back to the source PDF via
+   * a wikilink in the body AND a `source` frontmatter field.
+   *
+   * Returns the count of substrates actually created (the caller may have
+   * already validated selection).
+   */
+  async bulkCreateSubstratesFromConcepts(
+    concepts: PdfConcept[],
+    pdfFile: TFile
+  ): Promise<number> {
+    if (concepts.length === 0) return 0;
+
+    // Sanitize the PDF basename for use as folder name (Obsidian-safe).
+    const safeName = pdfFile.basename
+      .replace(/[\\/:*?"<>|]/g, "-")
+      .slice(0, 60)
+      .trim()
+      .replace(/\s+/g, "_");
+    const folder = `notes/from-pdf-${safeName}`;
+
+    // Ensure subfolder exists.
+    if (!this.app.vault.getAbstractFileByPath(folder)) {
+      try {
+        await this.app.vault.createFolder(folder);
+      } catch (e) {
+        console.warn(`[Antinomia] folder create failed (may exist):`, e);
+      }
+    }
+
+    // STEP 1 — Create the PDF hub note (an Antinomia meta_note that acts as
+    // the central node in the graph for this PDF). Concepts will link to
+    // this hub via `links` frontmatter; the hub in turn links to the PDF.
+    // Result in the graph view: hub at the center, N concept satellites.
+    const hubFile = await this.createOrUpdatePdfHubNote(pdfFile, folder, []);
+    const hubBasename = hubFile?.basename ?? `PDF-${safeName}`;
+    // Use a short, human-friendly alias for body wikilinks so Front Matter
+    // Title doesn't pop up an "Approve changes" dialog for every concept
+    // proposing to promote `[[H-xxx]]` → `[[H-xxx|<long PDF title>]]`.
+    const hubAlias = `PDF: ${pdfFile.basename}`;
+
+    // STEP 2 — Create one substrate per concept, each linked to the hub.
+    const createdFiles: TFile[] = [];
+    for (const c of concepts) {
+      const fields: SubstrateFields = {
+        title: c.title,
+        content: c.content,
+      };
+      const body = substrateTemplate(fields);
+      // Post-process the template:
+      // - Replace `source: user_input` with `source: "PDF: <basename>"`
+      // - Add `origin: pdf_extraction`
+      // - Add `links: ["[[<hub basename>]]"]` so the graph wires this
+      //   substrate to the PDF hub node (cluster effect). Frontmatter
+      //   links stay basename-only (YAML, not body — no FMT prompt).
+      // - Append a body footer wikilink WITH ALIAS back to the hub and the
+      //   PDF, so Front Matter Title doesn't propose alias promotion every
+      //   time the user opens a concept note.
+      const enriched = body
+        .replace(
+          /^source:\s*user_input$/m,
+          `source: "PDF: ${pdfFile.basename}"\norigin: "pdf_extraction"\nlinks:\n  - "[[${hubBasename}]]"`
+        )
+        .replace(
+          /\n*$/,
+          `\n\n> Extracted from: [[${hubBasename}|${hubAlias}]]\n> See PDF: [[${pdfFile.basename}|${pdfFile.basename}]]\n`
+        );
+
+      try {
+        const file = await this.createNote("S", enriched, folder, false);
+        if (file) createdFiles.push(file);
+      } catch (e) {
+        console.error(`[Antinomia] failed to create substrate from concept "${c.title}":`, e);
+      }
+    }
+
+    // STEP 3 — Refresh the hub note's body to list all the actual concept
+    // wikilinks (we couldn't write them in step 1 because the files didn't
+    // exist yet).
+    if (hubFile && createdFiles.length > 0) {
+      await this.createOrUpdatePdfHubNote(pdfFile, folder, createdFiles, hubFile);
+    }
+
+    new Notice(
+      `Created ${createdFiles.length} of ${concepts.length} substrates from "${pdfFile.basename}" in ${folder}/`
+    );
+    return createdFiles.length;
+  }
+
+  /**
+   * Create (or refresh the body of) the meta_note that acts as a graph hub
+   * for substrates extracted from a specific PDF. Idempotent: if a hub for
+   * this PDF already exists in the folder, we reuse it (rewriting the body
+   * with the new list of concepts) instead of creating duplicates.
+   *
+   * The hub is named `H-<safename>.md` (H for Hub) and lives at the root
+   * of the per-PDF folder.
+   */
+  private async createOrUpdatePdfHubNote(
+    pdfFile: TFile,
+    folder: string,
+    conceptFiles: TFile[],
+    existing?: TFile
+  ): Promise<TFile | null> {
+    const safeName = pdfFile.basename
+      .replace(/[\\/:*?"<>|]/g, "-")
+      .slice(0, 60)
+      .trim()
+      .replace(/\s+/g, "_");
+    const hubPath = `${folder}/H-${safeName}.md`;
+
+    // Each concept wikilink uses an explicit alias (the human title from the
+    // concept's frontmatter, falling back to its basename) so Front Matter
+    // Title doesn't trigger an "Approve changes" prompt for each one.
+    const conceptLinks =
+      conceptFiles.length > 0
+        ? conceptFiles
+            .map((f) => {
+              const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+              const title =
+                typeof fm?.title === "string" && fm.title.trim()
+                  ? String(fm.title).trim()
+                  : f.basename;
+              return `- [[${f.basename}|${title}]]`;
+            })
+            .join("\n")
+        : "_(no concepts yet — will be populated after bulk creation)_";
+
+    const today = todayISO();
+    const hubContent = `---
+antinomia_type: meta_note
+title: "PDF source: ${pdfFile.basename.replace(/"/g, '\\"')}"
+source: "PDF: ${pdfFile.basename}"
+origin: pdf_extraction_hub
+date: ${today}
+modified_date: ${today}
+---
+
+# PDF source: ${pdfFile.basename}
+
+> Original file: [[${pdfFile.basename}]]
+> Extracted concepts: **${conceptFiles.length}**
+
+## Concepts extracted
+
+${conceptLinks}
+
+---
+
+_This is an Antinomia meta_note acting as a graph hub for substrates extracted from the PDF above. Concepts link back to this hub via their \`links\` frontmatter — the Antinomia Graph view will show them as a cluster around this node._
+`;
+
+    try {
+      // Find existing hub: prefer the one passed in, otherwise look up by path.
+      const target =
+        existing ??
+        (this.app.vault.getAbstractFileByPath(hubPath) as TFile | null);
+      if (target) {
+        await this.app.vault.modify(target, hubContent);
+        return target;
+      }
+      const file = await this.app.vault.create(hubPath, hubContent);
+      return file;
+    } catch (e) {
+      console.error(`[Antinomia] PDF hub note create/update failed:`, e);
+      return null;
+    }
+  }
+
+  /**
+   * Import a PDF from disk into the vault. Uses Electron's file dialog on
+   * desktop (Obsidian is desktop-only per manifest.isDesktopOnly). Copies
+   * the file into `attachments/` (creating the folder if missing) and
+   * returns the resulting TFile.
+   *
+   * Returns null if the user cancelled, or shows an error modal on failure.
+   */
+  /**
+   * Import a PDF from disk into the vault using the standard HTML5 file
+   * picker (more portable than Electron's deprecated `remote.dialog` and
+   * works on any Obsidian build, mobile included if isDesktopOnly were
+   * ever relaxed). Copies the picked file into `attachments/` and returns
+   * the resulting TFile.
+   *
+   * Returns null if the user cancels or on read failure.
+   */
+  async importPdfFromDisk(): Promise<TFile | null> {
+    return new Promise((resolve) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "application/pdf,.pdf";
+      input.style.display = "none";
+      document.body.appendChild(input);
+
+      let resolved = false;
+      const cleanup = () => {
+        try {
+          input.remove();
+        } catch {
+          /* ignore */
+        }
+      };
+
+      input.addEventListener("change", async () => {
+        const file = input.files?.[0];
+        if (!file) {
+          if (!resolved) {
+            resolved = true;
+            cleanup();
+            resolve(null);
+          }
+          return;
+        }
+        try {
+          const buffer = await file.arrayBuffer();
+          const basename = file.name.replace(/\.pdf$/i, "");
+          const folder = "attachments";
+          await ensureFolder(this.app, folder);
+          let destPath = `${folder}/${basename}.pdf`;
+          let i = 1;
+          while (this.app.vault.getAbstractFileByPath(destPath)) {
+            destPath = `${folder}/${basename} (${i}).pdf`;
+            i++;
+          }
+          const tFile = await this.app.vault.createBinary(destPath, buffer);
+          new Notice(`Imported PDF to ${destPath}`);
+          resolved = true;
+          cleanup();
+          resolve(tFile);
+        } catch (e) {
+          console.error("[Antinomia] importPdfFromDisk failed:", e);
+          showErrorModal(
+            this.app,
+            "PDF import failed",
+            "Couldn't copy the PDF into the vault.",
+            (e as Error).message
+          );
+          resolved = true;
+          cleanup();
+          resolve(null);
+        }
+      });
+
+      // Cancel detection: HTML5 file input doesn't fire any event on cancel.
+      // Use the body's `focus` event as a heuristic — when the dialog
+      // closes, focus returns to the window. We wait a beat then check.
+      const onFocus = () => {
+        window.removeEventListener("focus", onFocus);
+        setTimeout(() => {
+          if (!resolved && !input.files?.length) {
+            resolved = true;
+            cleanup();
+            resolve(null);
+          }
+        }, 300);
+      };
+      window.addEventListener("focus", onFocus);
+
+      input.click();
+    });
+  }
+
+  /**
+   * Full PDF ingest flow:
+   *   1. Source pick (vault PDF or import from disk)
+   *   2. Extract text via pdfjsLib (Obsidian bundled)
+   *   3. Warn if too long (hard cap at PDF_TEXT_HARD_CAP_CHARS)
+   *   4. AI extract distinct concepts (EXTRACT_CONCEPTS_SYSTEM)
+   *   5. Preview modal: pick which to materialize
+   *   6. Bulk create substrate notes in notes/from-pdf-<basename>/ folder
+   *      with frontmatter source + body wikilink back to the PDF.
+   *
+   * Heavy AI call (taskClass deep). Stop button works via withLoadingButton.
+   */
+  async openSubstrateFromPDF(): Promise<void> {
+    new PdfSourcePickerModal(this.app, this, async (pdf) => {
+      await this.runPdfIngest(pdf);
     }).open();
   }
 
+  private async runPdfIngest(pdf: TFile): Promise<void> {
+    // Step 1: extract text from PDF binary.
+    const extractingNotice = new Notice(
+      `Extracting text from "${pdf.basename}"…`,
+      0
+    );
+    let extracted: PdfExtractResult;
+    try {
+      const binary = await this.app.vault.readBinary(pdf);
+      extracted = await extractPdfText(binary);
+    } catch (e) {
+      extractingNotice.hide();
+      const msg = (e as Error).message;
+      if (msg.startsWith("pdfjs_not_loaded:")) {
+        showErrorModal(
+          this.app,
+          "PDF library not loaded yet",
+          msg.replace(/^pdfjs_not_loaded:/, ""),
+          msg
+        );
+      } else {
+        showErrorModal(
+          this.app,
+          "PDF text extraction failed",
+          "Couldn't extract text from this PDF. It may be scanned (image-only) or corrupt. OCR support is planned for v1.5.",
+          msg
+        );
+      }
+      return;
+    }
+    extractingNotice.hide();
+
+    if (extracted.text.trim().length === 0) {
+      showErrorModal(
+        this.app,
+        "Empty PDF text",
+        `No extractable text in "${pdf.basename}". This is usually a scanned PDF (image-only). OCR is planned for v1.5.`,
+        `Pages: ${extracted.pageCount}\nTotal chars: ${extracted.totalChars}`
+      );
+      return;
+    }
+
+    if (extracted.truncated) {
+      const proceed = window.confirm(
+        `The PDF is longer than ${PDF_TEXT_HARD_CAP_CHARS.toLocaleString()} characters.\n\n` +
+          `Only the first ${PDF_TEXT_HARD_CAP_CHARS.toLocaleString()} chars will be analyzed; the rest will be skipped.\n\n` +
+          `Chunking support (full coverage) is planned for v1.5.\n\n` +
+          `OK = proceed with truncated text.\nCancel = abort.`
+      );
+      if (!proceed) return;
+    }
+
+    // Step 2: AI concept extraction with a dedicated progress modal that
+    // exposes a Stop button. The source picker has already closed, so we
+    // cannot use withLoadingButton — this modal IS the loading UI.
+    const profile = this.profileFor("default");
+    const progressModal = new PdfAnalyzingModal(this.app, pdf.basename, profile.model);
+    progressModal.open();
+    let result: { concepts: PdfConcept[]; meta: AIUsageMeta } | null = null;
+    try {
+      result = await this.extractConceptsFromPdfText(
+        extracted.text,
+        progressModal.controller.signal
+      );
+    } finally {
+      progressModal.close();
+    }
+    if (!result) return; // error modal already shown by extractConcepts (or silent abort)
+
+    // Step 3: preview & let the user pick.
+    new PdfConceptsPreviewModal(
+      this.app,
+      this,
+      pdf,
+      result.concepts,
+      result.meta,
+      async (picks) => {
+        await this.bulkCreateSubstratesFromConcepts(picks, pdf);
+        // Wait a beat so Obsidian's metadataCache picks up the new
+        // frontmatter (otherwise sidebars would show basenames instead of
+        // human titles until the next interaction). Then refresh both
+        // Substrate and Graph views so the user sees the cluster.
+        setTimeout(() => {
+          void this.activateView(VIEW_TYPE_SUBSTRATE_LIST);
+          this.refreshOpenGraphViews();
+        }, 700);
+      }
+    ).open();
+  }
+
   openFreeInputModal(): void {
-    new FreeInputModal(this.app, this, (analysis, originalText) => {
+    new FreeInputModal(this.app, this, (analysis, originalText, meta) => {
       if (analysis.tipo === "tension") {
         new NewTensionModal(
           this.app,
@@ -9242,7 +11027,8 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
             title: analysis.title,
             statementA: analysis.statementA,
             statementB: analysis.statementB,
-          }
+          },
+          meta
         ).open();
       } else {
         new NewSubstrateModal(
@@ -9258,7 +11044,8 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
           {
             title: analysis.title,
             contenuto: analysis.contenuto || originalText,
-          }
+          },
+          meta
         ).open();
       }
     }).open();
@@ -9279,17 +11066,50 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
     }
   }
 
-  async createNote(prefix: string, content: string): Promise<TFile | null> {
+  /**
+   * Create a new Antinomia note with the standard `<prefix>-<timestamp>.md`
+   * naming, in the standard `notes/` folder OR an optional subfolder (used
+   * by the PDF-ingest flow which groups generated substrates by source PDF).
+   *
+   * When `openAfterCreate` is false (used during bulk creation) we skip
+   * opening the file in the workspace to avoid stealing focus N times in
+   * a row.
+   */
+  async createNote(
+    prefix: string,
+    content: string,
+    folderOverride?: string,
+    openAfterCreate: boolean = true
+  ): Promise<TFile | null> {
     try {
-      await ensureFolder(this.app, FOLDER.notes);
-      const id = `${prefix}-${timestampId()}`;
-      const path = `${FOLDER.notes}/${id}.md`;
+      const folder = folderOverride ?? FOLDER.notes;
+      await ensureFolder(this.app, folder);
+      // timestampId() has 1-second resolution. When creating multiple notes
+      // in the same second (bulk PDF ingest, batch imports, etc.) we would
+      // collide. Append `-001`, `-002`, ... suffixes until we find a free
+      // path. Cap at 9999 to avoid an infinite loop on a clock anomaly.
+      const baseId = `${prefix}-${timestampId()}`;
+      let id = baseId;
+      let path = `${folder}/${id}.md`;
+      let suffix = 1;
+      while (this.app.vault.getAbstractFileByPath(path)) {
+        id = `${baseId}-${String(suffix).padStart(3, "0")}`;
+        path = `${folder}/${id}.md`;
+        suffix++;
+        if (suffix > 9999) {
+          throw new Error(
+            `Too many collisions for timestamp ID ${baseId} in ${folder}/`
+          );
+        }
+      }
       const file = await this.app.vault.create(path, content);
-      await this.app.workspace.getLeaf(false).openFile(file);
-      new Notice(`Creata: ${id}`);
+      if (openAfterCreate) {
+        await this.app.workspace.getLeaf(false).openFile(file);
+        new Notice(`Created: ${id}`);
+      }
       return file;
     } catch (e) {
-      new Notice(`Errore: ${(e as Error).message}`);
+      new Notice(`Error: ${(e as Error).message}`);
       return null;
     }
   }
@@ -9733,11 +11553,16 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
   async proposeTitleAI(file: TFile): Promise<void> {
     const profile = this.profileFor("default");
     if (!profile.apiKey) {
-      new Notice("API key missing in the active profile. Settings -> Antinomia.");
+      showErrorModal(
+        this.app,
+        "API key missing",
+        "The active AI profile has no API key. Open Settings → Antinomia and add one (or switch profile)."
+      );
       return;
     }
     const raw = await this.app.vault.read(file);
     new Notice("Antinomia: proposing title (AI)...");
+    const t0 = Date.now();
     let result: { text: string; usage?: ClaudeResponse["usage"] };
     try {
       result = await callAI({
@@ -9749,29 +11574,52 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
           {
             role: "user",
             content:
-              "Nome file: " +
+              "Filename: " +
               file.basename +
-              "\n\n=== CONTENUTO NOTA ===\n\n" +
+              "\n\n=== NOTE CONTENT ===\n\n" +
               raw,
           },
         ],
-        maxTokens: 100,
+        taskClass: "short",
+      });
+      notifyAIUsage("Title", result.usage, Date.now() - t0, {
+        app: this.app,
+        profile: profile.name,
+        model: profile.model,
+        url: profile.baseUrl,
       });
     } catch (e) {
-      new Notice(`Errore AI: ${(e as Error).message}`);
+      showErrorModal(
+        this.app,
+        "AI title error",
+        `Couldn't get a title from the AI. ${(e as Error).message.includes("not reachable") ? "Your local AI backend doesn't seem to be running." : "Check that the backend is reachable and the API key is valid."}`,
+        `Profile: ${profile.name} (${profile.model})\nURL: ${profile.baseUrl}\n\n${(e as Error).message}`
+      );
       return;
     }
-    const parsed = extractJson<TitleProposal>(result.text);
-    if (!parsed?.title || !String(parsed.title).trim()) {
-      console.error("[Antinomia] title unparseable:", result.text);
-      new Notice("Titolo non parseable. Vedi console.");
+    const proposed = parseTitleFromAIResponse(result.text);
+    if (!proposed) {
+      const responseLen = result.text?.length ?? 0;
+      console.error(
+        "[Antinomia] proposeTitleAI unparseable. Length=" + responseLen,
+        result.text
+      );
+      const message =
+        responseLen === 0
+          ? "The AI returned an empty response. This usually happens with reasoning models (Qwen3, DeepSeek-R1, o-series) that consume all tokens on internal <think> blocks before producing output. The plugin already tries to disable extended reasoning, but some distilled models force it. Try a non-reasoning model (Llama 3.x, Mistral, Phi) for short tasks like titles."
+          : "The AI replied but the response didn't contain a usable title (no valid JSON, no recognizable title pattern). Try a different model.";
+      showErrorModal(
+        this.app,
+        "AI title not parseable",
+        message,
+        `Profile: ${profile.name} (${profile.model})\nResponse length: ${responseLen}\n\n--- RAW RESPONSE ---\n${result.text?.slice(0, 2000) ?? "(empty)"}`
+      );
       return;
     }
-    const proposed = String(parsed.title).trim().slice(0, 80);
     new TitleEditModal(
       this.app,
       proposed,
-      `Titolo proposto per ${file.basename}`,
+      `Proposed title for ${file.basename}`,
       "AI suggestion. Edit freely before saving.",
       async (value) => {
         if (value === null || value === "") return;
@@ -9780,9 +11628,9 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
             frontm.title = value;
             frontm.modified_date = todayISO();
           });
-          new Notice(`Titolo: ${value}`);
+          new Notice(`Title: ${value}`);
         } catch (e) {
-          new Notice(`Errore: ${(e as Error).message}`);
+          new Notice(`Error: ${(e as Error).message}`);
         }
       }
     ).open();
@@ -9792,12 +11640,21 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
    * AI helper: propone un titolo dato un contenuto arbitrario (non legato a file).
    * Usato dai modal di creazione per pre-popolare il campo titolo.
    */
-  async proposeTitleFromContent(content: string): Promise<string | null> {
+  async proposeTitleFromContent(
+    content: string,
+    signal?: AbortSignal,
+    attachUsageTo?: HTMLButtonElement
+  ): Promise<string | null> {
     const profile = this.profileFor("default");
     if (!profile.apiKey) {
-      new Notice("API key missing in the active profile. Settings -> Antinomia.");
+      showErrorModal(
+        this.app,
+        "API key missing",
+        "The active AI profile has no API key. Open Settings → Antinomia and add one (or switch profile)."
+      );
       return null;
     }
+    const t0 = Date.now();
     try {
       const result = await callAI({
         baseUrl: profile.baseUrl,
@@ -9805,90 +11662,61 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
         model: profile.model,
         system: TITLE_SYSTEM,
         messages: [{ role: "user", content }],
-        maxTokens: 200,
+        // Autoadaptive: titles = short task. Per model family:
+        //  - Anthropic/Llama/Mistral/Phi  → ~200 max_tokens, no reasoning controls
+        //  - OpenAI o-series              → 4000, reasoning_effort=low
+        //  - Qwen3 reasoning / DeepSeek-R1 → 4000, reasoning_effort=off + enable_thinking=false
+        //  - Qwen instruct                → ~300
+        taskClass: "short",
+        signal,
       });
-      // Hard-cap any title at 7 words / 60 chars, regardless of source.
-      // Some local models (esp. Qwen3 in LM Studio) ignore the prompt
-      // constraints and return paragraphs.
-      const sanitizeTitle = (raw: string): string => {
-        let t = raw.trim();
-        // Strip surrounding quotes/backticks
-        t = t.replace(/^["'`]+|["'`]+$/g, "").trim();
-        // If multi-sentence, keep only the first sentence
-        const m = t.match(/^[^.!?\n]+/);
-        if (m) t = m[0].trim();
-        // Cap at 7 words
-        const words = t.split(/\s+/);
-        if (words.length > 7) t = words.slice(0, 7).join(" ");
-        // Cap at 60 chars (word-boundary if possible)
-        if (t.length > 60) {
-          const cut = t.slice(0, 60);
-          const lastSpace = cut.lastIndexOf(" ");
-          t = lastSpace > 30 ? cut.slice(0, lastSpace) : cut;
-        }
-        // Strip trailing punctuation/quotes
-        t = t.replace(/[.,;:\-—_"'`]+$/, "").trim();
-        return t;
-      };
-
-      const parsed = extractJson<TitleProposal>(result.text);
-      if (parsed && typeof parsed.title === "string" && parsed.title.trim()) {
-        return sanitizeTitle(parsed.title);
-      }
-      // Fallback: LM Studio sometimes replies with the title as plain text
-      // or as a reasoning paragraph instead of JSON. Strip thinking blocks
-      // and code fences, then look for a quoted/labeled title in the text.
-      const cleaned = result.text
-        .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
-        .replace(/<think>[\s\S]*?<\/think>/gi, "")
-        .replace(/```[a-zA-Z]*\n?|```/g, "")
-        .trim();
-      // Pattern 1: look for `"title": "..."` anywhere in the response
-      const jsonLike = cleaned.match(/["']title["']\s*:\s*["']([^"']+)["']/i);
-      if (jsonLike) {
-        const title = sanitizeTitle(jsonLike[1]);
-        if (title.length > 0) return title;
-      }
-      // Pattern 2: look for `Title: ...` or `Titolo: ...` line
-      const labeled = cleaned.match(
-        /(?:^|\n)\s*(?:title|titolo|proposed title|titolo proposto)\s*[:\-—]\s*(.+?)(?:\n|$)/i
+      notifyAIUsage(
+        "Title",
+        result.usage,
+        Date.now() - t0,
+        {
+          app: this.app,
+          profile: profile.name,
+          model: profile.model,
+          url: profile.baseUrl,
+        },
+        attachUsageTo
       );
-      if (labeled) {
-        const title = sanitizeTitle(labeled[1]);
-        if (title.length > 0) return title;
-      }
-      // Pattern 3: look for a quoted string of reasonable length anywhere
-      const quoted = cleaned.match(/["“]([^"”\n]{4,80})["”]/);
-      if (quoted) {
-        const title = sanitizeTitle(quoted[1]);
-        if (title.length > 0) return title;
-      }
-      // Pattern 4: skip reasoning lines (heuristic) and take the first short
-      // line that looks like a title (not a sentence about the user/AI)
-      const skipPatterns =
-        /^(l'utente|the user|i (think|believe|will|need|should)|let me|here(?:'s| is)|ecco|allora|sto|so |okay|the goal|my task|to (propose|generate|create)|reasoning:)/i;
-      const lines = cleaned
-        .split("\n")
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0 && !skipPatterns.test(s));
-      const candidate =
-        lines.find((s) => s.length <= 80 && s.split(/\s+/).length <= 10) ||
-        lines[0];
-      if (candidate) {
-        const stripped = candidate
-          .replace(/^(title|titolo)[:\s\-—]+/i, "")
-          .trim();
-        const title = sanitizeTitle(stripped);
-        if (title.length > 0) return title;
-      }
-      new Notice("AI: risposta titolo non parseable.");
+      // If the user clicked Stop *after* the backend already started
+      // streaming a response, callAI may still resolve successfully with a
+      // partial / empty body. Don't show an "unparseable" error modal in
+      // that case — the user knows they aborted.
+      if (signal?.aborted) return null;
+      const title = parseTitleFromAIResponse(result.text);
+      if (title) return title;
+      const responseLen = result.text?.length ?? 0;
       console.error(
-        "[Antinomia] proposeTitleFromContent unparseable:",
+        "[Antinomia] proposeTitleFromContent unparseable. Length=" + responseLen,
         result.text
+      );
+      const message =
+        responseLen === 0
+          ? "The AI returned an empty response. This usually happens with reasoning models (Qwen3, DeepSeek-R1, o-series) that consume all tokens on internal <think> blocks before producing output. The plugin already tries to disable extended reasoning, but some distilled models force it. Try a non-reasoning model (Llama 3.x, Mistral, Phi) for short tasks like titles."
+          : "The AI replied but the response didn't contain a usable title (no valid JSON, no recognizable title pattern). Try a different model.";
+      showErrorModal(
+        this.app,
+        "AI title not parseable",
+        message,
+        `Profile: ${profile.name} (${profile.model})\nResponse length: ${responseLen}\n\n--- RAW RESPONSE ---\n${result.text?.slice(0, 2000) ?? "(empty)"}`
       );
       return null;
     } catch (e) {
-      new Notice(`AI errore title: ${(e as Error).message}`);
+      const msg = (e as Error).message;
+      // Silent abort: user clicked Stop. No error modal.
+      if (msg === "hunter_aborted" || msg === "ai_aborted" || signal?.aborted) {
+        return null;
+      }
+      showErrorModal(
+        this.app,
+        "AI title error",
+        `Couldn't get a title from the AI. ${msg.includes("not reachable") ? "Your local AI backend doesn't seem to be running." : "Check that the backend is reachable and the API key is valid."}`,
+        `Profile: ${profile.name} (${profile.model})\nURL: ${profile.baseUrl}\n\n${msg}`
+      );
       return null;
     }
   }
@@ -9897,12 +11725,21 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
    * AI helper: propone IF/THEN/GREY zone dato il contenuto di una tensione.
    * Usato dal modal Eleva con bottone "Proponi IF/THEN (AI)".
    */
-  async proposeIfThenFromContent(content: string): Promise<PrincipleFields | null> {
+  async proposeIfThenFromContent(
+    content: string,
+    signal?: AbortSignal,
+    attachUsageTo?: HTMLButtonElement
+  ): Promise<PrincipleFields | null> {
     const profile = this.profileFor("default");
     if (!profile.apiKey) {
-      new Notice("API key missing in the active profile. Settings -> Antinomia.");
+      showErrorModal(
+        this.app,
+        "API key missing",
+        "The active AI profile has no API key. Open Settings → Antinomia and add one (or switch profile)."
+      );
       return null;
     }
+    const t0 = Date.now();
     try {
       const result = await callAI({
         baseUrl: profile.baseUrl,
@@ -9910,17 +11747,46 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
         model: profile.model,
         system: PRINCIPLE_SYSTEM,
         messages: [{ role: "user", content }],
-        maxTokens: 800,
+        taskClass: "medium",
+        signal,
       });
+      notifyAIUsage(
+        "IF/THEN",
+        result.usage,
+        Date.now() - t0,
+        {
+          app: this.app,
+          profile: profile.name,
+          model: profile.model,
+          url: profile.baseUrl,
+        },
+        attachUsageTo
+      );
+      // Silent abort if user clicked Stop after backend started streaming.
+      if (signal?.aborted) return null;
       const parsed = extractJson<PrincipleFields>(result.text);
       if (!parsed) {
-        new Notice("AI: proposta principio non parseable.");
         console.error("[Antinomia] proposeIfThenFromContent unparseable:", result.text);
+        showErrorModal(
+          this.app,
+          "AI principle proposal not parseable",
+          "The AI replied but the response wasn't valid JSON with IF/THEN/GREY fields. Try again or switch model.",
+          `Profile: ${profile.name} (${profile.model})\n\n--- RAW RESPONSE ---\n${result.text?.slice(0, 2000) ?? "(empty)"}`
+        );
         return null;
       }
       return parsed;
     } catch (e) {
-      new Notice(`AI errore principio: ${(e as Error).message}`);
+      const msg = (e as Error).message;
+      if (msg === "hunter_aborted" || msg === "ai_aborted" || signal?.aborted) {
+        return null;
+      }
+      showErrorModal(
+        this.app,
+        "AI principle error",
+        `Couldn't get a principle proposal from the AI. ${msg.includes("not reachable") ? "Your local AI backend doesn't seem to be running." : "Check that the backend is reachable and the API key is valid."}`,
+        `Profile: ${profile.name} (${profile.model})\nURL: ${profile.baseUrl}\n\n${msg}`
+      );
       return null;
     }
   }
@@ -9935,9 +11801,14 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
     const profile = this.profileFor("default");
     console.log("[Antinomia] presupposti START profile:", profile.name, profile.format, profile.model);
     if (!profile.apiKey) {
-      new Notice("API key missing in the active profile. Settings -> Antinomia.");
+      showErrorModal(
+        this.app,
+        "API key missing",
+        "The active AI profile has no API key. Open Settings → Antinomia and add one (or switch profile)."
+      );
       return null;
     }
+    const t0 = Date.now();
     try {
       const result = await callAI({
         baseUrl: profile.baseUrl,
@@ -9946,21 +11817,37 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
         format: profile.format,
         system: PRESUPPOSTI_SYSTEM,
         messages: [{ role: "user", content }],
-        maxTokens: 800,
+        taskClass: "medium",
         signal,
+      });
+      notifyAIUsage("Presuppositions", result.usage, Date.now() - t0, {
+        app: this.app,
+        profile: profile.name,
+        model: profile.model,
+        url: profile.baseUrl,
       });
       console.log("[Antinomia] presupposti response len:", result.text.length);
       console.log("[Antinomia] presupposti response full:", result.text);
       const parsed = extractJson<PresuppostiFields>(result.text);
       console.log("[Antinomia] presupposti parsed:", parsed);
       if (!parsed) {
-        new Notice("AI: proposta presupposti non parseable.");
         console.error("[Antinomia] presupposti UNPARSEABLE:", result.text);
+        showErrorModal(
+          this.app,
+          "AI presuppositions not parseable",
+          "The AI replied but the response wasn't valid JSON with presuppositions A/B. Try again or switch model.",
+          `Profile: ${profile.name} (${profile.model})\n\n--- RAW RESPONSE ---\n${result.text?.slice(0, 2000) ?? "(empty)"}`
+        );
         return null;
       }
       if (typeof parsed.presupposizioniA !== "string" && typeof parsed.presupposizioniB !== "string") {
-        new Notice("AI: JSON ok ma chiavi sbagliate: " + Object.keys(parsed).join(", "));
-        console.error("[Antinomia] presupposti chiavi sbagliate:", parsed);
+        console.error("[Antinomia] presupposti wrong keys:", parsed);
+        showErrorModal(
+          this.app,
+          "AI presuppositions: wrong keys",
+          "The AI returned valid JSON but with the wrong field names. Expected `presupposizioniA` and `presupposizioniB`.",
+          `Got keys: ${Object.keys(parsed).join(", ")}\n\nParsed:\n${JSON.stringify(parsed, null, 2)}`
+        );
         return null;
       }
       return parsed;
@@ -9969,7 +11856,12 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
         throw new Error("ai_aborted");
       }
       console.error("[Antinomia] presupposti CATCH:", e);
-      new Notice(`AI errore presupposti: ${(e as Error).message}`);
+      showErrorModal(
+        this.app,
+        "AI presuppositions error",
+        `Couldn't get presuppositions from the AI. ${(e as Error).message.includes("not reachable") ? "Your local AI backend doesn't seem to be running." : "Check that the backend is reachable and the API key is valid."}`,
+        `Profile: ${profile.name} (${profile.model})\nURL: ${profile.baseUrl}\n\n${(e as Error).message}`
+      );
       return null;
     }
   }
@@ -9978,12 +11870,21 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
    * AI helper: classifica testo grezzo in tensione vs substrate ed estrae i campi.
    * Usato dal FreeInputModal.
    */
-  async analyzeFreeInput(text: string): Promise<FreeInputAnalysis | null> {
+  async analyzeFreeInput(
+    text: string,
+    signal?: AbortSignal,
+    attachUsageTo?: HTMLButtonElement
+  ): Promise<{ analysis: FreeInputAnalysis; meta: AIUsageMeta } | null> {
     const profile = this.profileFor("default");
     if (!profile.apiKey) {
-      new Notice("API key missing in the active profile. Settings -> Antinomia.");
+      showErrorModal(
+        this.app,
+        "API key missing",
+        "The active AI profile has no API key. Open Settings → Antinomia and add one (or switch profile)."
+      );
       return null;
     }
+    const t0 = Date.now();
     try {
       const result = await callAI({
         baseUrl: profile.baseUrl,
@@ -9991,17 +11892,55 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
         model: profile.model,
         system: FREE_INPUT_SYSTEM,
         messages: [{ role: "user", content: text }],
-        maxTokens: 1200,
+        taskClass: "short",
+        signal,
       });
+      notifyAIUsage(
+        "Free input",
+        result.usage,
+        Date.now() - t0,
+        {
+          app: this.app,
+          profile: profile.name,
+          model: profile.model,
+          url: profile.baseUrl,
+        },
+        attachUsageTo
+      );
+      // Silent abort if user clicked Stop after backend started streaming.
+      if (signal?.aborted) return null;
       const parsed = extractJson<FreeInputAnalysis>(result.text);
       if (!parsed || (parsed.tipo !== "tension" && parsed.tipo !== "substrate")) {
-        new Notice("AI: analisi non parseable.");
         console.error("[Antinomia] analyzeFreeInput unparseable:", result.text);
+        showErrorModal(
+          this.app,
+          "AI analysis not parseable",
+          "The AI replied but the response wasn't valid JSON with a tension/substrate classification. Try again or rephrase the input.",
+          `Profile: ${profile.name} (${profile.model})\n\n--- RAW RESPONSE ---\n${result.text?.slice(0, 2000) ?? "(empty)"}`
+        );
         return null;
       }
-      return parsed;
+      const meta: AIUsageMeta = {
+        usage: result.usage,
+        durationMs: Date.now() - t0,
+        profile: profile.name,
+        model: profile.model,
+        url: profile.baseUrl,
+        operation: "Free input",
+      };
+      return { analysis: parsed, meta };
     } catch (e) {
-      new Notice(`AI errore analisi: ${(e as Error).message}`);
+      const msg = (e as Error).message;
+      // Silent abort: user clicked Stop. No error modal.
+      if (msg === "hunter_aborted" || msg === "ai_aborted" || signal?.aborted) {
+        return null;
+      }
+      showErrorModal(
+        this.app,
+        "AI analysis error",
+        `Couldn't analyze the input. ${msg.includes("not reachable") ? "Your local AI backend doesn't seem to be running." : "Check that the backend is reachable and the API key is valid."}`,
+        `Profile: ${profile.name} (${profile.model})\nURL: ${profile.baseUrl}\n\n${msg}`
+      );
       return null;
     }
   }

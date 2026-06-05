@@ -1,5 +1,125 @@
 # Changelog
 
+## v1.4.0 (June 5, 2026) — PDF concept extraction, autoadaptive model layer, resilient AI flows
+
+The largest release since the English schema migration. Three big themes:
+
+1. **PDF → substrates**: drop a PDF in the vault (or import from disk), Antinomia extracts standalone concepts via AI and creates one substrate per concept, automatically grouped in a per-PDF subfolder and wired together in the graph view via a meta_note "hub" node — so each PDF becomes a visible cluster.
+2. **Autoadaptive model layer**: Antinomia now classifies your active model into a family (Anthropic, OpenAI o-series, Qwen3-reasoning, DeepSeek-R1, Llama, Mistral, Phi, Gemma, etc.) and adapts `max_tokens`, reasoning vocabulary, and behavior accordingly. No more configuring max_tokens by hand, no more sending `"low"` to a backend that only knows `"on"/"off"`, no more empty responses from reasoning distills that consume all tokens in `<think>`.
+3. **Resilient AI flows**: every AI call now has a real Stop button that closes the local TCP connection (LM Studio actually stops generating), a persistent ack modal for errors instead of a 5-second Notice the user can't read in time, a clickable token usage indicator, and a fallback path that recovers the answer from `reasoning_content` when the model writes there instead of `content`.
+
+### NEW — PDF ingest with AI concept extraction
+
+Open the sidebar quick-actions menu → **Substrate from PDF**. Pick a PDF already in the vault, or import one from disk (HTML5 file picker, copies it to `attachments/`). Antinomia extracts the text via Obsidian's bundled `pdfjsLib`, sends it to the AI with a prompt designed to surface 5-20 standalone concepts (quotes, facts, observations, claims — NOT summaries), and shows a preview modal where you check which concepts to save as substrates.
+
+Each generated substrate goes into a dedicated subfolder `notes/from-pdf-<basename>/`, carries `source: "PDF: <basename>"` + `origin: pdf_extraction` in its frontmatter, and links via `links: [[H-<basename>]]` to a meta_note "hub" the plugin creates automatically. The hub note lists all extracted concepts, links back to the original PDF, and lives at the root of the per-PDF subfolder. **Effect in the graph view**: each PDF becomes a cluster — hub in the center, N concept satellites around it.
+
+Cap at 30,000 characters per PDF for the MVP (chunking for longer documents is planned for v1.5). Scanned/image-only PDFs are detected and produce a friendly error pointing to v1.5 (OCR via vision models). Stop button works during the AI call via a dedicated progress modal with abort signal.
+
+### NEW — Autoadaptive AI behavior (`detectModelCapabilities`)
+
+Until now, every AI call hardcoded `max_tokens: 200` (or 600, or 1024 — depending on the call site). For non-reasoning models this was generous; for Qwen3 reasoning distills it was a death sentence — the model burned all 200 tokens in `<think>` and returned an empty `content`.
+
+The new `detectModelCapabilities(model)` function classifies the active model into a family and returns:
+- `isReasoning: boolean`
+- `reasoningVocab: "openai" | "on_off" | "none"` (mismatched vocab is a major source of silent failures — OpenAI rejects `"off"`, LM Studio Qwen3 promotes unknowns to `"on"`)
+- `recommended.{short, medium, deep}` max_tokens per task category
+
+Call sites now pass `taskClass: "short" | "medium" | "deep"` instead of a fixed number. Titles and free input are `short` (auto-disable reasoning where supported); IF/THEN and presuppositions are `medium`; Hunter is `deep` (leaves reasoning on).
+
+A one-shot per-session console warning fires when you use a reasoning model for a short task, suggesting you create a dedicated "Fast" profile with a non-reasoning model (Llama 3.x, Mistral, Phi) for the trivial calls while keeping the reasoning model for Hunter.
+
+### NEW — Persistent error modal (`ErrorAckModal`) with full details
+
+Every AI failure used to show a Notice that disappeared after 5 seconds. With reasoning models on local hardware, by the time you'd parsed the message it was already gone. v1.4 replaces those Notices with an `ErrorAckModal`:
+
+- Title, plain-English message, collapsible "Technical details" with profile, model, URL, raw response payload
+- **Copy message** button (puts the whole modal content on the clipboard for sharing in a bug report)
+- **Copy details** button (just the technical block)
+- Selectable text in the body
+- OK to dismiss
+
+Used by every AI catch path: `proposeTitleFromContent`, `proposeTitleAI`, `proposeIfThenFromContent`, `proposePresuppostiFromContent`, `analyzeFreeInput`, `runHunter`, `extractConceptsFromPdfText`.
+
+### NEW — Token usage inline badge + clickable Notice
+
+After every successful AI call you see two indicators:
+- A **Notice** at top-right: `Antinomia · Title · ↓ 42 in / ↑ 18 out · 2.1s` — clickable to open a detailed modal (operation, profile, model, URL, throughput in tok/s, hint about reasoning model overuse if > 1000 tokens)
+- An **inline badge** next to the triggering button: `Tokens: ↓42 ↑18 · 2.1s` — persistent until you re-click the button or close the parent modal
+
+When the originating modal closes (e.g. Free input → NewTension/NewSubstrate), the usage info propagates via a new `AIUsageMeta` type and appears as a banner at the top of the downstream modal: `Pre-filled by Free input · Tokens: ↓N ↑M · Xs`. No more losing the info because the source modal closed too quickly.
+
+### Fixed — `reasoning_content` fallback for Qwen3 distills
+
+Qwen3 distills via LM Studio (e.g. `qwen3-14b-claude-4.5-opus-high-reasoning-distill`) write their actual output in `message.reasoning_content`, not `message.content`. When `max_tokens` truncated the call mid-reasoning, `content` was `""` and the title parser saw nothing.
+
+Fix: `parseAIResponse` now falls back to `reasoning_content` when `content` is empty, with a console warning. The downstream pattern parsers (`parseTitleFromAIResponse` with 5 patterns including JSON extraction, label match, quoted string, skip-reasoning-lines heuristic) can usually fish the final answer out of the reasoning trace.
+
+Also logs a console warning when `finish_reason === "length"` so you know `max_tokens` was the bottleneck.
+
+### Fixed — Stop button now stops everything
+
+Several AI flows had `withLoadingButton(..., (signal) => ...)` passing a signal that the async function ignored (`proposeTitleFromContent`, `analyzeFreeInput`, `proposeIfThenFromContent`). Stop button visually disappeared but the AI kept running. Fixed: all of them now accept and propagate `signal` to `callAI`, which uses Node's `http.request` for local backends and calls `req.destroy()` on abort — closing the TCP socket so LM Studio actually stops generating.
+
+Also: when Stop is clicked *after* the backend has already begun streaming the response, `callAI` may still resolve successfully with a partial body. New silent-abort check (`if (signal?.aborted) return null`) prevents an unwanted "AI response not parseable" error modal from appearing in that race-condition window.
+
+### Fixed — Pre-flight ping for local backends
+
+Before each AI call to `localhost`/`127.0.0.1`/`*.local`, the new `pingLocalBackend()` hits `<baseUrl>/v1/models` with a 2-second timeout (results cached 30s alive / 5s down). If the local server is off, the user gets a friendly error: *"Local AI backend not reachable at http://localhost:1234. Start LM Studio / Ollama (Local Server) and try again."* Instead of a cryptic ECONNREFUSED dumped into a Notice.
+
+Also fixed a latent bug where `baseUrl` ending in `/v1` (the common case) caused the ping to hit `/v1/v1/models`.
+
+### Fixed — `reasoning_effort` vocabulary across runtimes
+
+The `reasoning_effort` body field uses different vocabularies across providers:
+- **OpenAI cloud** (o-series, GPT-5): `"low" | "medium" | "high"` (rejects others with 400)
+- **LM Studio ~0.3.x**: `"on" | "off"` (promotes unknowns silently to `"on"`)
+- **LM Studio 0.4.x+**: `"none" | "minimal" | "low" | "medium" | "high" | "xhigh"` (rejects `"off"` with 400)
+
+Sending the wrong vocabulary was the root cause of "model bursts tokens for no reason" and "400 invalid_value" errors in v1.3. Fix: route by `caps.reasoningVocab` — for `openai-reasoning` family send `"low"`; for everything else (local reasoning models) send nothing and rely on `chat_template_kwargs.enable_thinking: false`, which works at the model-template level across runtime versions.
+
+### Fixed — Hunter internal schema fully migrated to English
+
+`HunterContradiction` and `HunterResult` interfaces still used Italian field names (`nota_a`, `nota_b`, `descrizione`, `contraddizioni`, confidence `"alta" | "media" | "bassa"`) even after the v1.2 English UI migration — pure technical debt that confused the prompt language detection because the AI saw mixed-language signals. Fully migrated to `note_a`, `note_b`, `description`, `pairs`, `high/medium/low`. `normalizePair` keeps backward-compat for AI responses in either schema; sorted results, dismiss key, badge color map, and view rendering all updated.
+
+### Fixed — Graph view: meta_note and principle nodes now actually render
+
+`GraphFilters` interface had keys `meta_nota` and `principio` (Italian), but `layerKey()` returns `meta_note` and `principle` (English). Lookup `this.filters["meta_note"]` returned `undefined` → node silently excluded from the graph. This had been broken since v1.2 but hidden because nobody ever toggled those filters explicitly. Discovered while debugging why the PDF hub clusters weren't rendering. Now meta_notes and principles appear correctly, with their proper colors (purple and dark green respectively).
+
+### Fixed — Gemma 4 classification
+
+`detectModelCapabilities` treated all `gemma*` models as non-reasoning instruct. Gemma 3+ and 4 ship with thinking ENABLED by default in their chat template (similar to Qwen3 distills) and write their output to `reasoning_content`. The 200-token short-task budget caused empty content + parser fallback to a fragment of internal reasoning ("thinking through" extracted as title, etc.). Now `gemma-[34+]` is recognized as `qwen3-reasoning`-equivalent: 4000 token budget for short tasks, `enable_thinking: false` signal sent (which some Gemma 4 distills still ignore — for those, switching to a true non-reasoning model is the only fix).
+
+### Fixed — Bulk note creation no longer collides on timestamp ID
+
+`timestampId()` has 1-second resolution. Creating N notes in the same second (PDF ingest, batch imports) caused `S-YYYYMMDD-HHmmss.md` collisions — first note succeeded, rest silently failed. Fix: `createNote()` now appends `-001`, `-002`, ... suffix when a path is already taken. Applies to all future bulk flows, not just PDF.
+
+### Fixed — Front Matter Title "Approve changes" prompt during PDF ingest
+
+When generating bulk substrates with body wikilinks like `[[H-xxx]]`, the Front Matter Title plugin showed an "Approve changes" dialog for each one proposing to add an alias. Fix: pre-write wikilinks with explicit alias `[[basename|<title>]]` so FMT has nothing to suggest.
+
+### Fixed — Various Italian residues from the v1.2 EN migration
+
+- Prompt `Hunter` had `confidence: bassa` in an otherwise English prompt
+- Notice in callAI: `"API key mancante"`, `"Base URL mancante"`, `"AI errore <status>"`
+- Notice in `proposeTitleFromContent`: `"AI: risposta titolo non parseable"`, `"AI errore title"`
+- Sidebar `HunterContradictionsView`: `"coppie nascoste perche' gia' dismessas"`, `"Escluse N note"`, `"Marca come falso positivo"`
+- `analyzeFreeInput` loading text `"⏳ Analizzando..."` → `"⏳ Analyzing..."`
+- `createNote` Notice `"Creata: ..."` and `"Errore: ..."` → `"Created: ..."` and `"Error: ..."`
+
+A few notice in file-I/O paths (10 occurrences in note manipulation) are still in Italian and will be cleaned up in v1.4.1.
+
+### Fixed — Cytoscape and CSS deprecations
+
+- Edge `node:grabbing` selector is invalid in Cytoscape (the state is `:grabbed`)
+- CSS `appearance: slider-vertical` is deprecated in Chromium — replaced with the standard `writing-mode: vertical-lr; direction: rtl` pattern
+
+### Fixed — FreeInputModal callsite from sidebar crashed when clicked
+
+The sidebar quick-actions item *"Free-form input (AI classifies)"* called `new FreeInputModal(plugin.app, plugin).open()` — missing the required third argument (`onAnalyzed` callback). Click Analyze → `Uncaught TypeError: this.onAnalyzed is not a function`. Latent since the modal was introduced. Fix: route via `plugin.openFreeInputModal()` which supplies the callback.
+
+---
+
 ## v1.3.0 (June 2, 2026) — Multilingual Hunter, Meta filter fix, smoother graph interactions
 
 A focused polish release: the Hunter now adapts its output language to the user's notes (no more forced Italian on Llama/Groq), the Meta filter in the graph view finally matches notes (had a latent typo bug), and the graph re-layout after toggling filters is smooth and respects existing node positions instead of swarming everything to the center.
