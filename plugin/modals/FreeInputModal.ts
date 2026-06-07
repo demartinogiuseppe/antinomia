@@ -66,7 +66,7 @@ export class FreeInputModal extends Modal {
       )
       .addButton((b) =>
         b
-          .setButtonText("Analizza con AI")
+          .setButtonText("Analyze with AI")
           .setCta()
           .onClick(async () => {
             const t = testo.trim();

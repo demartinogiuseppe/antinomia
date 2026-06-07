@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.4.2 (June 7, 2026) — Quick polish
+
+A round of small fixes and UX polish.
+
+- **Cloud-profile privacy warning (#163)**: activating a non-local (cloud) profile now shows a modal spelling out the implications — your notes leave the machine to a third party (their ToS / possible training), per-token cost, network latency, the provider can read your tensions. "Cancel" reverts the switch; a "don't warn me again" toggle persists the choice.
+- **Profile baseUrl sanity check (#162)**: at load, if a profile matches a known backend preset (by id/name) but its baseUrl points at a different host (e.g. a "Groq" profile left on `api.anthropic.com`), a non-blocking Notice offers a one-click "Fix".
+- **Title parsing rejects meta-content (#164)**: reasoning models that ignore the JSON-only instruction sometimes leaked a fragment like "as a JSON object with one title" as the note title. The last-resort line picker now rejects meta-instruction shapes — while preserving legitimate titles that happen to contain words like "value", "object", or "string".
+- **Plugin version in Dashboard (#136)**: shown as a subtle line under the Dashboard heading.
+- **Token badge on the Hunter button (#138)**: the inline token-usage badge (same UX as the Title badge) now also appears next to the Run Hunter button, complementing the run-metadata header.
+- **No surprise sidebar after PDF ingest (#139)**: the Substrate list is only revealed if it was already open, instead of force-opening a leaf you didn't ask for.
+- **Double Elevate modal fixed (#65)**: two rapid clicks could open the elevate form twice — a check-then-act race where the guard flag was set after an `await`. The guard is now claimed synchronously.
+- **English Notices (#111, #159)**: translated the last residual Italian strings in file-IO / flow Notices and the Free-input "Analyze with AI" button.
+
 ## v1.4.1 (June 7, 2026) — Refactor + patch
 
 ### Internal refactor (no behavior change)

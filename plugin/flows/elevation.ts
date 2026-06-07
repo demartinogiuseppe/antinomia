@@ -15,12 +15,17 @@ import { ElevateToPrincipleModal } from "../modals/ElevateToPrincipleModal";
 
 export async function openElevateModal(plugin: AntinomiaPlugin, file: TFile): Promise<void> {
     if (plugin.elevateModalOpen) {
-      console.warn("[Antinomia] openElevateModal: gia' aperto, ignoro richiesta duplicata");
+      console.warn("[Antinomia] openElevateModal: already open, ignoring duplicate request");
       return;
     }
+    // Claim the guard SYNCHRONOUSLY, before the first await below. Otherwise two
+    // rapid clicks both pass the check (the flag is still false while the first
+    // is awaiting vault.read) and two modals open. Release on every early exit.
+    plugin.elevateModalOpen = true;
     const fm0 = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
     if (fm0?.antinomia_type !== TYPE.tension) {
       new Notice("Elevate: active note is not a tension.");
+      plugin.elevateModalOpen = false;
       return;
     }
     let rawElev = "";
@@ -28,9 +33,9 @@ export async function openElevateModal(plugin: AntinomiaPlugin, file: TFile): Pr
       rawElev = await plugin.app.vault.read(file);
     } catch (e) {
       new Notice(`Read error: ${(e as Error).message}`);
+      plugin.elevateModalOpen = false;
       return;
     }
-    plugin.elevateModalOpen = true;
     const modal = new ElevateToPrincipleModal(
       plugin.app,
       plugin,
@@ -61,7 +66,7 @@ export async function elevateToPrinciple(plugin: AntinomiaPlugin,
         await plugin.elevateTransform(file, fields);
       }
     } catch (e) {
-      new Notice(`Errore elevazione: ${(e as Error).message}`);
+      new Notice(`Elevation error: ${(e as Error).message}`);
     }
 }
 
@@ -81,7 +86,7 @@ export async function elevateTransform(plugin: AntinomiaPlugin, file: TFile, fie
     const afterFm = await plugin.app.vault.read(file);
     const fmEnd = afterFm.indexOf("\n---", 3);
     if (fmEnd === -1) {
-      new Notice("Errore: frontmatter non leggibile.");
+      new Notice("Error: frontmatter not readable.");
       return;
     }
     const fmBlock = afterFm.slice(0, fmEnd + 4);
@@ -93,7 +98,7 @@ export async function elevateTransform(plugin: AntinomiaPlugin, file: TFile, fie
       oldBody +
       "\n";
     await plugin.app.vault.modify(file, fmBlock + newBody);
-    new Notice(`Elevata (transform): ${file.basename}`);
+    new Notice(`Elevated (transform): ${file.basename}`);
 }
 
 export async function elevateSplit(plugin: AntinomiaPlugin, file: TFile, fields?: PrincipleFields): Promise<void> {
@@ -122,7 +127,7 @@ export async function elevateSplit(plugin: AntinomiaPlugin, file: TFile, fields?
       "_(testo originale conservato nel defeated linkato)_\n";
     const principleFile = await plugin.createNote("P", principleContent);
     if (!principleFile) {
-      new Notice("Errore: impossibile creare il principio.");
+      new Notice("Error: could not create the principle.");
       return;
     }
     const principleBasename = principleFile.basename;
@@ -137,7 +142,7 @@ export async function elevateSplit(plugin: AntinomiaPlugin, file: TFile, fields?
     if (!afterFm.includes(`> Replaced by: [[${principleBasename}]]`)) {
       await plugin.app.vault.modify(file, afterFm + `\n\n> Replaced by: [[${principleBasename}]]\n`);
     }
-    new Notice(`Elevata (split): ${tensionBasename} -> defeated, principio ${principleBasename}`);
+    new Notice(`Elevated (split): ${tensionBasename} -> defeated, principle ${principleBasename}`);
 }
 
 export async function proposeIfThenFromContent(plugin: AntinomiaPlugin, 

@@ -7,9 +7,9 @@ import { App, Notice, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf } 
 
 import type { Profile, GraphColors, BackendPreset, TutorialStep, PdfExtractResult, ClassifyResult, TitleProposal, PresuppostiFields, PdfConcept, PdfConceptsResult, AIUsageMeta, FreeInputAnalysis, HunterConfidence, HunterContradiction, HunterResult, HunterRunMetadata, HunterRun, DefeatedSubmit, TensionFields, SubstrateFields, PrincipleFields, GraphFilters, ClaudeResponse } from "./core/types";
 
-import { FOLDER, TYPE, VIEW_TYPE_OPEN_TENSIONS, VIEW_TYPE_HUNTER_RESULTS, VIEW_TYPE_DISMISSED_PAIRS, VIEW_TYPE_SUBSTRATE_LIST, VIEW_TYPE_PRINCIPLES_LIST, VIEW_TYPE_DEFEATED_LIST, VIEW_TYPE_ONBOARDING, VIEW_TYPE_DASHBOARD, VIEW_TYPE_AUDIT, VIEW_TYPE_GRAPH, VIEW_TYPE_UNCLASSIFIED, GRAPH_STYLE_PRESETS } from "./core/constants";
+import { FOLDER, TYPE, VIEW_TYPE_OPEN_TENSIONS, VIEW_TYPE_HUNTER_RESULTS, VIEW_TYPE_DISMISSED_PAIRS, VIEW_TYPE_SUBSTRATE_LIST, VIEW_TYPE_PRINCIPLES_LIST, VIEW_TYPE_DEFEATED_LIST, VIEW_TYPE_ONBOARDING, VIEW_TYPE_DASHBOARD, VIEW_TYPE_AUDIT, VIEW_TYPE_GRAPH, VIEW_TYPE_UNCLASSIFIED, GRAPH_STYLE_PRESETS, BACKEND_PRESETS } from "./core/constants";
 
-import { todayISO, timestampId, ensureFolder } from "./core/utils";
+import { todayISO, timestampId, ensureFolder, isLocalBaseUrl } from "./core/utils";
 
 import { yamlQuote } from "./core/frontmatter";
 
@@ -30,6 +30,7 @@ import { notifyAIUsage, renderUsageMetaBanner, ErrorAckModal, showErrorModal } f
 import { ProfileEditModal } from "./modals/ProfileEditModal";
 
 import { WelcomeModal } from "./modals/WelcomeModal";
+import { CloudWarningModal } from "./modals/CloudWarningModal";
 
 import { ConfirmModal } from "./modals/ConfirmModal";
 
@@ -465,8 +466,15 @@ class AntinomiaSettingTab extends PluginSettingTab {
         }
         dd.setValue(this.plugin.settings.activeProfileId);
         dd.onChange(async (value) => {
+          const prev = this.plugin.settings.activeProfileId;
           this.plugin.settings.activeProfileId = value;
           await this.plugin.saveSettings();
+          // Warn when switching TO a cloud profile; revert on cancel.
+          this.plugin.maybeWarnCloudProfile(async () => {
+            this.plugin.settings.activeProfileId = prev;
+            await this.plugin.saveSettings();
+            dd.setValue(prev);
+          });
         });
       });
 
@@ -997,8 +1005,8 @@ export default class AntinomiaPlugin extends Plugin {
    * dismissati, salva ultimo run nei settings, mostra in HunterResultsView.
    * Supporta cancellazione via Stop button (AbortController).
    */
-  async runHunter(focusFile?: TFile): Promise<void> {
-    return runHunter(this, focusFile);
+  async runHunter(focusFile?: TFile, attachToButton?: HTMLButtonElement): Promise<void> {
+    return runHunter(this, focusFile, attachToButton);
   }
 
   /**
@@ -1105,6 +1113,12 @@ export default class AntinomiaPlugin extends Plugin {
           void this.activateView(VIEW_TYPE_GRAPH, "tab");
         }
       }
+      // Cloud-profile privacy reminder for returning users. Skipped on the very
+      // first launch, where the WelcomeModal already covers cloud-vs-local.
+      if (this.settings.onboardingCompleted) {
+        this.maybeWarnCloudProfile();
+      }
+      this.validateProfileBaseUrls();
     });
 
     // ---- Creation (guided + bypass) ----
@@ -1557,6 +1571,72 @@ export default class AntinomiaPlugin extends Plugin {
   }
 
   /**
+   * If the active profile points at a third-party cloud backend (not a local
+   * server) and the user hasn't dismissed the warning, show the cloud-privacy
+   * modal. `onCancel` runs when the user backs out (used to revert a profile
+   * switch). No-op when the active profile is local or the warning is off.
+   */
+  /**
+   * Non-blocking sanity check at load: if a profile clearly corresponds to a
+   * known backend preset (by id or name) but its baseUrl points at a different
+   * host (a common copy-paste mistake, e.g. a "Groq" profile left on
+   * api.anthropic.com), surface a Notice with a one-click "Fix" that rewrites
+   * the baseUrl to the preset's. Custom/unknown profiles are left alone.
+   */
+  validateProfileBaseUrls(): void {
+    const hostOf = (u: string): string => {
+      try {
+        return new URL(u).hostname;
+      } catch {
+        return "";
+      }
+    };
+    for (const profile of this.settings.profiles) {
+      const name = profile.name.toLowerCase();
+      const preset = BACKEND_PRESETS.find(
+        (p) => p.id === profile.id || name.includes(p.id)
+      );
+      if (!preset) continue;
+      const want = hostOf(preset.baseUrl);
+      const got = hostOf(profile.baseUrl);
+      if (!want || !got || want === got) continue;
+      const frag = document.createDocumentFragment();
+      const span = document.createElement("span");
+      span.setText(
+        `Antinomia: profile "${profile.name}" has baseUrl ${got}, but the ${preset.label} preset uses ${want}. `
+      );
+      frag.appendChild(span);
+      const btn = document.createElement("button");
+      btn.textContent = "Fix";
+      btn.style.marginLeft = "8px";
+      btn.onclick = async () => {
+        profile.baseUrl = preset.baseUrl;
+        await this.saveSettings();
+        new Notice(`Fixed baseUrl for "${profile.name}" → ${want}.`);
+      };
+      frag.appendChild(btn);
+      new Notice(frag, 20000);
+    }
+  }
+
+  maybeWarnCloudProfile(onCancel: () => void = () => {}): void {
+    if (this.settings.cloudWarningDismissed) return;
+    const p = this.activeProfile();
+    if (!p || isLocalBaseUrl(p.baseUrl)) return;
+    new CloudWarningModal(
+      this.app,
+      this,
+      async (dontWarnAgain) => {
+        if (dontWarnAgain) {
+          this.settings.cloudWarningDismissed = true;
+          await this.saveSettings();
+        }
+      },
+      onCancel
+    ).open();
+  }
+
+  /**
    * Get the profile to use for a given command type. Currently only "hunter"
    * has its own override; everything else uses the active profile.
    */
@@ -1893,7 +1973,7 @@ export default class AntinomiaPlugin extends Plugin {
       return fm?.antinomia_type === TYPE.principle;
     });
     if (principles.length === 0) {
-      new Notice("Nessun principio nel vault.");
+      new Notice("No principles in the vault.");
       return;
     }
     const alreadyLinked = new Set<string>();
@@ -1958,7 +2038,7 @@ export default class AntinomiaPlugin extends Plugin {
   async createDefeatedForPrinciple(principleFile: TFile): Promise<void> {
     const fm = this.app.metadataCache.getFileCache(principleFile)?.frontmatter;
     if (fm?.antinomia_type !== TYPE.principle) {
-      new Notice("Selezione: la nota non e' un principio.");
+      new Notice("Selection: the note is not a principle.");
       return;
     }
     const today = todayISO();
@@ -1982,7 +2062,7 @@ export default class AntinomiaPlugin extends Plugin {
       `> Replaced by: [[${principleFile.basename}]]\n`;
     const defeatedFile = await this.createNote("D", defeatedContent);
     if (!defeatedFile) {
-      new Notice("Errore: impossibile creare il defeated.");
+      new Notice("Error: could not create the defeated.");
       return;
     }
     await this.app.fileManager.processFrontMatter(principleFile, (frontm) => {
@@ -2033,9 +2113,9 @@ export default class AntinomiaPlugin extends Plugin {
         fm.status = "resolved";
         fm.modified_date = todayISO();
       });
-      new Notice(`Risolta: ${file.basename}`);
+      new Notice(`Resolved: ${file.basename}`);
     } catch (e) {
-      new Notice(`Errore: ${(e as Error).message}`);
+      new Notice(`Error: ${(e as Error).message}`);
     }
   }
 
@@ -2072,7 +2152,7 @@ export default class AntinomiaPlugin extends Plugin {
           `Archived as defeated (${motivo}${subMsg}): ${file.basename}`
         );
       } catch (e) {
-        new Notice(`Errore: ${(e as Error).message}`);
+        new Notice(`Error: ${(e as Error).message}`);
       }
     }).open();
   }
@@ -2102,7 +2182,7 @@ export default class AntinomiaPlugin extends Plugin {
       new Notice(`Marcata come ${tipo}: ${file.basename}`);
     } catch (e) {
       console.error("[Antinomia] markAsType failed", e);
-      new Notice(`Errore: ${(e as Error).message}`);
+      new Notice(`Error: ${(e as Error).message}`);
     }
   }
 
@@ -2116,7 +2196,7 @@ export default class AntinomiaPlugin extends Plugin {
       });
       new Notice(`Ignorata: ${file.basename}`);
     } catch (e) {
-      new Notice(`Errore: ${(e as Error).message}`);
+      new Notice(`Error: ${(e as Error).message}`);
     }
   }
 
@@ -2157,7 +2237,7 @@ export default class AntinomiaPlugin extends Plugin {
         maxTokens: 400,
       });
     } catch (e) {
-      new Notice(`Errore AI: ${(e as Error).message}`);
+      new Notice(`AI error: ${(e as Error).message}`);
       return;
     }
     const parsed = extractJson<ClassifyResult>(result.text);
@@ -2188,7 +2268,7 @@ export default class AntinomiaPlugin extends Plugin {
           });
           new Notice(`Applicato: antinomia_type = ${parsed.tipo}`);
         } catch (e) {
-          new Notice(`Errore: ${(e as Error).message}`);
+          new Notice(`Error: ${(e as Error).message}`);
         }
       }
     ).open();
@@ -2293,7 +2373,7 @@ export default class AntinomiaPlugin extends Plugin {
    */
   async linkActiveTo(active: TFile, target: TFile): Promise<void> {
     if (active.path === target.path) {
-      new Notice("Non puoi collegare una nota a se stessa.");
+      new Notice("You can't link a note to itself.");
       return;
     }
     try {
@@ -2330,7 +2410,7 @@ export default class AntinomiaPlugin extends Plugin {
       }
       new Notice(`Collegate ${active.basename} <-> ${target.basename}`);
     } catch (e) {
-      new Notice(`Errore collegamento: ${(e as Error).message}`);
+      new Notice(`Link error: ${(e as Error).message}`);
     }
   }
 

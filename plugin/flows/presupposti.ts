@@ -14,7 +14,7 @@ import { MapPresuppostiModal } from "../modals/MapPresuppostiModal";
 export async function openMapPresupposti(plugin: AntinomiaPlugin, file: TFile): Promise<void> {
     const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
     if (fm?.antinomia_type !== TYPE.tension) {
-      new Notice("Mappa presupposti: la nota attiva non e' una tensione.");
+      new Notice("Map presuppositions: the active note is not a tension.");
       return;
     }
     let raw = "";
@@ -131,7 +131,7 @@ export async function applyPresupposti(plugin: AntinomiaPlugin, file: TFile, fie
       const raw = await plugin.app.vault.read(file);
       const fmEnd = raw.indexOf("\n---", 3);
       if (fmEnd === -1) {
-        new Notice("Errore: frontmatter non leggibile.");
+        new Notice("Error: frontmatter not readable.");
         return;
       }
       const fmBlock = raw.slice(0, fmEnd + 4);
@@ -164,6 +164,6 @@ export async function applyPresupposti(plugin: AntinomiaPlugin, file: TFile, fie
       await plugin.app.vault.modify(file, fmBlock2 + body);
       new Notice("Presupposti aggiornati.");
     } catch (e) {
-      new Notice(`Errore presupposti: ${(e as Error).message}`);
+      new Notice(`Presuppositions error: ${(e as Error).message}`);
     }
 }

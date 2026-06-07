@@ -410,10 +410,17 @@ export async function runPdfIngest(plugin: AntinomiaPlugin, pdf: TFile): Promise
         await plugin.bulkCreateSubstratesFromConcepts(picks, pdf);
         // Wait a beat so Obsidian's metadataCache picks up the new
         // frontmatter (otherwise sidebars would show basenames instead of
-        // human titles until the next interaction). Then refresh both
-        // Substrate and Graph views so the user sees the cluster.
+        // human titles until the next interaction). Then refresh the
+        // Substrate and Graph views ONLY if the user already had them open —
+        // don't force-open a leaf the user didn't ask for. Open views refresh
+        // themselves on the vault/metadata events they register.
         setTimeout(() => {
-          void plugin.activateView(VIEW_TYPE_SUBSTRATE_LIST);
+          const subLeaves = plugin.app.workspace.getLeavesOfType(
+            VIEW_TYPE_SUBSTRATE_LIST
+          );
+          if (subLeaves.length > 0) {
+            plugin.app.workspace.revealLeaf(subLeaves[0]);
+          }
           plugin.refreshOpenGraphViews();
         }, 700);
       }
