@@ -2,6 +2,38 @@
 // Extracted from main.ts (refactor v1.5).
 
 import { App, TFile } from "obsidian";
+import { TYPE } from "./constants";
+import type { GraphFilters } from "./types";
+
+/**
+ * Map a note's frontmatter to its graph layer key (the GraphFilters key used
+ * for colouring/filtering), or null if it isn't an Antinomia note.
+ *
+ * Notable cases:
+ *  - tension: status elevated/resolved/(open) -> tensione_elevata/risolta/aperta
+ *  - defeated with motive=elevated: the ORIGINAL tension that produced a
+ *    principle (Design C) -> shown under the "Elevated" layer, not "Defeated".
+ *
+ * Extracted from AntinomiaGraphView so it can be unit-tested.
+ */
+export function layerKey(fm: any): keyof GraphFilters | null {
+  const t = fm?.antinomia_type;
+  if (t === TYPE.tension) {
+    const stato = fm?.status;
+    if (stato === "elevated") return "tensione_elevata";
+    if (stato === "resolved") return "tensione_risolta";
+    return "tensione_aperta";
+  }
+  if (t === TYPE.substrate) return "substrate";
+  if (t === TYPE.principle) return "principle";
+  if (t === TYPE.defeated) {
+    const motive = fm?.motive;
+    if (motive === "elevated") return "tensione_elevata";
+    return "defeated";
+  }
+  if (t === TYPE.meta) return "meta_note";
+  return null;
+}
 
 export function stripFrontmatter(raw: string): string {
   if (!raw.startsWith("---")) return raw;
