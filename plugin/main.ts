@@ -81,6 +81,12 @@ import {
   humanTitle,
 } from "./core/frontmatter";
 
+import {
+  tensionTemplate,
+  substrateTemplate,
+  principleBodyTemplate,
+} from "./core/templates";
+
 // Antinomia V1 — Step 5e: guided creation modals + human titles + Hunter v2.1
 //
 // Design invariants (do not violate without explicit user reconfirmation):
@@ -3710,78 +3716,6 @@ class DefeatedReasonModal extends Modal {
 }
 
 // ---------- templates ----------
-
-function tensionTemplate(fields: TensionFields = {}): string {
-  const date = todayISO();
-  const titoloLine = fields.title
-    ? `title: ${yamlQuote(fields.title)}`
-    : "title:";
-  const a = fields.statementA?.trim() ?? "";
-  const b = fields.statementB?.trim() ?? "";
-  return `---
-antinomia_type: ${TYPE.tension}
-${titoloLine}
-status: open
-base_language: english
-creation_date: ${date}
-modified_date: ${date}
-origin: user_input
-links: []
----
-- **A (base):** ${a}
-- **A (original):**
-- **B (base):** ${b}
-- **B (original):**
-- **Presuppositions A:**
-- **Presuppositions B:**
-`;
-}
-
-function substrateTemplate(fields: SubstrateFields = {}): string {
-  const date = todayISO();
-  const titoloLine = fields.title
-    ? `title: ${yamlQuote(fields.title)}`
-    : "title:";
-  const c = fields.content?.trim() ?? "";
-  return `---
-antinomia_type: ${TYPE.substrate}
-${titoloLine}
-base_language: english
-original_language: english
-source: user_input
-date: ${date}
----
-- **Content (base):** ${c}
-- **Original:**
-`;
-}
-
-/**
- * Build the principle body (the IF/THEN/GREY block) from optional fields.
- * If a field is empty, falls back to the original placeholder so the user
- * can still spot what's missing in the editor.
- */
-function principleBodyTemplate(fields: PrincipleFields = {}): string {
-  const ifA = fields.ifA?.trim() ?? "";
-  const thenA = fields.thenA?.trim() ?? "";
-  const ifB = fields.ifB?.trim() ?? "";
-  const thenB = fields.thenB?.trim() ?? "";
-  const grey = fields.greyZone?.trim() ?? "";
-
-  const lineA =
-    ifA || thenA
-      ? `IF ${ifA || "[condition A]"} -> ${thenA || "[outcome X]"}`
-      : "IF [condition A] -> [outcome X]";
-  const lineB =
-    ifB || thenB
-      ? `IF ${ifB || "[condition B]"} -> ${thenB || "[outcome Y]"}`
-      : "IF [condition B] -> [outcome Y]";
-
-  return `- **${lineA}**
-- **${lineB}**
-- **GREY ZONE:** ${grey}
-`;
-}
 
 /**
  * Modal to compose a new principle (IF/THEN/GREY). Same visual style as
