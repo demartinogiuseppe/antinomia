@@ -64,6 +64,17 @@ import {
   LAYER_SHAPES,
 } from "./core/constants";
 
+import {
+  todayISO,
+  timestampId,
+  ensureFolder,
+  truncate,
+  extractYouTubeId,
+  decodeHtmlEntities,
+  alphabeticOwner,
+  renderVaultLabel,
+} from "./core/utils";
+
 // Antinomia V1 — Step 5e: guided creation modals + human titles + Hunter v2.1
 //
 // Design invariants (do not violate without explicit user reconfirmation):
@@ -1934,16 +1945,6 @@ class AntinomiaSettingTab extends PluginSettingTab {
 
 // ---------- helpers ----------
 
-function todayISO(): string {
-  return moment().format("YYYY-MM-DD");
-}
-function timestampId(): string {
-  return moment().format("YYYYMMDD-HHmmss");
-}
-async function ensureFolder(app: App, path: string): Promise<void> {
-  if (!app.vault.getAbstractFileByPath(path))
-    await app.vault.createFolder(path);
-}
 function stripFrontmatter(raw: string): string {
   if (!raw.startsWith("---")) return raw;
   const end = raw.indexOf("\n---", 3);
@@ -2124,11 +2125,6 @@ function extractJson<T>(raw: string): T | null {
     return null;
   }
 }
-function truncate(text: string, max: number): string {
-  if (text.length <= max) return text;
-  return text.slice(0, max).trimEnd() + " [...]";
-}
-
 /**
  * Quote a string for use as a YAML scalar in our raw template strings.
  * Necessary because user-provided titles (and similar) may contain `:`,
@@ -2139,35 +2135,6 @@ function yamlQuote(s: string): string {
   return '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
 }
 
-/**
- * Extract a YouTube video ID from any common URL form.
- * Returns null if not a YouTube URL.
- */
-function extractYouTubeId(input: string): string | null {
-  const trimmed = input.trim();
-  // youtu.be/<id>
-  let m = trimmed.match(/youtu\.be\/([A-Za-z0-9_-]{11})/);
-  if (m) return m[1];
-  // youtube.com/watch?v=<id>
-  m = trimmed.match(/[?&]v=([A-Za-z0-9_-]{11})/);
-  if (m) return m[1];
-  // youtube.com/embed/<id> or /shorts/<id> or /v/<id>
-  m = trimmed.match(/youtube\.com\/(?:embed|shorts|v)\/([A-Za-z0-9_-]{11})/);
-  if (m) return m[1];
-  // Bare 11-char id (unlikely but cheap to support)
-  if (/^[A-Za-z0-9_-]{11}$/.test(trimmed)) return trimmed;
-  return null;
-}
-
-function decodeHtmlEntities(s: string): string {
-  return s
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, " ");
-}
 
 /**
  * Fetch YouTube transcript via Obsidian's requestUrl (bypasses CORS in
@@ -2380,23 +2347,6 @@ async function fetchYouTubeTranscript(
   console.log(`[Antinomia] transcript parsed via ${chosen}: ${lines.length} lines`);
   return { text: lines.join(" "), lang, videoId };
 }
-function alphabeticOwner(a: string, b: string): string {
-  return a < b ? a : b;
-}
-/**
- * Helper to render the optional vault display name as a small subheader.
- * Used in the top of main sidebars.
- */
-function renderVaultLabel(parent: HTMLElement, name: string): void {
-  if (!name) return;
-  const lbl = parent.createEl("div");
-  lbl.style.fontSize = "0.78em";
-  lbl.style.opacity = "0.55";
-  lbl.style.marginBottom = "4px";
-  lbl.style.fontStyle = "italic";
-  lbl.setText(name);
-}
-
 function humanTitle(app: App, file: TFile): string {
   const cache = app.metadataCache.getFileCache(file);
   const fm = cache?.frontmatter;
