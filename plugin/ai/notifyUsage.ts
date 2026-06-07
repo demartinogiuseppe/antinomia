@@ -215,7 +215,8 @@ export class ErrorAckModal extends Modal {
     app: App,
     private heading: string,
     private message: string,
-    private details?: string
+    private details?: string,
+    private action?: { label: string; onClick: () => void }
   ) {
     super(app);
   }
@@ -282,7 +283,7 @@ export class ErrorAckModal extends Modal {
       };
     }
 
-    new Setting(contentEl)
+    const footer = new Setting(contentEl)
       .addButton((b) => {
         b.setButtonText("Copy message").onClick(async () => {
           const payload =
@@ -308,13 +309,19 @@ export class ErrorAckModal extends Modal {
             }, 1500);
           }
         });
-      })
-      .addButton((b) =>
-        b
-          .setButtonText("OK")
-          .setCta()
-          .onClick(() => this.close())
+      });
+    if (this.action) {
+      const act = this.action;
+      footer.addButton((b) =>
+        b.setButtonText(act.label).onClick(() => {
+          this.close();
+          act.onClick();
+        })
       );
+    }
+    footer.addButton((b) =>
+      b.setButtonText("OK").setCta().onClick(() => this.close())
+    );
   }
   onClose(): void {
     this.contentEl.empty();
@@ -325,7 +332,8 @@ export function showErrorModal(
   app: App,
   heading: string,
   message: string,
-  details?: string
+  details?: string,
+  action?: { label: string; onClick: () => void }
 ): void {
-  new ErrorAckModal(app, `Antinomia — ${heading}`, message, details).open();
+  new ErrorAckModal(app, `Antinomia — ${heading}`, message, details, action).open();
 }

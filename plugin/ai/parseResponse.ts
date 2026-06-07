@@ -1,7 +1,7 @@
 // Antinomia — AI response parsing helpers.
 // Extracted from main.ts (refactor v1.5).
 
-import type { ClaudeResponse, TitleProposal } from "../core/types";
+import type { ClaudeResponse, TitleProposal, FreeInputAnalysis } from "../core/types";
 
 export function normalizeJsonQuotes(s: string): string {
   // First pass: tokenize to know when we are inside a double-quoted string.
@@ -330,4 +330,96 @@ export function parseTitleFromAIResponse(rawText: string): string | null {
   }
 
   return null;
+}
+
+/**
+ * Parse a Free-input analysis ({tipo, title, statementA, statementB,
+ * contenuto}) out of an AI response, tolerating prose. Mirrors the
+ * fallback ladder of parseTitleFromAIResponse:
+ *   1. strict JSON (extractJson)
+ *   2. loose JSON-ish field extraction ("tipo": "...", "title": "...", ...)
+ *   3. discursive heuristic (a reasoning model narrating its choice)
+ * Returns null only when even `tipo` can't be determined.
+ *
+ * Real failure this rescues (qwen3-distill):
+ *   "...I'll classify this as a 'substrate'... The title could be something
+ *    like 'Financial Documentation Requirements'. Since this is a substrate,
+ *    I won't fill in the statementA and statementB fields."
+ *   -> { tipo: "substrate", title: "Financial Documentation Requirements", ... }
+ */
+export function parseFreeInputFromAIResponse(
+  rawText: string
+): FreeInputAnalysis | null {
+  if (!rawText || !rawText.trim()) return null;
+  const clean = rawText
+    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<think>[\s\S]*$/gi, "")
+    .trim();
+  if (!clean) return null;
+
+  const mk = (
+    tipo: "tension" | "substrate",
+    title: string,
+    statementA = "",
+    statementB = "",
+    contenuto = ""
+  ): FreeInputAnalysis => ({
+    tipo,
+    title: title.trim(),
+    statementA: statementA.trim(),
+    statementB: statementB.trim(),
+    contenuto: contenuto.trim(),
+  });
+
+  // Pattern 1: strict JSON.
+  try {
+    const j = extractJson<Record<string, unknown>>(clean);
+    if (j && (j.tipo === "tension" || j.tipo === "substrate")) {
+      return mk(
+        j.tipo,
+        String(j.title ?? ""),
+        String(j.statementA ?? ""),
+        String(j.statementB ?? ""),
+        String(j.contenuto ?? j.content ?? "")
+      );
+    }
+  } catch {
+    /* fall through */
+  }
+
+  // Determine tipo: loose JSON field, then prose phrasings, then last-resort
+  // first bare mention.
+  const tipoMatch =
+    clean.match(/["']?tipo["']?\s*[:=]\s*["']?(substrate|tension)\b/i) ||
+    clean.match(
+      /classif\w*\s+(?:it|this)?\s*(?:as|come)\s*(?:a|an|un[ao]?)?\s*["']?(substrate|tension)\b/i
+    ) ||
+    clean.match(/\bthis is (?:a|an)\s+(substrate|tension)\b/i) ||
+    clean.match(/\b(substrate|tension)\b/i);
+  if (!tipoMatch) return null;
+  const tipo = tipoMatch[1].toLowerCase() as "tension" | "substrate";
+
+  // Title: JSON-ish "title": "X", then prose "title ... 'X'". Do NOT fall back
+  // to the first quoted string (that is usually the tipo word, e.g. 'substrate').
+  const field = (re: RegExp): string => {
+    const m = clean.match(re);
+    return m ? m[1].trim() : "";
+  };
+  const title =
+    field(/["']?title["']?\s*[:=]\s*["']([^"'\n]{2,100})["']/i) ||
+    field(/["']?title["']?\s*[:=]\s*([^\n,}"']{2,100})/i) ||
+    field(/\btitle\b[^"'\n]{0,40}["']([^"'\n]{2,100})["']/i);
+
+  const statementA =
+    field(/["']?statementA["']?\s*[:=]\s*["']([^"'\n]{1,300})["']/i) ||
+    field(/statement\s*A\s*[:=]\s*([^\n]{1,300})/i);
+  const statementB =
+    field(/["']?statementB["']?\s*[:=]\s*["']([^"'\n]{1,300})["']/i) ||
+    field(/statement\s*B\s*[:=]\s*([^\n]{1,300})/i);
+  const contenuto =
+    field(/["']?(?:contenuto|content)["']?\s*[:=]\s*["']([^"'\n]{1,500})["']/i) ||
+    field(/\b(?:contenuto|content)\s*[:=]\s*([^\n]{1,500})/i);
+
+  return mk(tipo, title, statementA, statementB, contenuto);
 }
