@@ -19,6 +19,31 @@ import {
   requestUrl,
 } from "obsidian";
 
+import type {
+  Profile,
+  GraphColors,
+  BackendPreset,
+  TutorialStep,
+  PdfExtractResult,
+  ClassifyResult,
+  TitleProposal,
+  PresuppostiFields,
+  PdfConcept,
+  PdfConceptsResult,
+  AIUsageMeta,
+  FreeInputAnalysis,
+  HunterConfidence,
+  HunterContradiction,
+  HunterResult,
+  HunterRunMetadata,
+  HunterRun,
+  DefeatedSubmit,
+  TensionFields,
+  SubstrateFields,
+  PrincipleFields,
+  GraphFilters,
+} from "./core/types";
+
 // Antinomia V1 — Step 5e: guided creation modals + human titles + Hunter v2.1
 //
 // Design invariants (do not violate without explicit user reconfirmation):
@@ -49,14 +74,6 @@ const VIEW_TYPE_ONBOARDING = "antinomia-onboarding-checklist";
 const VIEW_TYPE_DASHBOARD = "antinomia-dashboard";
 const VIEW_TYPE_AUDIT = "antinomia-audit";
 const VIEW_TYPE_GRAPH = "antinomia-graph";
-
-interface Profile {
-  id: string;
-  name: string;
-  baseUrl: string;
-  apiKey: string;
-  model: string;
-}
 
 interface AntinomiaSettings {
   profiles: Profile[];
@@ -90,19 +107,6 @@ interface AntinomiaSettings {
   // Experimental: spread nodes further apart so edges are less likely to
   // cross unrelated nodes. Slower initial layout, cleaner visual result.
   graphSpaciousLayout?: boolean;
-}
-
-interface GraphColors {
-  tensione_aperta: string;
-  tensione_risolta: string;
-  tensione_elevata: string;
-  substrate: string;
-  principio: string;
-  defeated: string;
-  meta_nota: string;
-  label: string;
-  edge: string;
-  background: string;
 }
 
 const GRAPH_STYLE_PRESETS: Record<string, GraphColors> = {
@@ -222,15 +226,6 @@ const DEFAULT_SETTINGS: AntinomiaSettings = {
     background: "",
   },
 };
-
-interface BackendPreset {
-  id: string;
-  label: string;
-  baseUrl: string;
-  defaultModel: string;
-  defaultKey: string;
-  helpKey: string;
-}
 
 const BACKEND_PRESETS: BackendPreset[] = [
   {
@@ -1076,13 +1071,6 @@ class WelcomeModal extends Modal {
   onClose(): void {
     this.contentEl.empty();
   }
-}
-
-interface TutorialStep {
-  title: string;
-  paragraphs: string[];
-  exampleTitle?: string;
-  exampleLines?: string[];
 }
 
 const TUTORIAL_STEPS: TutorialStep[] = [
@@ -2532,13 +2520,6 @@ function detectApiFormat(baseUrl: string): "anthropic" | "openai" {
  */
 const PDF_TEXT_HARD_CAP_CHARS = 30_000;
 
-interface PdfExtractResult {
-  text: string;
-  pageCount: number;
-  truncated: boolean;
-  totalChars: number;
-}
-
 /**
  * Extract plain text from a PDF binary using Obsidian's bundled pdfjsLib.
  *
@@ -3224,11 +3205,6 @@ LANGUAGE: detect the dominant language of THE USER'S NOTE CONTENT and write the 
 Reply with ONLY valid JSON, no fence:
 {"tipo": "<one of the 5 type names above>", "motivazione": "<1-2 sentences in the user's language>"}`;
 
-interface ClassifyResult {
-  tipo: string;
-  motivazione: string;
-}
-
 const TITLE_SYSTEM = `You are a title generator. You output ONE JSON object and NOTHING ELSE.
 
 ABSOLUTE RULES:
@@ -3257,10 +3233,6 @@ Input: Sto creando una tensione. Affermazione A: Voglio concentrarmi sul mio lav
 Output: {"title": "Concentrazione vs Disponibilità"}
 
 Now produce the JSON for the user's input. JSON ONLY.`;
-
-interface TitleProposal {
-  title: string;
-}
 
 /**
  * Parses a title out of an AI response that may be:
@@ -3385,11 +3357,6 @@ Constraints:
 Reply with ONLY valid JSON, no comments, no markdown fence:
 {"presupposizioniA": "<presuppositions of side A, in the user's language>", "presupposizioniB": "<presuppositions of side B, in the user's language>"}`;
 
-interface PresuppostiFields {
-  presupposizioniA?: string;
-  presupposizioniB?: string;
-}
-
 const EXTRACT_CONCEPTS_SYSTEM = `You are the Antinomia document analyzer. Your task: extract distinct standalone CONCEPTS from a piece of text (typically a PDF excerpt) suitable as Antinomia substrates.
 
 A SUBSTRATE is raw material: a quote, a fact, an observation, a claim. NOT a summary, NOT an interpretation, NOT a conclusion drawn from multiple parts. Each concept must be self-contained — readable without the surrounding text.
@@ -3410,14 +3377,6 @@ Reply with ONLY valid JSON, no fence, no commentary:
 
 If the text contains no extractable concepts (too short, garbled, irrelevant): {"concepts": []}`;
 
-interface PdfConcept {
-  title: string;
-  content: string;
-}
-interface PdfConceptsResult {
-  concepts: PdfConcept[];
-}
-
 const FREE_INPUT_SYSTEM = `You are the Antinomia analyst. The user gives you a raw input (it can be a quote, an observation, a doubt, a contradiction, a single thought) and you must:
 
 1. Determine if it's a TENSION or a SUBSTRATE.
@@ -3437,29 +3396,6 @@ Reply with ONLY valid JSON, no fence:
 {"tipo": "tension" | "substrate", "title": "...", "statementA": "...", "statementB": "...", "contenuto": "..."}
 
 For tension leave contenuto empty. For substrate leave statementA/statementB empty.`;
-
-/**
- * Carries the AI usage stats of the call that produced an analysis so the
- * downstream modal (NewTensionModal / NewSubstrateModal) can show a banner
- * with the tokens spent. Without this, the user only sees a transient
- * Notice that gets visually buried under the new modal.
- */
-interface AIUsageMeta {
-  usage?: { input_tokens?: number; output_tokens?: number };
-  durationMs?: number;
-  profile?: string;
-  model?: string;
-  url?: string;
-  operation?: string;
-}
-
-interface FreeInputAnalysis {
-  tipo: "tension" | "substrate";
-  title: string;
-  statementA: string;
-  statementB: string;
-  contenuto: string;
-}
 
 const PRINCIPLE_SYSTEM = `You are the Antinomia assistant. You are helping the user transform a tension (statement A vs statement B) into an operational principle in IF/THEN/GREY form.
 
@@ -3669,31 +3605,6 @@ function buildHunterSystem(style: "concise" | "verbose"): string {
   );
 }
 
-type HunterConfidence = "high" | "medium" | "low";
-interface HunterContradiction {
-  note_a: string;
-  note_b: string;
-  description: string;
-  confidence?: HunterConfidence;
-}
-interface HunterResult {
-  pairs: HunterContradiction[];
-}
-interface HunterRunMetadata {
-  timestamp: string;
-  notesExamined: number;
-  totalCandidates: number;
-  truncated: boolean;
-  durationMs: number;
-  model: string;
-  inputTokens?: number;
-  outputTokens?: number;
-  dismissedFiltered: number;
-}
-interface HunterRun {
-  meta: HunterRunMetadata;
-  result: HunterResult;
-}
 const CONFIDENCE_ORDER: Record<HunterConfidence, number> = {
   high: 0,
   medium: 1,
@@ -3839,11 +3750,6 @@ class TitleEditModal extends Modal {
   }
 }
 
-interface DefeatedSubmit {
-  motive: string;
-  replaced_by: string | null;
-}
-
 class DefeatedReasonModal extends Modal {
   private result: DefeatedSubmit | null = null;
   private contextFile: TFile;
@@ -3951,11 +3857,6 @@ class DefeatedReasonModal extends Modal {
 
 // ---------- templates ----------
 
-interface TensionFields {
-  title?: string;
-  statementA?: string;
-  statementB?: string;
-}
 function tensionTemplate(fields: TensionFields = {}): string {
   const date = todayISO();
   const titoloLine = fields.title
@@ -3982,10 +3883,6 @@ links: []
 `;
 }
 
-interface SubstrateFields {
-  title?: string;
-  content?: string;
-}
 function substrateTemplate(fields: SubstrateFields = {}): string {
   const date = todayISO();
   const titoloLine = fields.title
@@ -4003,14 +3900,6 @@ date: ${date}
 - **Content (base):** ${c}
 - **Original:**
 `;
-}
-
-interface PrincipleFields {
-  ifA?: string;
-  thenA?: string;
-  ifB?: string;
-  thenB?: string;
-  greyZone?: string;
 }
 
 /**
@@ -7229,16 +7118,6 @@ class UnclassifiedNotesView extends ItemView {
 // ============================================================================
 // Antinomia Graph View — vista grafo custom con filtri per layer
 // ============================================================================
-
-interface GraphFilters {
-  tensione_aperta: boolean;
-  tensione_risolta: boolean;
-  tensione_elevata: boolean;
-  substrate: boolean;
-  principle: boolean;
-  defeated: boolean;
-  meta_note: boolean;
-}
 
 const DEFAULT_GRAPH_FILTERS: GraphFilters = {
   tensione_aperta: true,
