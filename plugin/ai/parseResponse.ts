@@ -295,19 +295,38 @@ export function parseTitleFromAIResponse(rawText: string): string | null {
     if (t.length > 0) return t;
   }
 
-  // Pattern 5: skip reasoning/preamble lines, pick first short line
+  // Pattern 5: skip reasoning/preamble lines, pick first short line.
   const skipPatterns =
     /^(l'utente|the user|i (think|believe|will|need|should)|let me|here(?:'s| is)|ecco|allora|sto|so |okay|the goal|my task|to (propose|generate|create)|reasoning:|note:|output:|response:|json:)/i;
+  // Blacklist: lines that talk ABOUT the title/format instead of being one.
+  // A reasoning model that ignores the JSON-only instruction often leaks a
+  // fragment like "as a JSON object with one title field" — short enough to
+  // pass the length test, but obviously meta. Reject and try the next line.
+  //
+  // Matched on meta-instruction SHAPES, not bare nouns: words like "value",
+  // "object", "string", "key" appear in legitimate titles ("The value of
+  // doubt", "Object of desire") and must NOT be rejected.
+  //   reject: "as a JSON object with one title"  ·  "the title field is a string"
+  //           "format: key value pairs"          ·  "with one title field"
+  //   keep:   "The value of doubt"               ·  "Object of desire"
+  //           "Truth as a weapon"                ·  "Speed or correctness"
+  const metaBlacklist =
+    /\bjson\b|\btitle field\b|\bschema\b|\bas a (json|string|title|object|field)\b|\bwith one (title|field|object)\b|\b(field|format|key|value|property)\s*[:=]/i;
   const lines = cleaned
     .split("\n")
     .map((s) => s.trim())
-    .filter((s) => s.length > 0 && !skipPatterns.test(s));
+    .filter(
+      (s) => s.length > 0 && !skipPatterns.test(s) && !metaBlacklist.test(s)
+    );
   const shortLine = lines.find((s) => s.length <= 80 && s.split(/\s+/).length <= 10);
   const candidate = shortLine || lines[0];
   if (candidate) {
     const stripped = candidate.replace(/^(title|titolo)[:\s\-—]+/i, "").trim();
-    const t = sanitizeTitle(stripped);
-    if (t.length > 0) return t;
+    // Final guard: even after stripping, bail if the candidate is meta-content.
+    if (!metaBlacklist.test(stripped)) {
+      const t = sanitizeTitle(stripped);
+      if (t.length > 0) return t;
+    }
   }
 
   return null;
