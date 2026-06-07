@@ -7807,8 +7807,11 @@ class AntinomiaGraphView extends ItemView {
       f.appendChild(b);
       return f;
     };
-    defs.appendChild(mkBlur("ant-edge-blur-strong", "7"));
-    defs.appendChild(mkBlur("ant-edge-blur-mild", "2.5"));
+    // Edge halo blur — dialed back further: 7/2.5 → 4/1.5 → 2.5/1.
+    // The glow is now a faint accent rather than an effect; the readable
+    // line is the sharp core path drawn on top.
+    defs.appendChild(mkBlur("ant-edge-blur-strong", "2.5"));
+    defs.appendChild(mkBlur("ant-edge-blur-mild", "1"));
     svg.appendChild(defs);
     // <g> for edge paths inside pathsSvg
     const g = document.createElementNS(SVG_NS, "g");
@@ -7897,31 +7900,32 @@ class AntinomiaGraphView extends ItemView {
         defsEl.appendChild(grad);
 
         const d = `M ${sx} ${sy} L ${tx} ${ty}`;
-        // Strong outer halo (large blur, semi-transparent)
+        // Strong outer halo — thinner: stroke 4→3.
         const haloOuter = document.createElementNS(SVG_NS, "path");
         haloOuter.setAttribute("d", d);
         haloOuter.setAttribute("stroke", `url(#${gradId})`);
-        haloOuter.setAttribute("stroke-width", "10");
+        haloOuter.setAttribute("stroke-width", "3");
         haloOuter.setAttribute("stroke-linecap", "round");
         haloOuter.setAttribute("fill", "none");
-        haloOuter.setAttribute("opacity", String(0.40 * fadeFactor));
+        haloOuter.setAttribute("opacity", String(0.12 * fadeFactor));
         haloOuter.setAttribute("filter", "url(#ant-edge-blur-strong)");
         group.appendChild(haloOuter);
-        // Inner halo (small blur, brighter)
+        // Inner halo — thinner: stroke 2.5→1.8.
         const haloInner = document.createElementNS(SVG_NS, "path");
         haloInner.setAttribute("d", d);
         haloInner.setAttribute("stroke", `url(#${gradId})`);
-        haloInner.setAttribute("stroke-width", "4");
+        haloInner.setAttribute("stroke-width", "1.8");
         haloInner.setAttribute("stroke-linecap", "round");
         haloInner.setAttribute("fill", "none");
-        haloInner.setAttribute("opacity", String(0.55 * fadeFactor));
+        haloInner.setAttribute("opacity", String(0.22 * fadeFactor));
         haloInner.setAttribute("filter", "url(#ant-edge-blur-mild)");
         group.appendChild(haloInner);
-        // Core (sharp, opaque)
+        // Core (sharp, opaque) — thinner: stroke 1.4→0.9 for a subtler
+        // overall line weight. Opacity kept high so the line stays crisp.
         const core = document.createElementNS(SVG_NS, "path");
         core.setAttribute("d", d);
         core.setAttribute("stroke", `url(#${gradId})`);
-        core.setAttribute("stroke-width", "1.4");
+        core.setAttribute("stroke-width", "0.9");
         core.setAttribute("stroke-linecap", "round");
         core.setAttribute("fill", "none");
         core.setAttribute("opacity", String(0.85 * fadeFactor));
@@ -8535,15 +8539,24 @@ class AntinomiaGraphView extends ItemView {
       });
 
       // Integrate velocity + position. Skip nodes the user is dragging.
+      // Lazy-init velocity for nodes that joined the graph after
+      // startContinuousPhysics() (e.g. a substrate created via PDF ingest
+      // while the graph view was already open). Without this, the next
+      // physics tick crashes on `velocities.get(n.id()).vx` because the
+      // new node was never registered.
       arr.forEach((n: any) => {
+        const nid = n.id();
+        let v = this.velocities.get(nid);
+        if (!v) {
+          v = { vx: 0, vy: 0 };
+          this.velocities.set(nid, v);
+        }
         if (n.grabbed()) {
-          const v = this.velocities.get(n.id())!;
           v.vx = 0;
           v.vy = 0;
           return;
         }
-        const v = this.velocities.get(n.id())!;
-        const f = forces.get(n.id())!;
+        const f = forces.get(nid)!;
         v.vx = (v.vx + f.fx) * DAMPING;
         v.vy = (v.vy + f.fy) * DAMPING;
         const speed = Math.sqrt(v.vx * v.vx + v.vy * v.vy);
@@ -8554,6 +8567,15 @@ class AntinomiaGraphView extends ItemView {
         const p = n.position();
         n.position({ x: p.x + v.vx, y: p.y + v.vy });
       });
+
+      // Garbage-collect velocities for nodes that have been removed from
+      // the graph so the Map doesn't grow unbounded across rebuilds.
+      if (this.velocities.size > arr.length + 50) {
+        const alive = new Set(arr.map((n: any) => n.id()));
+        for (const k of Array.from(this.velocities.keys())) {
+          if (!alive.has(k)) this.velocities.delete(k);
+        }
+      }
 
       this.physicsRAF = requestAnimationFrame(step);
     };
