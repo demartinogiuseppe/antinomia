@@ -2,6 +2,9 @@
 plugin/node_modules/
 plugin/main.js.map
 
+# Vitest coverage output
+plugin/coverage/
+
 # Backup automatico di main.ts (gestito da esbuild.config.mjs)
 plugin/backups/
 
