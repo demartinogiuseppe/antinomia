@@ -4,11 +4,12 @@ import { Notice } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { callAI } from "../ai/callAI";
 import { notifyAIUsage, showErrorModal } from "../ai/notifyUsage";
-import { extractJson } from "../ai/parseResponse";
+import { parseFreeInputFromAIResponse } from "../ai/parseResponse";
 import { FREE_INPUT_SYSTEM } from "../ai/prompts";
 import { substrateTemplate, tensionTemplate } from "../core/templates";
 import type { AIUsageMeta, FreeInputAnalysis, Profile } from "../core/types";
 import { extractYouTubeId } from "../core/utils";
+import { ConfirmModal } from "../modals/ConfirmModal";
 import { FreeInputModal } from "../modals/FreeInputModal";
 import { NewSubstrateModal } from "../modals/NewSubstrateModal";
 import { NewTensionModal } from "../modals/NewTensionModal";
@@ -171,50 +172,77 @@ export async function analyzeFreeInput(plugin: AntinomiaPlugin,
       return null;
     }
     const t0 = Date.now();
+    // Reinforced suffix appended on the (single) retry when the first reply
+    // was prose the robust parser still couldn't classify.
+    const REINFORCE =
+      '\n\nSTRICT JSON ONLY. Your previous reply was prose. Output exactly one JSON object {"tipo": "tension"|"substrate", "title": "...", "statementA": "...", "statementB": "...", "contenuto": "..."} starting with { and ending with }. No prose, no commentary before or after.';
     try {
-      const result = await callAI({
-        baseUrl: profile.baseUrl,
-        apiKey: profile.apiKey,
-        model: profile.model,
-        system: FREE_INPUT_SYSTEM,
-        messages: [{ role: "user", content: text }],
-        taskClass: "short",
-        signal,
-      });
-      notifyAIUsage(
-        "Free input",
-        result.usage,
-        Date.now() - t0,
-        {
-          app: plugin.app,
-          profile: profile.name,
+      let lastRaw = "";
+      // Attempt 0: normal prompt. Attempt 1: reinforced retry (once).
+      for (let attempt = 0; attempt < 2; attempt++) {
+        if (attempt === 1) {
+          new Notice(
+            "Free input: model output was prose, retrying with stricter prompt..."
+          );
+        }
+        const result = await callAI({
+          baseUrl: profile.baseUrl,
+          apiKey: profile.apiKey,
           model: profile.model,
-          url: profile.baseUrl,
-        },
-        attachUsageTo
-      );
-      // Silent abort if user clicked Stop after backend started streaming.
-      if (signal?.aborted) return null;
-      const parsed = extractJson<FreeInputAnalysis>(result.text);
-      if (!parsed || (parsed.tipo !== "tension" && parsed.tipo !== "substrate")) {
-        console.error("[Antinomia] analyzeFreeInput unparseable:", result.text);
-        showErrorModal(
-          plugin.app,
-          "AI analysis not parseable",
-          "The AI replied but the response wasn't valid JSON with a tension/substrate classification. Try again or rephrase the input.",
-          `Profile: ${profile.name} (${profile.model})\n\n--- RAW RESPONSE ---\n${result.text?.slice(0, 2000) ?? "(empty)"}`
+          system: attempt === 0 ? FREE_INPUT_SYSTEM : FREE_INPUT_SYSTEM + REINFORCE,
+          messages: [{ role: "user", content: text }],
+          taskClass: "short",
+          signal,
+        });
+        notifyAIUsage(
+          "Free input",
+          result.usage,
+          Date.now() - t0,
+          {
+            app: plugin.app,
+            profile: profile.name,
+            model: profile.model,
+            url: profile.baseUrl,
+          },
+          attachUsageTo
         );
-        return null;
+        // Silent abort if user clicked Stop after backend started streaming.
+        if (signal?.aborted) return null;
+        lastRaw = result.text ?? "";
+        const parsed = parseFreeInputFromAIResponse(result.text);
+        if (parsed) {
+          const meta: AIUsageMeta = {
+            usage: result.usage,
+            durationMs: Date.now() - t0,
+            profile: profile.name,
+            model: profile.model,
+            url: profile.baseUrl,
+            operation: "Free input",
+          };
+          return { analysis: parsed, meta };
+        }
+        // else: loop retries once, then drops to the escape hatch below.
       }
-      const meta: AIUsageMeta = {
-        usage: result.usage,
-        durationMs: Date.now() - t0,
-        profile: profile.name,
-        model: profile.model,
-        url: profile.baseUrl,
-        operation: "Free input",
-      };
-      return { analysis: parsed, meta };
+
+      // Both attempts unparseable → escape hatch: let the user keep the text
+      // as a raw substrate and edit it manually, instead of losing it.
+      console.error(
+        "[Antinomia] analyzeFreeInput unparseable after retry:",
+        lastRaw
+      );
+      new ConfirmModal(
+        plugin.app,
+        "AI response not parseable",
+        `The AI replied but it wasn't valid JSON, even after a stricter retry. You can open the raw response as a substrate and edit it by hand.\n\n--- RAW RESPONSE ---\n${lastRaw.slice(0, 1200) || "(empty)"}`,
+        "Open response as substrate",
+        () => {
+          void plugin.createNote(
+            "S",
+            substrateTemplate({ content: lastRaw.trim() })
+          );
+        }
+      ).open();
+      return null;
     } catch (e) {
       const msg = (e as Error).message;
       // Silent abort: user clicked Stop. No error modal.
