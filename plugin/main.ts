@@ -63,6 +63,11 @@ import {
   DEFAULT_GRAPH_FILTERS,
   LAYER_COLORS,
   LAYER_SHAPES,
+  BACKEND_PRESETS,
+  MODEL_PRESETS,
+  detectBackend,
+  CONFIDENCE_ORDER,
+  CONFIDENCE_COLOR,
 } from "./core/constants";
 
 import {
@@ -98,6 +103,7 @@ import {
   FREE_INPUT_SYSTEM,
   PRINCIPLE_SYSTEM,
   HUNTER_SYSTEM,
+  buildHunterSystem,
 } from "./ai/prompts";
 
 import {
@@ -118,6 +124,8 @@ import {
 
 import { withLoadingButton } from "./helpers/withLoadingButton";
 
+import { renderTensionContext } from "./helpers/renderTensionContext";
+
 // Antinomia V1 — Step 5e: guided creation modals + human titles + Hunter v2.1
 //
 // Design invariants (do not violate without explicit user reconfirmation):
@@ -127,126 +135,6 @@ import { withLoadingButton } from "./helpers/withLoadingButton";
 //   - Backend pluggable (Anthropic cloud / LM Studio / custom).
 //   - Modals for new tension/substrate are opt-out: "Salta e apri nota vuota"
 //     button lets the savvy user bypass and write directly in markdown.
-
-const BACKEND_PRESETS: BackendPreset[] = [
-  {
-    id: "anthropic",
-    label: "Anthropic Cloud",
-    baseUrl: "https://api.anthropic.com",
-    defaultModel: "claude-sonnet-4-6",
-    defaultKey: "",
-    helpKey: "Create the key at console.anthropic.com.",
-  },
-  {
-    id: "groq",
-    label: "Groq Cloud (free tier)",
-    baseUrl: "https://api.groq.com/openai/v1",
-    defaultModel: "llama-3.3-70b-versatile",
-    defaultKey: "",
-    helpKey: "Free tier with generous rate limits. Create the key at console.groq.com.",
-  },
-  {
-    id: "openai",
-    label: "OpenAI",
-    baseUrl: "https://api.openai.com/v1",
-    defaultModel: "gpt-4o-mini",
-    defaultKey: "",
-    helpKey: "Create the key at platform.openai.com (paid, $5 credit on new accounts).",
-  },
-  {
-    id: "openrouter",
-    label: "OpenRouter",
-    baseUrl: "https://openrouter.ai/api/v1",
-    defaultModel: "meta-llama/llama-3.1-8b-instruct:free",
-    defaultKey: "",
-    helpKey: "Aggregator with some free models. Create the key at openrouter.ai.",
-  },
-  {
-    id: "lmstudio",
-    label: "LM Studio (local, free)",
-    baseUrl: "http://localhost:1234/v1",
-    defaultModel: "qwen/qwen3.5-9b",
-    defaultKey: "lmstudio",
-    helpKey: "LM Studio ignores the key but the plugin requires it.",
-  },
-  {
-    id: "ollama",
-    label: "Ollama (local, free)",
-    baseUrl: "http://localhost:11434/v1",
-    defaultModel: "llama3.2",
-    defaultKey: "ollama",
-    helpKey: "Ollama ignores the key but the plugin requires it.",
-  },
-];
-
-const MODEL_PRESETS: Array<{ id: string; label: string }> = [
-  { id: "claude-sonnet-4-6", label: "Sonnet 4.6 (Anthropic)" },
-  { id: "claude-opus-4-6", label: "Opus 4.6 (Anthropic)" },
-  { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5 (Anthropic)" },
-  { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq, free)" },
-  { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B (Groq, free, faster)" },
-  { id: "mixtral-8x7b-32768", label: "Mixtral 8x7B (Groq, free)" },
-  { id: "gpt-4o-mini", label: "GPT-4o mini (OpenAI)" },
-  { id: "gpt-4o", label: "GPT-4o (OpenAI)" },
-  { id: "meta-llama/llama-3.1-8b-instruct:free", label: "Llama 3.1 8B free (OpenRouter)" },
-  { id: "qwen/qwen3.5-9b", label: "Qwen 3.5 9B (LM Studio)" },
-];
-
-function detectBackend(baseUrl: string): string {
-  const u = baseUrl.toLowerCase();
-  if (u.includes("anthropic.com")) return "anthropic";
-  if (u.includes("groq.com")) return "groq";
-  if (u.includes("openai.com")) return "openai";
-  if (u.includes("openrouter.ai")) return "openrouter";
-  if (u.includes("localhost:1234") || u.includes("127.0.0.1:1234"))
-    return "lmstudio";
-  if (u.includes("localhost:11434") || u.includes("127.0.0.1:11434"))
-    return "ollama";
-  return "custom";
-}
-
-/**
- * Compact, consistent Notice shown after every successful AI call. Surfaces
- * the token usage and elapsed time so the user can see at a glance how
- * expensive each operation was (cloud cost / local time).
- *
- * If `context` is provided, the Notice becomes CLICKABLE: clicking it opens
- * an `ErrorAckModal` with full details (profile, model, URL, tokens, duration)
- * and a Copy button — useful for sharing/diagnosing without losing the info
- * when the Notice auto-dismisses.
- *
- * Examples:
- *   "Antinomia · Title · ↓ 42 in / ↑ 18 out · 2.1s"
- *   "Antinomia · Hunter · ↓ 1284 in / ↑ 312 out · 14.7s"
- *   "Antinomia · Title · 2.1s"           (when usage unavailable)
- */
-
-/**
- * Render a small info banner at the top of a modal that was pre-filled from
- * an AI call (e.g. NewTensionModal / NewSubstrateModal after a Free input
- * classification). Shows operation, tokens, and duration; click opens the
- * full ErrorAckModal-style details view.
- *
- * The banner persists for as long as the parent modal stays open — fixing
- * the UX hole where the badge attached to the Free input button vanished
- * the instant that modal closed to spawn the next one.
- */
-
-/**
- * Persistent error modal — replaces transient Notices for errors that the
- * user needs to actually read and acknowledge (failed AI calls, unreachable
- * backends, unparseable responses). Shows a clear human-readable message
- * plus a collapsible "Technical details" block with the raw error / payload.
- *
- * Use Notices for success/info ("Hunter: 3 pairs in 4s"); use this for
- * errors that require attention.
- */
-
-/**
- * Helper: show a persistent error modal anywhere in the plugin. Title is
- * always prefixed with "Antinomia — ". Use for AI errors, network failures,
- * unparseable responses, missing config.
- */
 
 /**
  * Modal to edit an AI profile (name, baseUrl, apiKey, model). Has a Backend
@@ -1945,100 +1833,6 @@ async function extractPdfText(
 
 
 
-
-
-
-
-/**
- * Wrap an async operation behind a button: disables it, ticks a live
- * elapsed-seconds counter on the label, restores everything on completion
- * (or error). Used by all "Proponi (AI)" buttons inside modals.
- */
-
-/**
- * Render a compact, scrollable box showing the tension content (A, B,
- * presupposti). Used by ElevateToPrincipleModal and MapPresuppostiModal so
- * the user can re-read the tension WHILE filling the form, without closing
- * the modal. Empty fields are skipped.
- */
-function renderTensionContext(parent: HTMLElement, rawContent: string): void {
-  const body = stripFrontmatter(rawContent).trim();
-  const extract = (re: RegExp): string =>
-    (body.match(re)?.[1] ?? "").trim();
-  const aBase = extract(/-\s*\*\*A \(base\):\*\*\s*([^\n]*)/);
-  const aOrig = extract(/-\s*\*\*A \(originale\):\*\*\s*([^\n]*)/);
-  const bBase = extract(/-\s*\*\*B \(base\):\*\*\s*([^\n]*)/);
-  const bOrig = extract(/-\s*\*\*B \(originale\):\*\*\s*([^\n]*)/);
-  const presupA = extract(/-\s*\*\*Presuppositions A:\*\*\s*([^\n]*)/);
-  const presupB = extract(/-\s*\*\*Presuppositions B:\*\*\s*([^\n]*)/);
-
-  const box = parent.createEl("div");
-  box.style.padding = "10px 12px";
-  box.style.marginBottom = "14px";
-  box.style.background = "var(--background-secondary)";
-  box.style.borderLeft = "3px solid var(--text-accent)";
-  box.style.borderRadius = "4px";
-  box.style.maxHeight = "240px";
-  box.style.overflowY = "auto";
-  box.style.fontSize = "0.88em";
-
-  const header = box.createEl("div");
-  header.style.fontWeight = "bold";
-  header.style.marginBottom = "6px";
-  header.setText("Origin tension");
-
-  const mkRow = (label: string, value: string) => {
-    if (!value) return;
-    const r = box.createEl("div");
-    r.style.marginBottom = "4px";
-    r.style.lineHeight = "1.35";
-    const lab = r.createEl("strong");
-    lab.setText(`${label}: `);
-    r.appendText(value);
-  };
-
-  if (aBase) mkRow("A", aBase);
-  if (aOrig) mkRow("A (original)", aOrig);
-  if (bBase) mkRow("B", bBase);
-  if (bOrig) mkRow("B (original)", bOrig);
-  if (presupA) mkRow("Presuppositions A", presupA);
-  if (presupB) mkRow("Presuppositions B", presupB);
-
-  // If absolutely nothing was extracted, show the whole body as fallback
-  if (!aBase && !bBase && !presupA && !presupB) {
-    const fallback = box.createEl("pre");
-    fallback.style.whiteSpace = "pre-wrap";
-    fallback.style.fontSize = "0.85em";
-    fallback.style.margin = "0";
-    fallback.setText(body.slice(0, 1000));
-  }
-}
-
-
-
-/**
- * Build the Hunter system prompt for a given style. "concise" appends a strict
- * "no reasoning exposed" constraint that typically speeds up the model 2-3x.
- * "verbose" leaves the base prompt as-is so the model can chain-of-thought.
- */
-function buildHunterSystem(style: "concise" | "verbose"): string {
-  if (style === "verbose") return HUNTER_SYSTEM;
-  return (
-    HUNTER_SYSTEM +
-    `\n\nAdditional constraint: description in 2-3 sentences MAX, straight to the point. NO exposed reasoning, NO phrases like "let's review", "let's consider", "however, let's see if", "although... while...". Go straight to the final conclusion on the contradiction.`
-  );
-}
-
-const CONFIDENCE_ORDER: Record<HunterConfidence, number> = {
-  high: 0,
-  medium: 1,
-  low: 2,
-};
-const CONFIDENCE_COLOR: Record<HunterConfidence, string> = {
-  high: "var(--color-green, #2ecc71)",
-  medium: "var(--color-yellow, #f1c40f)",
-  low: "var(--color-orange, #e67e22)",
-};
 
 // ---------- modals ----------
 

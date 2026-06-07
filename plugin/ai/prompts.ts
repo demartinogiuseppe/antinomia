@@ -171,3 +171,16 @@ Reply with ONLY valid JSON, no fence:
 {"pairs": [{"note_a": "<basename>", "note_b": "<basename>", "description": "<2-3 sentences on WHAT, not on HOW to resolve, in the user's language>", "confidence": "high|medium|low"}]}
 
 If none: {"pairs": []}`;
+
+/**
+ * Build the Hunter system prompt for a given style. "concise" appends a strict
+ * "no reasoning exposed" constraint that typically speeds up the model 2-3x.
+ * "verbose" leaves the base prompt as-is so the model can chain-of-thought.
+ */
+export function buildHunterSystem(style: "concise" | "verbose"): string {
+  if (style === "verbose") return HUNTER_SYSTEM;
+  return (
+    HUNTER_SYSTEM +
+    `\n\nAdditional constraint: description in 2-3 sentences MAX, straight to the point. NO exposed reasoning, NO phrases like "let's review", "let's consider", "however, let's see if", "although... while...". Go straight to the final conclusion on the contradiction.`
+  );
+}

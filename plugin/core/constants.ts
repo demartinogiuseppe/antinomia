@@ -3,7 +3,7 @@
 // Layer type tags, folder names, Obsidian view-type ids, graph colour presets
 // and layer colour/shape maps. Extracted from main.ts (refactor v1.5).
 
-import type { GraphColors, GraphFilters } from "./types";
+import type { GraphColors, GraphFilters, BackendPreset, HunterConfidence } from "./types";
 
 export const FOLDER = { notes: "notes" } as const;
 
@@ -133,4 +133,97 @@ export const LAYER_SHAPES: Record<string, string> = {
   defeated: "ellipse",
   meta_nota: "ellipse",
   unknown: "ellipse",
+};
+
+// ---------- AI backend presets ----------
+
+export const BACKEND_PRESETS: BackendPreset[] = [
+  {
+    id: "anthropic",
+    label: "Anthropic Cloud",
+    baseUrl: "https://api.anthropic.com",
+    defaultModel: "claude-sonnet-4-6",
+    defaultKey: "",
+    helpKey: "Create the key at console.anthropic.com.",
+  },
+  {
+    id: "groq",
+    label: "Groq Cloud (free tier)",
+    baseUrl: "https://api.groq.com/openai/v1",
+    defaultModel: "llama-3.3-70b-versatile",
+    defaultKey: "",
+    helpKey: "Free tier with generous rate limits. Create the key at console.groq.com.",
+  },
+  {
+    id: "openai",
+    label: "OpenAI",
+    baseUrl: "https://api.openai.com/v1",
+    defaultModel: "gpt-4o-mini",
+    defaultKey: "",
+    helpKey: "Create the key at platform.openai.com (paid, $5 credit on new accounts).",
+  },
+  {
+    id: "openrouter",
+    label: "OpenRouter",
+    baseUrl: "https://openrouter.ai/api/v1",
+    defaultModel: "meta-llama/llama-3.1-8b-instruct:free",
+    defaultKey: "",
+    helpKey: "Aggregator with some free models. Create the key at openrouter.ai.",
+  },
+  {
+    id: "lmstudio",
+    label: "LM Studio (local, free)",
+    baseUrl: "http://localhost:1234/v1",
+    defaultModel: "qwen/qwen3.5-9b",
+    defaultKey: "lmstudio",
+    helpKey: "LM Studio ignores the key but the plugin requires it.",
+  },
+  {
+    id: "ollama",
+    label: "Ollama (local, free)",
+    baseUrl: "http://localhost:11434/v1",
+    defaultModel: "llama3.2",
+    defaultKey: "ollama",
+    helpKey: "Ollama ignores the key but the plugin requires it.",
+  },
+];
+
+export const MODEL_PRESETS: Array<{ id: string; label: string }> = [
+  { id: "claude-sonnet-4-6", label: "Sonnet 4.6 (Anthropic)" },
+  { id: "claude-opus-4-6", label: "Opus 4.6 (Anthropic)" },
+  { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5 (Anthropic)" },
+  { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq, free)" },
+  { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B (Groq, free, faster)" },
+  { id: "mixtral-8x7b-32768", label: "Mixtral 8x7B (Groq, free)" },
+  { id: "gpt-4o-mini", label: "GPT-4o mini (OpenAI)" },
+  { id: "gpt-4o", label: "GPT-4o (OpenAI)" },
+  { id: "meta-llama/llama-3.1-8b-instruct:free", label: "Llama 3.1 8B free (OpenRouter)" },
+  { id: "qwen/qwen3.5-9b", label: "Qwen 3.5 9B (LM Studio)" },
+];
+
+export function detectBackend(baseUrl: string): string {
+  const u = baseUrl.toLowerCase();
+  if (u.includes("anthropic.com")) return "anthropic";
+  if (u.includes("groq.com")) return "groq";
+  if (u.includes("openai.com")) return "openai";
+  if (u.includes("openrouter.ai")) return "openrouter";
+  if (u.includes("localhost:1234") || u.includes("127.0.0.1:1234"))
+    return "lmstudio";
+  if (u.includes("localhost:11434") || u.includes("127.0.0.1:11434"))
+    return "ollama";
+  return "custom";
+}
+
+// ---------- Hunter confidence ordering / colours ----------
+
+export const CONFIDENCE_ORDER: Record<HunterConfidence, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+};
+
+export const CONFIDENCE_COLOR: Record<HunterConfidence, string> = {
+  high: "var(--color-green, #2ecc71)",
+  medium: "var(--color-yellow, #f1c40f)",
+  low: "var(--color-orange, #e67e22)",
 };
