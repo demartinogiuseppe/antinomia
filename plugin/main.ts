@@ -3,128 +3,29 @@ import cytoscape from "cytoscape";
 import fcose from "cytoscape-fcose";
 cytoscape.use(fcose as any);
 
-import {
-  App,
-  FuzzySuggestModal,
-  ItemView,
-  Menu,
-  Modal,
-  Notice,
-  Plugin,
-  PluginSettingTab,
-  Setting,
-  TFile,
-  WorkspaceLeaf,
-  moment,
-  requestUrl,
-} from "obsidian";
+import { App, Notice, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf } from "obsidian";
 
-import type {
-  Profile,
-  GraphColors,
-  BackendPreset,
-  TutorialStep,
-  PdfExtractResult,
-  ClassifyResult,
-  TitleProposal,
-  PresuppostiFields,
-  PdfConcept,
-  PdfConceptsResult,
-  AIUsageMeta,
-  FreeInputAnalysis,
-  HunterConfidence,
-  HunterContradiction,
-  HunterResult,
-  HunterRunMetadata,
-  HunterRun,
-  DefeatedSubmit,
-  TensionFields,
-  SubstrateFields,
-  PrincipleFields,
-  GraphFilters,
-  ClaudeResponse,
-} from "./core/types";
+import type { Profile, GraphColors, BackendPreset, TutorialStep, PdfExtractResult, ClassifyResult, TitleProposal, PresuppostiFields, PdfConcept, PdfConceptsResult, AIUsageMeta, FreeInputAnalysis, HunterConfidence, HunterContradiction, HunterResult, HunterRunMetadata, HunterRun, DefeatedSubmit, TensionFields, SubstrateFields, PrincipleFields, GraphFilters, ClaudeResponse } from "./core/types";
 
-import {
-  FOLDER,
-  TYPE,
-  VIEW_TYPE_OPEN_TENSIONS,
-  VIEW_TYPE_HUNTER_RESULTS,
-  VIEW_TYPE_DISMISSED_PAIRS,
-  VIEW_TYPE_SUBSTRATE_LIST,
-  VIEW_TYPE_PRINCIPLES_LIST,
-  VIEW_TYPE_DEFEATED_LIST,
-  VIEW_TYPE_ONBOARDING,
-  VIEW_TYPE_DASHBOARD,
-  VIEW_TYPE_AUDIT,
-  VIEW_TYPE_GRAPH,
-  VIEW_TYPE_UNCLASSIFIED,
-  GRAPH_STYLE_PRESETS,
-  DEFAULT_GRAPH_FILTERS,
-  LAYER_COLORS,
-  LAYER_SHAPES,
-  BACKEND_PRESETS,
-  MODEL_PRESETS,
-  detectBackend,
-  CONFIDENCE_ORDER,
-  CONFIDENCE_COLOR,
-} from "./core/constants";
+import { FOLDER, TYPE, VIEW_TYPE_OPEN_TENSIONS, VIEW_TYPE_HUNTER_RESULTS, VIEW_TYPE_DISMISSED_PAIRS, VIEW_TYPE_SUBSTRATE_LIST, VIEW_TYPE_PRINCIPLES_LIST, VIEW_TYPE_DEFEATED_LIST, VIEW_TYPE_ONBOARDING, VIEW_TYPE_DASHBOARD, VIEW_TYPE_AUDIT, VIEW_TYPE_GRAPH, VIEW_TYPE_UNCLASSIFIED, GRAPH_STYLE_PRESETS } from "./core/constants";
 
-import {
-  todayISO,
-  timestampId,
-  ensureFolder,
-  truncate,
-  extractYouTubeId,
-  decodeHtmlEntities,
-  alphabeticOwner,
-  renderVaultLabel,
-} from "./core/utils";
+import { todayISO, timestampId, ensureFolder } from "./core/utils";
 
-import {
-  stripFrontmatter,
-  yamlQuote,
-  humanTitle,
-} from "./core/frontmatter";
+import { yamlQuote } from "./core/frontmatter";
 
-import {
-  tensionTemplate,
-  substrateTemplate,
-  principleBodyTemplate,
-} from "./core/templates";
+import { tensionTemplate, substrateTemplate } from "./core/templates";
 
 import { DEFAULT_SETTINGS, type AntinomiaSettings } from "./core/settings";
 
-import {
-  CLASSIFY_SYSTEM,
-  TITLE_SYSTEM,
-  PRESUPPOSTI_SYSTEM,
-  EXTRACT_CONCEPTS_SYSTEM,
-  FREE_INPUT_SYSTEM,
-  PRINCIPLE_SYSTEM,
-  HUNTER_SYSTEM,
-  buildHunterSystem,
-} from "./ai/prompts";
+import { CLASSIFY_SYSTEM } from "./ai/prompts";
 
-import {
-  normalizeJsonQuotes,
-  extractJson,
-  parseAIResponse,
-  parseTitleFromAIResponse,
-} from "./ai/parseResponse";
+import { extractJson } from "./ai/parseResponse";
 
 import { callAI } from "./ai/callAI";
 
-import {
-  notifyAIUsage,
-  renderUsageMetaBanner,
-  ErrorAckModal,
-  showErrorModal,
-} from "./ai/notifyUsage";
+import { notifyAIUsage, renderUsageMetaBanner, ErrorAckModal, showErrorModal } from "./ai/notifyUsage";
 
-import { withLoadingButton } from "./helpers/withLoadingButton";
 
-import { renderTensionContext } from "./helpers/renderTensionContext";
 
 import { ProfileEditModal } from "./modals/ProfileEditModal";
 
@@ -142,29 +43,20 @@ import { TitleEditModal } from "./modals/TitleEditModal";
 
 import { DefeatedReasonModal } from "./modals/DefeatedReasonModal";
 
-import { ElevateToPrincipleModal } from "./modals/ElevateToPrincipleModal";
 
-import { FreeInputModal } from "./modals/FreeInputModal";
 
 import { NewTensionModal } from "./modals/NewTensionModal";
 
 import { NewSubstrateModal } from "./modals/NewSubstrateModal";
 
-import { PdfAnalyzingModal } from "./modals/PdfAnalyzingModal";
 
-import { PdfConceptsPreviewModal } from "./modals/PdfConceptsPreviewModal";
 
-import { PdfSourcePickerModal } from "./modals/PdfSourcePickerModal";
 
-import { PdfPickerModal } from "./modals/PdfPickerModal";
 
 import { NotePickerModal } from "./modals/NotePickerModal";
 
-import { MapPresuppostiModal } from "./modals/MapPresuppostiModal";
 
-import { renderAntinomiaNav } from "./helpers/renderAntinomiaNav";
 
-import { renderNoteCard } from "./helpers/renderNoteCard";
 
 import { OpenTensionsView } from "./views/OpenTensionsView";
 
@@ -818,7 +710,6 @@ class AntinomiaSettingTab extends PluginSettingTab {
  * chunking yet). PDFs larger than this trigger a warning to the user; we
  * still process the first N characters and skip the rest.
  */
-const PDF_TEXT_HARD_CAP_CHARS = 30_000;
 
 // ---------- Model capability detection (autoadaptive AI behavior) ----------
 
