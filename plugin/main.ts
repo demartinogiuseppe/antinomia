@@ -75,6 +75,12 @@ import {
   renderVaultLabel,
 } from "./core/utils";
 
+import {
+  stripFrontmatter,
+  yamlQuote,
+  humanTitle,
+} from "./core/frontmatter";
+
 // Antinomia V1 — Step 5e: guided creation modals + human titles + Hunter v2.1
 //
 // Design invariants (do not violate without explicit user reconfirmation):
@@ -1945,13 +1951,6 @@ class AntinomiaSettingTab extends PluginSettingTab {
 
 // ---------- helpers ----------
 
-function stripFrontmatter(raw: string): string {
-  if (!raw.startsWith("---")) return raw;
-  const end = raw.indexOf("\n---", 3);
-  if (end === -1) return raw;
-  const after = raw.slice(end + 4);
-  return after.startsWith("\n") ? after.slice(1) : after;
-}
 /**
  * Normalize single-quoted string values to double-quoted, so that JSON-like
  * output with mixed quotes (common in models that try to handle apostrophes
@@ -2124,15 +2123,6 @@ function extractJson<T>(raw: string): T | null {
     console.error("[Antinomia] Normalized text was:", normalized);
     return null;
   }
-}
-/**
- * Quote a string for use as a YAML scalar in our raw template strings.
- * Necessary because user-provided titles (and similar) may contain `:`,
- * `#`, `"`, leading `-`, etc., which break unquoted YAML parsing.
- * Always wraps in double quotes and escapes embedded `\\` and `"`.
- */
-function yamlQuote(s: string): string {
-  return '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
 }
 
 
@@ -2346,16 +2336,6 @@ async function fetchYouTubeTranscript(
   }
   console.log(`[Antinomia] transcript parsed via ${chosen}: ${lines.length} lines`);
   return { text: lines.join(" "), lang, videoId };
-}
-function humanTitle(app: App, file: TFile): string {
-  const cache = app.metadataCache.getFileCache(file);
-  const fm = cache?.frontmatter;
-  const explicit =
-    (fm?.title as string | undefined) ?? (fm?.title as string | undefined);
-  if (explicit && String(explicit).trim()) return String(explicit).trim();
-  const firstHeading = cache?.headings?.[0]?.heading;
-  if (firstHeading && firstHeading.trim()) return firstHeading.trim();
-  return file.basename;
 }
 
 // ---------- AI ----------
