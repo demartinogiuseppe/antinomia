@@ -108,5 +108,9 @@ if (process.argv.includes("--watch")) {
   await esbuild.build(buildOptions);
   // Copia manifest.json accanto a main.js cosi Obsidian riconosce il plugin
   await fs.copyFile("manifest.json", path.join(TARGET_DIR, "manifest.json"));
+  // Copia styles.css se presente (Obsidian lo carica automaticamente)
+  if (fsSync.existsSync("styles.css")) {
+    await fs.copyFile("styles.css", path.join(TARGET_DIR, "styles.css"));
+  }
   console.log("Build complete. Output in:", TARGET_DIR);
 }

@@ -41,6 +41,8 @@ export interface AntinomiaSettings {
   // On load, scan for legacy v1.1 (Italian schema) notes and show a one-time
   // friendly Notice offering migration. Default true.
   migrationCheckEnabled?: boolean;
+  // Static galaxy-nebula background behind the Graph view. CSS-only. Default true.
+  galaxyBackground?: boolean;
 }
 
 export const DEFAULT_SETTINGS: AntinomiaSettings = {
@@ -74,6 +76,7 @@ export const DEFAULT_SETTINGS: AntinomiaSettings = {
   graphSpaciousLayout: false,
   cloudWarningDismissed: false,
   migrationCheckEnabled: true,
+  galaxyBackground: true,
   graphCustomColors: {
     tensione_aperta: "#ff8c42",
     tensione_risolta: "#fbc02d",

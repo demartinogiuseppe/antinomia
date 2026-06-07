@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.4.5 (June 7, 2026) — Galaxy nebula background for the Graph view
+
+**Features**
+- **Galaxy nebula background** for the Antinomia Graph view — a cosmic nebula photo behind the graph, with a 45% dark overlay so nodes and edges stay perfectly readable.
+- **"Galaxy background" setting** in Settings → Graph view (default ON). Live toggle — no Obsidian restart.
+
+**Notes**
+- No impact on zoom, pan, edge overlay, or layer filters. The image is anchored to the container, so it doesn't parallax while the graph pans/zooms.
+- Bundling: the image is a JPEG (~64 KB) embedded as a base64 data URI inside `styles.css` (~87 KB). Because BRAT auto-fetches `styles.css`, the background ships with auto-updates — no separate asset to package.
+
 ## v1.4.4 (June 7, 2026) — Migration utility
 
 If you installed Antinomia back at **v1.1.x** (Italian schema) and updated via BRAT, your vault would break — the new code doesn't recognise the old Italian frontmatter keys, so the graph wouldn't render and the Hunter would ignore your notes. This release adds a safe, one-command fix.

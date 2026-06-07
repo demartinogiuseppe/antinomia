@@ -350,6 +350,24 @@ class AntinomiaSettingTab extends PluginSettingTab {
         });
       });
 
+    new Setting(containerEl)
+      .setName("Galaxy background")
+      .setDesc(
+        "Static violet/blue/pink nebulae behind the graph (CSS-only, no animation). Turn off for a flat background."
+      )
+      .addToggle((tg) => {
+        tg.setValue(this.plugin.settings.galaxyBackground !== false);
+        tg.onChange(async (v) => {
+          this.plugin.settings.galaxyBackground = v;
+          await this.plugin.saveSettings();
+          // Live toggle: no rebuild, just add/remove the class on open views.
+          for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_GRAPH)) {
+            const view = leaf.view as unknown as { applyGalaxyClass?: () => void };
+            view?.applyGalaxyClass?.();
+          }
+        });
+      });
+
     if ((this.plugin.settings.graphStyleName || "default") === "custom") {
       const cust = this.plugin.settings.graphCustomColors;
       const colorRow = (key: keyof GraphColors, label: string): void => {

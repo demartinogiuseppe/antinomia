@@ -184,10 +184,13 @@ export class AntinomiaGraphView extends ItemView {
     const container = contentEl.createDiv();
     container.style.flex = "1";
     container.style.minHeight = "0"; // permette al flex item di restringersi
-    container.style.background = "var(--background-primary)";
+    // backgroundColor (not the `background` shorthand) so the galaxy class's
+    // background-image can compose over the base colour instead of resetting it.
+    container.style.backgroundColor = "var(--background-primary)";
     container.style.overflow = "hidden";
     container.style.position = "relative";
     this.graphContainer = container;
+    this.applyGalaxyClass();
 
     // Zoom slider verticale: figlio di contentEl (NON di container) cosi'
     // non viene coperto dai canvas Cytoscape che vivono dentro container.
@@ -387,6 +390,17 @@ export class AntinomiaGraphView extends ItemView {
    * Force full rebuild: destroy cy e ricostruisci, cosi' i preset/custom
    * colors vengono riapplicati. Chiamato quando l'utente cambia stile.
    */
+  /**
+   * Add/remove the static galaxy-nebula background class on the container per
+   * the `galaxyBackground` setting (default on). Pure CSS toggle — no rebuild,
+   * applies live.
+   */
+  applyGalaxyClass(): void {
+    if (!this.graphContainer) return;
+    const on = this.plugin.settings.galaxyBackground !== false;
+    this.graphContainer.classList.toggle("antinomia-graph-galaxy", on);
+  }
+
   applyStyleChange(): void {
     this.stopContinuousPhysics();
     if (this.cy) {
@@ -833,9 +847,11 @@ export class AntinomiaGraphView extends ItemView {
         ? this.plugin.settings.graphCustomColors
         : (GRAPH_STYLE_PRESETS[styleName] || GRAPH_STYLE_PRESETS.default);
     const TEXT_MUTED = C.label;
-    // Applica background al container se il preset lo definisce, altrimenti usa il tema Obsidian
+    // Applica background al container se il preset lo definisce, altrimenti usa il tema Obsidian.
+    // backgroundColor only, so the galaxy nebula background-image (class) stays on top.
     if (this.graphContainer) {
-      this.graphContainer.style.background = C.background || "var(--background-primary)";
+      this.graphContainer.style.backgroundColor = C.background || "var(--background-primary)";
+      this.applyGalaxyClass();
     }
 
     this.cy = cytoscape({
