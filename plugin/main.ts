@@ -31,6 +31,11 @@ import { ProfileEditModal } from "./modals/ProfileEditModal";
 
 import { WelcomeModal } from "./modals/WelcomeModal";
 import { CloudWarningModal } from "./modals/CloudWarningModal";
+import { MigrationModal } from "./modals/MigrationModal";
+import {
+  scanVaultForLegacyNotes,
+  restoreFromLatestBackup,
+} from "./flows/migration";
 
 import { ConfirmModal } from "./modals/ConfirmModal";
 
@@ -257,6 +262,20 @@ class AntinomiaSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.autoOpenDashboard)
           .onChange(async (v) => {
             this.plugin.settings.autoOpenDashboard = v;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Check for legacy v1.1 notes at startup")
+      .setDesc(
+        "If your vault has notes from Antinomia v1.1 (Italian schema), show a one-time clickable Notice offering to migrate them to v1.4. Turn off to silence the check."
+      )
+      .addToggle((t) =>
+        t
+          .setValue(this.plugin.settings.migrationCheckEnabled !== false)
+          .onChange(async (v) => {
+            this.plugin.settings.migrationCheckEnabled = v;
             await this.plugin.saveSettings();
           })
       );
@@ -1119,9 +1138,37 @@ export default class AntinomiaPlugin extends Plugin {
         this.maybeWarnCloudProfile();
       }
       this.validateProfileBaseUrls();
+
+      // Low-friction legacy-schema detection: a single clickable 5s Notice
+      // (never an aggressive modal). Click opens the migration modal.
+      if (this.settings.migrationCheckEnabled !== false) {
+        void scanVaultForLegacyNotes(this.app).then((legacy) => {
+          if (legacy.length === 0) return;
+          const frag = document.createDocumentFragment();
+          const span = document.createElement("span");
+          span.setText(
+            `Antinomia: ${legacy.length} notes use the legacy v1.1 schema. Click to migrate to v1.4.`
+          );
+          span.style.cursor = "pointer";
+          span.style.textDecoration = "underline";
+          span.onclick = () => new MigrationModal(this.app, this).open();
+          frag.appendChild(span);
+          new Notice(frag, 5000);
+        });
+      }
     });
 
     // ---- Creation (guided + bypass) ----
+    this.addCommand({
+      id: "migrate-v1",
+      name: "Migrate vault from v1.1 to v1.4 (english schema)",
+      callback: () => new MigrationModal(this.app, this).open(),
+    });
+    this.addCommand({
+      id: "restore-backup",
+      name: "Restore pre-migration backup (latest)",
+      callback: () => void restoreFromLatestBackup(this.app),
+    });
     this.addCommand({
       id: "new-tension",
       name: "new tension",
