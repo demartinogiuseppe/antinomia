@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.4.3 (June 7, 2026) — Robust AI parsers + retry strategy
+
+Reasoning models (e.g. qwen3-distill) sometimes reply with prose instead of the requested JSON, which made the Free-input and Hunter flows fail outright. Both now degrade gracefully instead of throwing the work away.
+
+- **Free input (#160)**: new fallback parser — strict JSON → loose JSON-ish field extraction → discursive heuristic that reads a model narrating its choice ("I'll classify this as a 'substrate'… the title could be 'Financial Documentation Requirements'"). If parsing still fails, one automatic retry with a reinforced STRICT-JSON prompt (with a transparent Notice), and finally an "Open response as substrate" escape hatch that keeps the raw text as an editable substrate instead of losing it.
+- **Hunter (#161)**: one automatic retry with a reinforced JSON-only prompt when the first reply isn't a valid `pairs[]` structure (transparent Notice, no silent retry). Network/abort errors still bail immediately. If the retry also fails, the error modal gains an "Open raw response" button that writes the payload to a `HUNTER-RAW` debug note. No fragile prose pattern-matching on the structured pair list — explicit retry is more reliable.
+
+Additive: well-formed JSON still parses on the first pattern, so there's no behavior change for compliant backends.
+
 ## v1.4.2 (June 7, 2026) — Quick polish
 
 A round of small fixes and UX polish.
