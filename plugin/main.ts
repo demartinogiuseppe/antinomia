@@ -7,7 +7,7 @@ import { App, Notice, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf } 
 
 import type { Profile, GraphColors, BackendPreset, TutorialStep, PdfExtractResult, ClassifyResult, TitleProposal, PresuppostiFields, PdfConcept, PdfConceptsResult, AIUsageMeta, FreeInputAnalysis, HunterConfidence, HunterContradiction, HunterResult, HunterRunMetadata, HunterRun, DefeatedSubmit, TensionFields, SubstrateFields, PrincipleFields, GraphFilters, ClaudeResponse } from "./core/types";
 
-import { FOLDER, TYPE, VIEW_TYPE_OPEN_TENSIONS, VIEW_TYPE_HUNTER_RESULTS, VIEW_TYPE_DISMISSED_PAIRS, VIEW_TYPE_SUBSTRATE_LIST, VIEW_TYPE_PRINCIPLES_LIST, VIEW_TYPE_DEFEATED_LIST, VIEW_TYPE_ONBOARDING, VIEW_TYPE_DASHBOARD, VIEW_TYPE_AUDIT, VIEW_TYPE_GRAPH, VIEW_TYPE_UNCLASSIFIED, GRAPH_STYLE_PRESETS } from "./core/constants";
+import { FOLDER, TYPE, VIEW_TYPE_OPEN_TENSIONS, VIEW_TYPE_HUNTER_RESULTS, VIEW_TYPE_DISMISSED_PAIRS, VIEW_TYPE_SUBSTRATE_LIST, VIEW_TYPE_PRINCIPLES_LIST, VIEW_TYPE_DEFEATED_LIST, VIEW_TYPE_ONBOARDING, VIEW_TYPE_DASHBOARD, VIEW_TYPE_AUDIT, VIEW_TYPE_GRAPH, VIEW_TYPE_UNCLASSIFIED, GRAPH_STYLE_PRESETS, BACKEND_PRESETS } from "./core/constants";
 
 import { todayISO, timestampId, ensureFolder, isLocalBaseUrl } from "./core/utils";
 
@@ -1118,6 +1118,7 @@ export default class AntinomiaPlugin extends Plugin {
       if (this.settings.onboardingCompleted) {
         this.maybeWarnCloudProfile();
       }
+      this.validateProfileBaseUrls();
     });
 
     // ---- Creation (guided + bypass) ----
@@ -1575,6 +1576,49 @@ export default class AntinomiaPlugin extends Plugin {
    * modal. `onCancel` runs when the user backs out (used to revert a profile
    * switch). No-op when the active profile is local or the warning is off.
    */
+  /**
+   * Non-blocking sanity check at load: if a profile clearly corresponds to a
+   * known backend preset (by id or name) but its baseUrl points at a different
+   * host (a common copy-paste mistake, e.g. a "Groq" profile left on
+   * api.anthropic.com), surface a Notice with a one-click "Fix" that rewrites
+   * the baseUrl to the preset's. Custom/unknown profiles are left alone.
+   */
+  validateProfileBaseUrls(): void {
+    const hostOf = (u: string): string => {
+      try {
+        return new URL(u).hostname;
+      } catch {
+        return "";
+      }
+    };
+    for (const profile of this.settings.profiles) {
+      const name = profile.name.toLowerCase();
+      const preset = BACKEND_PRESETS.find(
+        (p) => p.id === profile.id || name.includes(p.id)
+      );
+      if (!preset) continue;
+      const want = hostOf(preset.baseUrl);
+      const got = hostOf(profile.baseUrl);
+      if (!want || !got || want === got) continue;
+      const frag = document.createDocumentFragment();
+      const span = document.createElement("span");
+      span.setText(
+        `Antinomia: profile "${profile.name}" has baseUrl ${got}, but the ${preset.label} preset uses ${want}. `
+      );
+      frag.appendChild(span);
+      const btn = document.createElement("button");
+      btn.textContent = "Fix";
+      btn.style.marginLeft = "8px";
+      btn.onclick = async () => {
+        profile.baseUrl = preset.baseUrl;
+        await this.saveSettings();
+        new Notice(`Fixed baseUrl for "${profile.name}" → ${want}.`);
+      };
+      frag.appendChild(btn);
+      new Notice(frag, 20000);
+    }
+  }
+
   maybeWarnCloudProfile(onCancel: () => void = () => {}): void {
     if (this.settings.cloudWarningDismissed) return;
     const p = this.activeProfile();
