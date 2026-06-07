@@ -91,52 +91,75 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
     const abortSignal = plugin.hunterAbortController.signal;
 
     const t0 = Date.now();
-    let result: { text: string; usage?: ClaudeResponse["usage"] };
-    try {
-      const aiPromise = callAI({
-        baseUrl: profile.baseUrl,
-        apiKey: profile.apiKey,
-        model: profile.model,
-        format: profile.format,
-        system: buildHunterSystem(plugin.settings.hunterReasoningStyle),
-        messages: [{ role: "user", content: userContent }],
-        // Hunter is a "deep" task — the model has to compare many notes
-        // pairwise and emit a structured list. Autoadaptive budget per
-        // family (e.g. ~2000 for Llama/Anthropic, ~10000 for reasoning
-        // models that need room for both <think> and the JSON output).
-        taskClass: "deep",
-        // Hunter benefits from reasoning when the model supports it
-        // (substrate↔substrate is genuinely subtle work), so we leave
-        // extended thinking ON for deep tasks.
-        disableThinking: false,
-        signal: abortSignal,
-      });
-      const abortPromise = new Promise<never>((_, reject) => {
-        abortSignal.addEventListener("abort", () => reject(new Error("hunter_aborted")));
-      });
-      result = await Promise.race([aiPromise, abortPromise]);
-    } catch (e) {
-      hunterView?.setLoading(false);
-      plugin.hunterAbortController = null;
-      if ((e as Error).message === "hunter_aborted") {
-        new Notice("Hunter stopped by user.");
-        console.log("[Antinomia] hunter aborted by user");
-      } else {
-        showErrorModal(
-          plugin.app,
-          "Hunter error",
-          `The Hunter run failed. ${(e as Error).message.includes("not reachable") ? "Your local AI backend doesn't seem to be running." : "Check that the backend is reachable and the API key is valid."}`,
-          `Profile: ${profile.name} (${profile.model})\nURL: ${profile.baseUrl}\n\n${(e as Error).message}`
-        );
-        console.error("[Antinomia] hunter call failed", e);
+    // Reinforced suffix appended to the system prompt on the (single) retry
+    // when the first reply was prose instead of a pairs[] structure. Hunter's
+    // output is a structured array, so heuristic salvage is too fragile — an
+    // explicit "JSON only" retry is more reliable than pattern-matching prose.
+    const REINFORCE =
+      '\n\nCRITICAL: your previous reply was prose, not JSON. Output ONLY the JSON {"pairs": [{"note_a": "...", "note_b": "...", "description": "...", "confidence": "high|medium|low"}]} or {"pairs": []} if none. NO commentary, NO instructions, NO meta-text. Start with { end with }.';
+    let result!: { text: string; usage?: ClaudeResponse["usage"] };
+    let rawPairs: any[] | null = null;
+    let durationMs = 0;
+
+    // Attempt 0: normal prompt. Attempt 1: reinforced retry (once). A network
+    // / abort error bails immediately (it's not a prose problem); only an
+    // unparseable reply triggers the retry.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt === 1) {
+        new Notice("Hunter: model output was prose, retrying with stricter prompt...");
       }
-      return;
+      try {
+        const aiPromise = callAI({
+          baseUrl: profile.baseUrl,
+          apiKey: profile.apiKey,
+          model: profile.model,
+          format: profile.format,
+          system:
+            buildHunterSystem(plugin.settings.hunterReasoningStyle) +
+            (attempt === 1 ? REINFORCE : ""),
+          messages: [{ role: "user", content: userContent }],
+          // Hunter is a "deep" task — the model has to compare many notes
+          // pairwise and emit a structured list. Autoadaptive budget per
+          // family (e.g. ~2000 for Llama/Anthropic, ~10000 for reasoning
+          // models that need room for both <think> and the JSON output).
+          taskClass: "deep",
+          // Hunter benefits from reasoning when the model supports it
+          // (substrate↔substrate is genuinely subtle work), so we leave
+          // extended thinking ON for deep tasks.
+          disableThinking: false,
+          signal: abortSignal,
+        });
+        const abortPromise = new Promise<never>((_, reject) => {
+          abortSignal.addEventListener("abort", () => reject(new Error("hunter_aborted")));
+        });
+        result = await Promise.race([aiPromise, abortPromise]);
+      } catch (e) {
+        hunterView?.setLoading(false);
+        plugin.hunterAbortController = null;
+        if ((e as Error).message === "hunter_aborted") {
+          new Notice("Hunter stopped by user.");
+          console.log("[Antinomia] hunter aborted by user");
+        } else {
+          showErrorModal(
+            plugin.app,
+            "Hunter error",
+            `The Hunter run failed. ${(e as Error).message.includes("not reachable") ? "Your local AI backend doesn't seem to be running." : "Check that the backend is reachable and the API key is valid."}`,
+            `Profile: ${profile.name} (${profile.model})\nURL: ${profile.baseUrl}\n\n${(e as Error).message}`
+          );
+          console.error("[Antinomia] hunter call failed", e);
+        }
+        return;
+      }
+      durationMs = Date.now() - t0;
+      const parsedRaw = extractJson<any>(result.text);
+      if (parsedRaw && Array.isArray(parsedRaw.pairs)) rawPairs = parsedRaw.pairs;
+      else if (parsedRaw && Array.isArray(parsedRaw.contraddizioni)) rawPairs = parsedRaw.contraddizioni;
+      if (rawPairs) break; // got a structure — stop retrying
     }
+
     hunterView?.setLoading(false);
     plugin.hunterAbortController = null;
-    const durationMs = Date.now() - t0;
 
-    const parsedRaw = extractJson<any>(result.text);
     // Normalize: the AI is asked for English keys (pairs/note_a/note_b/
     // description/confidence: high|medium|low). We accept legacy Italian
     // keys (contraddizioni/nota_a/nota_b/descrizione/alta|media|bassa) for
@@ -155,16 +178,22 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
         return undefined;
       })(),
     });
-    let rawPairs: any[] | null = null;
-    if (parsedRaw && Array.isArray(parsedRaw.pairs)) rawPairs = parsedRaw.pairs;
-    else if (parsedRaw && Array.isArray(parsedRaw.contraddizioni)) rawPairs = parsedRaw.contraddizioni;
     if (!rawPairs) {
-      console.error("[Antinomia] hunter unparseable:", result.text);
+      console.error("[Antinomia] hunter unparseable after retry:", result.text);
       showErrorModal(
         plugin.app,
         "Hunter response not parseable",
-        "The AI replied but didn't return a valid pairs[] structure. This often happens with local reasoning models that spend all tokens on internal <think> blocks, or with very strict JSON-mode responses.",
-        `Profile: ${profile.name} (${profile.model})\nResponse length: ${result.text?.length ?? 0}\n\n--- RAW RESPONSE ---\n${result.text?.slice(0, 3000) ?? "(empty)"}`
+        "The AI replied but didn't return a valid pairs[] structure, even after a stricter retry. This often happens with local reasoning models that spend all tokens on internal <think> blocks, or with very strict JSON-mode responses.",
+        `Profile: ${profile.name} (${profile.model})\nResponse length: ${result.text?.length ?? 0}\n\n--- RAW RESPONSE ---\n${result.text?.slice(0, 3000) ?? "(empty)"}`,
+        {
+          label: "Open raw response",
+          onClick: () => {
+            void plugin.createNote(
+              "HUNTER-RAW",
+              `# Hunter raw response (debug)\n\nProfile: ${profile.name} (${profile.model})\nResponse length: ${result.text?.length ?? 0}\n\n\`\`\`\n${result.text ?? "(empty)"}\n\`\`\`\n`
+            );
+          },
+        }
       );
       return;
     }
