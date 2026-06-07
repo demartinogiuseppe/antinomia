@@ -38,6 +38,9 @@ export interface AntinomiaSettings {
   // Once true, the "cloud profile sends your notes to a third party" warning
   // is suppressed (user ticked "don't warn me again"). Default false.
   cloudWarningDismissed?: boolean;
+  // On load, scan for legacy v1.1 (Italian schema) notes and show a one-time
+  // friendly Notice offering migration. Default true.
+  migrationCheckEnabled?: boolean;
 }
 
 export const DEFAULT_SETTINGS: AntinomiaSettings = {
@@ -70,6 +73,7 @@ export const DEFAULT_SETTINGS: AntinomiaSettings = {
   graphStyleName: "neon",
   graphSpaciousLayout: false,
   cloudWarningDismissed: false,
+  migrationCheckEnabled: true,
   graphCustomColors: {
     tensione_aperta: "#ff8c42",
     tensione_risolta: "#fbc02d",
