@@ -158,3 +158,17 @@ export interface GraphFilters {
   defeated: boolean;
   meta_note: boolean;
 }
+
+// AI transport (wire) types. Kept here rather than in ai/callAI.ts so that
+// ai/parseResponse.ts can reference ClaudeResponse without a parseResponse <->
+// callAI import cycle.
+export interface ClaudeMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface ClaudeResponse {
+  content: Array<{ type: string; text?: string }>;
+  stop_reason?: string;
+  usage?: { input_tokens: number; output_tokens: number };
+}
