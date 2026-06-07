@@ -1005,8 +1005,8 @@ export default class AntinomiaPlugin extends Plugin {
    * dismissati, salva ultimo run nei settings, mostra in HunterResultsView.
    * Supporta cancellazione via Stop button (AbortController).
    */
-  async runHunter(focusFile?: TFile): Promise<void> {
-    return runHunter(this, focusFile);
+  async runHunter(focusFile?: TFile, attachToButton?: HTMLButtonElement): Promise<void> {
+    return runHunter(this, focusFile, attachToButton);
   }
 
   /**

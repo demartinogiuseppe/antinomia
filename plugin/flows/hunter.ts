@@ -11,7 +11,7 @@ import { stripFrontmatter } from "../core/frontmatter";
 import { HunterResultsView } from "../views/HunterResultsView";
 import type { ClaudeResponse, HunterConfidence, HunterContradiction, HunterResult, HunterRun, HunterRunMetadata, Profile } from "../core/types";
 
-export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile): Promise<void> {
+export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, attachToButton?: HTMLButtonElement): Promise<void> {
     const profile = plugin.profileFor("hunter");
     if (!profile.apiKey) {
       new Notice("API key missing in the Hunter profile (or active one). Settings -> Antinomia.");
@@ -247,7 +247,8 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile): Pro
         profile: profile.name,
         model: profile.model,
         url: profile.baseUrl,
-      }
+      },
+      attachToButton
     );
     console.log("[Antinomia] hunter run", meta);
 }

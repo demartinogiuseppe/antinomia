@@ -113,7 +113,9 @@ export class HunterResultsView extends ItemView {
     });
     runBtn.style.marginRight = "6px";
     runBtn.disabled = isLoading;
-    if (!isLoading) runBtn.onclick = () => this.plugin.runHunter();
+    // Pass the run button so the token-usage badge attaches inline next to it
+    // (same UX as the Title badge), complementing the run-metadata header.
+    if (!isLoading) runBtn.onclick = () => this.plugin.runHunter(undefined, runBtn);
 
     if (isLoading) {
       const elapsed = Math.floor(
