@@ -1,0 +1,12 @@
+{
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "The user is listing types of financial documents. I'll classify this as a 'substrate'. The title could be something like 'Financial Documentation Requirements'. Since this is a substrate, I won't fill in the statementA and statementB fields."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 70, "completion_tokens": 120 }
+}

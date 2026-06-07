@@ -1,0 +1,12 @@
+{
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "• Ensure all possible pairs are checked, including substrate-substrate combinations. • Focus on semantic and logical contradictions across the notes. • Use Italian as the description language given the content's linguistic context."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 800, "completion_tokens": 233 }
+}

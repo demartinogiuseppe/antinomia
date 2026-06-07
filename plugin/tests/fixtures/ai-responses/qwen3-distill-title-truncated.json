@@ -1,0 +1,13 @@
+{
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "reasoning_content": "Okay, the user wants a short neutral title about doubt and certainty. Let me weigh a few options... 'Certainty's price'? Too cute. I'll go with {\"title\": \"The weight of doubt\"}"
+      },
+      "finish_reason": "length"
+    }
+  ],
+  "usage": { "prompt_tokens": 50, "completion_tokens": 4000 }
+}
