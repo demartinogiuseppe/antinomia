@@ -1,0 +1,9 @@
+{
+  "choices": [
+    {
+      "message": { "role": "assistant", "content": "", "reasoning_content": "Title: Order and chaos" },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 28, "completion_tokens": 9 }
+}

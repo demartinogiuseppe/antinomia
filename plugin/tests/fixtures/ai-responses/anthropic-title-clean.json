@@ -1,0 +1,5 @@
+{
+  "content": [{ "type": "text", "text": "{\"title\": \"Trust versus verification\"}" }],
+  "stop_reason": "end_turn",
+  "usage": { "input_tokens": 40, "output_tokens": 12 }
+}

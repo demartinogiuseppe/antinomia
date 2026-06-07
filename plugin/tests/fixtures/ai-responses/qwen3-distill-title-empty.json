@@ -1,0 +1,9 @@
+{
+  "choices": [
+    {
+      "message": { "role": "assistant", "content": "", "reasoning_content": "" },
+      "finish_reason": "length"
+    }
+  ],
+  "usage": { "prompt_tokens": 50, "completion_tokens": 4000 }
+}

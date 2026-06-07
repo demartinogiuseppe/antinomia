@@ -4,7 +4,7 @@ import cytoscape from "cytoscape";
 import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { DEFAULT_GRAPH_FILTERS, GRAPH_STYLE_PRESETS, LAYER_COLORS, LAYER_SHAPES, TYPE, VIEW_TYPE_GRAPH } from "../core/constants";
-import { humanTitle } from "../core/frontmatter";
+import { humanTitle, layerKey } from "../core/frontmatter";
 import type { GraphColors, GraphFilters } from "../core/types";
 import { renderAntinomiaNav } from "../helpers/renderAntinomiaNav";
 
@@ -279,33 +279,7 @@ export class AntinomiaGraphView extends ItemView {
     const seenEdges = new Set<string>();
     const includedBasenames = new Set<string>();
 
-    const layerKey = (
-      fm: any
-    ): keyof GraphFilters | null => {
-      const t = fm?.antinomia_type;
-      if (t === TYPE.tension) {
-        const stato = fm?.status;
-        // Legacy: tension+status=elevated (rare; the normal Design C flow
-        // converts an elevated tension into a defeated+motive=elevated +
-        // a new principle).
-        if (stato === "elevated") return "tensione_elevata";
-        if (stato === "resolved") return "tensione_risolta";
-        return "tensione_aperta";
-      }
-      if (t === TYPE.substrate) return "substrate";
-      if (t === TYPE.principle) return "principle";
-      if (t === TYPE.defeated) {
-        // A defeated with motive=elevated is the *original* tension that
-        // gave birth to a principle (Design C). Treat it as the "elevated"
-        // layer so the "Elevated" filter checkbox shows these notes — the
-        // ones that have actually been elevated, not the rare legacy state.
-        const motive = fm?.motive;
-        if (motive === "elevated") return "tensione_elevata";
-        return "defeated";
-      }
-      if (t === TYPE.meta) return "meta_note";
-      return null;
-    };
+    // layerKey lives in core/frontmatter (shared + unit-tested).
 
     const colorKey = (key: keyof GraphFilters): string => {
       // Identity mapping (kept as a function for potential future remapping).

@@ -1,7 +1,37 @@
 // Antinomia — AI response parsing helpers.
 // Extracted from main.ts (refactor v1.5).
 
-import type { ClaudeResponse, TitleProposal, FreeInputAnalysis } from "../core/types";
+import type {
+  ClaudeResponse,
+  TitleProposal,
+  FreeInputAnalysis,
+  HunterContradiction,
+  HunterConfidence,
+} from "../core/types";
+
+/**
+ * Normalize one raw Hunter pair object into a HunterContradiction. Accepts the
+ * current English schema (note_a/note_b/description/confidence high|medium|low)
+ * and the legacy Italian schema (nota_a/nota_b/descrizione/alta|media|bassa)
+ * for backward-compat. Missing fields become empty strings / undefined
+ * confidence. Extracted from runHunter so it can be unit-tested.
+ */
+export function normalizeHunterPair(c: any): HunterContradiction {
+  return {
+    note_a: c?.note_a ?? c?.nota_a ?? "",
+    note_b: c?.note_b ?? c?.nota_b ?? "",
+    description: c?.description ?? c?.descrizione ?? "",
+    confidence: ((): HunterConfidence | undefined => {
+      const raw = String(c?.confidence ?? "").toLowerCase().trim();
+      if (raw === "high" || raw === "medium" || raw === "low")
+        return raw as HunterConfidence;
+      if (raw === "alta") return "high";
+      if (raw === "media") return "medium";
+      if (raw === "bassa") return "low";
+      return undefined;
+    })(),
+  };
+}
 
 export function normalizeJsonQuotes(s: string): string {
   // First pass: tokenize to know when we are inside a double-quoted string.

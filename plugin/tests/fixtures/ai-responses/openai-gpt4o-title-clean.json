@@ -1,0 +1,9 @@
+{
+  "choices": [
+    {
+      "message": { "role": "assistant", "content": "{\"title\": \"The cost of certainty\"}" },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 35, "completion_tokens": 10 }
+}

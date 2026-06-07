@@ -1,0 +1,9 @@
+{
+  "choices": [
+    {
+      "message": { "role": "assistant", "content": "{\"title\": \"Speed or correctness\"}" },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 30, "completion_tokens": 8 }
+}

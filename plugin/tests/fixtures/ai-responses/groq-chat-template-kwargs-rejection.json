@@ -1,0 +1,8 @@
+{
+  "error": {
+    "message": "property 'chat_template_kwargs' is unsupported, please remove it and try again",
+    "type": "invalid_request_error",
+    "code": "unknown_parameter",
+    "param": "chat_template_kwargs"
+  }
+}

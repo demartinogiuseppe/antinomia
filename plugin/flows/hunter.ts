@@ -4,7 +4,7 @@ import { Notice, TFile } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { callAI } from "../ai/callAI";
 import { notifyAIUsage, showErrorModal } from "../ai/notifyUsage";
-import { extractJson } from "../ai/parseResponse";
+import { extractJson, normalizeHunterPair } from "../ai/parseResponse";
 import { buildHunterSystem } from "../ai/prompts";
 import { TYPE, VIEW_TYPE_HUNTER_RESULTS } from "../core/constants";
 import { stripFrontmatter } from "../core/frontmatter";
@@ -160,24 +160,8 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
     hunterView?.setLoading(false);
     plugin.hunterAbortController = null;
 
-    // Normalize: the AI is asked for English keys (pairs/note_a/note_b/
-    // description/confidence: high|medium|low). We accept legacy Italian
-    // keys (contraddizioni/nota_a/nota_b/descrizione/alta|media|bassa) for
-    // backward-compat with older runs and Anthropic responses that still
-    // mirror the older schema.
-    const normalizePair = (c: any): HunterContradiction => ({
-      note_a: c?.note_a ?? c?.nota_a ?? "",
-      note_b: c?.note_b ?? c?.nota_b ?? "",
-      description: c?.description ?? c?.descrizione ?? "",
-      confidence: ((): HunterConfidence | undefined => {
-        const raw = String(c?.confidence ?? "").toLowerCase().trim();
-        if (raw === "high" || raw === "medium" || raw === "low") return raw as HunterConfidence;
-        if (raw === "alta") return "high";
-        if (raw === "media") return "medium";
-        if (raw === "bassa") return "low";
-        return undefined;
-      })(),
-    });
+    // Normalize via the shared, unit-tested normalizeHunterPair (English +
+    // legacy Italian schema). See ai/parseResponse.
     if (!rawPairs) {
       console.error("[Antinomia] hunter unparseable after retry:", result.text);
       showErrorModal(
@@ -197,7 +181,7 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
       );
       return;
     }
-    const parsed: HunterResult = { pairs: rawPairs.map(normalizePair) };
+    const parsed: HunterResult = { pairs: rawPairs.map(normalizeHunterPair) };
 
     // Anti-hallucination validation: discard invented basenames, self-pairs, empty descriptions
     const realBasenames = new Set(selected.map((f) => f.basename));
