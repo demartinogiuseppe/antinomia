@@ -21,7 +21,7 @@ function loadFixtureVault(): Record<string, string> {
 }
 
 function fmOf(content: string): Record<string, unknown> {
-  const m = content.match(/^---\n([\s\S]*?)\n---/);
+  const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   return m ? ((yaml.load(m[1]) as Record<string, unknown>) ?? {}) : {};
 }
 

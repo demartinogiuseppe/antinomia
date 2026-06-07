@@ -13,7 +13,7 @@ function parentOf(path: string): string {
 }
 
 function readFm(content: string): Record<string, unknown> | undefined {
-  const m = content.match(/^---\n([\s\S]*?)\n---/);
+  const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!m) return undefined;
   try {
     const parsed = yaml.load(m[1]);
@@ -105,7 +105,7 @@ export function makeMockApp(initial: Record<string, string>) {
       fn: (fm: Record<string, unknown>) => void
     ): Promise<void> {
       const content = contents.get(file.path) ?? "";
-      const m = content.match(/^---\n([\s\S]*?)\n---\n?/);
+      const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
       const fm: Record<string, unknown> = m
         ? ((yaml.load(m[1]) as Record<string, unknown>) ?? {})
         : {};
