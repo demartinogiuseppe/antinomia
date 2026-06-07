@@ -107,7 +107,7 @@ export async function openSubstrateFromYouTube(plugin: AntinomiaPlugin, prefillU
         text: "Click sul bottone qui sotto per aprire youtubetotranscript.com nel browser.",
       });
       steps.createEl("li", {
-        text: "Sul sito, l'URL del video e' gia' incollato. Click 'Get Transcript'.",
+        text: "On the site, the video URL is already pasted. Click 'Get Transcript'.",
       });
       steps.createEl("li", {
         text: "Seleziona tutta la trascrizione, Ctrl+C, torna qui e incollala nel campo sotto.",

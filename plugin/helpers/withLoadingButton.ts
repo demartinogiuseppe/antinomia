@@ -32,7 +32,7 @@ export async function withLoadingButton<T>(
   stopBtn.style.padding = "2px 8px";
   stopBtn.style.fontSize = "0.85em";
   stopBtn.style.cursor = "pointer";
-  stopBtn.title = "Ferma la generazione AI in corso.";
+  stopBtn.title = "Stop the running AI generation.";
   stopBtn.onclick = (e) => {
     e.preventDefault();
     e.stopPropagation();

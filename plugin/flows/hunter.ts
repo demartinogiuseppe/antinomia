@@ -84,7 +84,7 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
         ? hunterLeaf.view
         : null;
 
-    new Notice(`Hunter${focusFile ? ` su ${focusFile.basename}` : ""}: invio ${selected.length} note (${nTensions}T + ${nSubstrates}S)...${truncated ? " (troncate)" : ""}`);
+    new Notice(`Hunter${focusFile ? ` on ${focusFile.basename}` : ""}: sending ${selected.length} notes (${nTensions}T + ${nSubstrates}S)...${truncated ? " (truncated)" : ""}`);
     hunterView?.setLoading(true, selected.length);
 
     plugin.hunterAbortController = new AbortController();
@@ -286,6 +286,6 @@ export async function undismissContradiction(plugin: AntinomiaPlugin,
     if (mA || mB) {
       new Notice(`Reincluso: ${aBasename} <-> ${bBasename}`);
     } else {
-      new Notice("Nessun dismiss trovato per questa coppia.");
+      new Notice("No dismissal found for this pair.");
     }
 }

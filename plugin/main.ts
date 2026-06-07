@@ -1973,7 +1973,7 @@ export default class AntinomiaPlugin extends Plugin {
       return fm?.antinomia_type === TYPE.principle;
     });
     if (principles.length === 0) {
-      new Notice("Nessun principio nel vault.");
+      new Notice("No principles in the vault.");
       return;
     }
     const alreadyLinked = new Set<string>();
@@ -2038,7 +2038,7 @@ export default class AntinomiaPlugin extends Plugin {
   async createDefeatedForPrinciple(principleFile: TFile): Promise<void> {
     const fm = this.app.metadataCache.getFileCache(principleFile)?.frontmatter;
     if (fm?.antinomia_type !== TYPE.principle) {
-      new Notice("Selezione: la nota non e' un principio.");
+      new Notice("Selection: the note is not a principle.");
       return;
     }
     const today = todayISO();
@@ -2062,7 +2062,7 @@ export default class AntinomiaPlugin extends Plugin {
       `> Replaced by: [[${principleFile.basename}]]\n`;
     const defeatedFile = await this.createNote("D", defeatedContent);
     if (!defeatedFile) {
-      new Notice("Errore: impossibile creare il defeated.");
+      new Notice("Error: could not create the defeated.");
       return;
     }
     await this.app.fileManager.processFrontMatter(principleFile, (frontm) => {
@@ -2113,9 +2113,9 @@ export default class AntinomiaPlugin extends Plugin {
         fm.status = "resolved";
         fm.modified_date = todayISO();
       });
-      new Notice(`Risolta: ${file.basename}`);
+      new Notice(`Resolved: ${file.basename}`);
     } catch (e) {
-      new Notice(`Errore: ${(e as Error).message}`);
+      new Notice(`Error: ${(e as Error).message}`);
     }
   }
 
@@ -2152,7 +2152,7 @@ export default class AntinomiaPlugin extends Plugin {
           `Archived as defeated (${motivo}${subMsg}): ${file.basename}`
         );
       } catch (e) {
-        new Notice(`Errore: ${(e as Error).message}`);
+        new Notice(`Error: ${(e as Error).message}`);
       }
     }).open();
   }
@@ -2182,7 +2182,7 @@ export default class AntinomiaPlugin extends Plugin {
       new Notice(`Marcata come ${tipo}: ${file.basename}`);
     } catch (e) {
       console.error("[Antinomia] markAsType failed", e);
-      new Notice(`Errore: ${(e as Error).message}`);
+      new Notice(`Error: ${(e as Error).message}`);
     }
   }
 
@@ -2196,7 +2196,7 @@ export default class AntinomiaPlugin extends Plugin {
       });
       new Notice(`Ignorata: ${file.basename}`);
     } catch (e) {
-      new Notice(`Errore: ${(e as Error).message}`);
+      new Notice(`Error: ${(e as Error).message}`);
     }
   }
 
@@ -2237,7 +2237,7 @@ export default class AntinomiaPlugin extends Plugin {
         maxTokens: 400,
       });
     } catch (e) {
-      new Notice(`Errore AI: ${(e as Error).message}`);
+      new Notice(`AI error: ${(e as Error).message}`);
       return;
     }
     const parsed = extractJson<ClassifyResult>(result.text);
@@ -2268,7 +2268,7 @@ export default class AntinomiaPlugin extends Plugin {
           });
           new Notice(`Applicato: antinomia_type = ${parsed.tipo}`);
         } catch (e) {
-          new Notice(`Errore: ${(e as Error).message}`);
+          new Notice(`Error: ${(e as Error).message}`);
         }
       }
     ).open();
@@ -2373,7 +2373,7 @@ export default class AntinomiaPlugin extends Plugin {
    */
   async linkActiveTo(active: TFile, target: TFile): Promise<void> {
     if (active.path === target.path) {
-      new Notice("Non puoi collegare una nota a se stessa.");
+      new Notice("You can't link a note to itself.");
       return;
     }
     try {
@@ -2410,7 +2410,7 @@ export default class AntinomiaPlugin extends Plugin {
       }
       new Notice(`Collegate ${active.basename} <-> ${target.basename}`);
     } catch (e) {
-      new Notice(`Errore collegamento: ${(e as Error).message}`);
+      new Notice(`Link error: ${(e as Error).message}`);
     }
   }
 
