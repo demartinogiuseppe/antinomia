@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.4.4 (June 7, 2026) — Migration utility
+
+If you installed Antinomia back at **v1.1.x** (Italian schema) and updated via BRAT, your vault would break — the new code doesn't recognise the old Italian frontmatter keys, so the graph wouldn't render and the Hunter would ignore your notes. This release adds a safe, one-command fix.
+
+- **#150 Migration utility (v1.1 → v1.4)**: command **"Antinomia: Migrate vault from v1.1 to v1.4 (english schema)"** renames 16 frontmatter keys, the `antinomia_type` / `status` / `motive` enum values, and 10 body markers to the English schema. It is **idempotent** (safe to run twice; already-migrated notes are skipped) and **backup-first** — a complete copy of every affected note is written to `notes/.antinomia-pre-migration-backup-<timestamp>/` before anything changes. A second command, **"Restore pre-migration backup (latest)"**, undoes the migration. On load, if legacy notes are detected, a single clickable 5-second Notice offers to migrate (never an aggressive modal; toggle it off in Settings).
+- **Internal**: `layerKey` extracted to `core/frontmatter.ts` and `normalizeHunterPair` to `ai/parseResponse.ts` (both behavior-neutral, done for the test refactor).
+- **Tests**: 107 → 132. Unit tests for the pure migration transforms (keys/enums/body markers + idempotency) and an integration test running the full migrate → backup → restore cycle over a fixture vault. Coverage on the tested modules ~47%.
+
+Your data is never touched without a backup. If anything looks off after migrating, run the restore command.
+
 ## v1.4.3 (June 7, 2026) — Robust AI parsers + retry strategy
 
 Reasoning models (e.g. qwen3-distill) sometimes reply with prose instead of the requested JSON, which made the Free-input and Hunter flows fail outright. Both now degrade gracefully instead of throwing the work away.
