@@ -1,5 +1,33 @@
 # Changelog
 
+## v1.4.1 (June 7, 2026) — Refactor + patch
+
+### Internal refactor (no behavior change)
+
+`plugin/main.ts` split from a 12,138-line monolith into **2,410 lines** (-80%) across **53 module files**:
+
+- `core/` — types, constants, utils, frontmatter, templates, settings
+- `ai/` — prompts, parseResponse, detectModel, pingBackend, callAI, notifyUsage
+- `helpers/` — withLoadingButton, renderTensionContext, renderAntinomiaNav, renderNoteCard
+- `modals/` — one class per file (18)
+- `views/` — one class per file (11)
+- `flows/` — pdfIngest, youtubeFetch, hunter, freeInput, elevation, presupposti, titleProposal, exampleVault (8)
+
+Flow methods use a **delegator pattern**: each flow's logic lives in `flows/*` as `f(plugin, …)`, and the plugin class keeps a thin `f(…) { return f(this, …) }`, so the public `plugin.x()` API the UI calls is unchanged. Zero behavior change; verified by build + typecheck holding constant across every extraction step.
+
+Two dependency-cycle findings surfaced and resolved during the split:
+- `parseResponse ↔ callAI` — broke by moving the transport types (`ClaudeMessage` / `ClaudeResponse`) to `core/types`.
+- `AntinomiaGraphView` referenced the `cytoscape` UMD global once extracted into its own module — fixed with an explicit `import cytoscape`.
+
+### Fixes
+
+- **BUG-GRAPH-001**: `TypeError: Cannot read properties of undefined (reading 'vx')` on `rebuildGraph` during the physics loop — nodes added after `startContinuousPhysics()` (e.g. a substrate created via PDF ingest while the graph view was open) had no velocity entry. Now lazy-initialized.
+- **BUG-CLOUD-001**: Groq cloud rejected `chat_template_kwargs` / `extra_body` with HTTP 400. These runtime-specific reasoning-disable fields (LM Studio / vLLM / Ollama) are now sent **only** to local backends; cloud relies on `reasoning_effort` or nothing.
+
+### UX
+
+- Edge glow on the graph reduced ~60% — thinner halo, sharper core line, less dominant overall.
+
 ## v1.4.0 (June 5, 2026) — PDF concept extraction, autoadaptive model layer, resilient AI flows
 
 The largest release since the English schema migration. Three big themes:
