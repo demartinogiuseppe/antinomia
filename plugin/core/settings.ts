@@ -35,6 +35,9 @@ export interface AntinomiaSettings {
   // Experimental: spread nodes further apart so edges are less likely to
   // cross unrelated nodes. Slower initial layout, cleaner visual result.
   graphSpaciousLayout?: boolean;
+  // Once true, the "cloud profile sends your notes to a third party" warning
+  // is suppressed (user ticked "don't warn me again"). Default false.
+  cloudWarningDismissed?: boolean;
 }
 
 export const DEFAULT_SETTINGS: AntinomiaSettings = {
@@ -66,6 +69,7 @@ export const DEFAULT_SETTINGS: AntinomiaSettings = {
   elevationMode: "split",
   graphStyleName: "neon",
   graphSpaciousLayout: false,
+  cloudWarningDismissed: false,
   graphCustomColors: {
     tensione_aperta: "#ff8c42",
     tensione_risolta: "#fbc02d",

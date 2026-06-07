@@ -9,7 +9,7 @@ import type { Profile, GraphColors, BackendPreset, TutorialStep, PdfExtractResul
 
 import { FOLDER, TYPE, VIEW_TYPE_OPEN_TENSIONS, VIEW_TYPE_HUNTER_RESULTS, VIEW_TYPE_DISMISSED_PAIRS, VIEW_TYPE_SUBSTRATE_LIST, VIEW_TYPE_PRINCIPLES_LIST, VIEW_TYPE_DEFEATED_LIST, VIEW_TYPE_ONBOARDING, VIEW_TYPE_DASHBOARD, VIEW_TYPE_AUDIT, VIEW_TYPE_GRAPH, VIEW_TYPE_UNCLASSIFIED, GRAPH_STYLE_PRESETS } from "./core/constants";
 
-import { todayISO, timestampId, ensureFolder } from "./core/utils";
+import { todayISO, timestampId, ensureFolder, isLocalBaseUrl } from "./core/utils";
 
 import { yamlQuote } from "./core/frontmatter";
 
@@ -30,6 +30,7 @@ import { notifyAIUsage, renderUsageMetaBanner, ErrorAckModal, showErrorModal } f
 import { ProfileEditModal } from "./modals/ProfileEditModal";
 
 import { WelcomeModal } from "./modals/WelcomeModal";
+import { CloudWarningModal } from "./modals/CloudWarningModal";
 
 import { ConfirmModal } from "./modals/ConfirmModal";
 
@@ -465,8 +466,15 @@ class AntinomiaSettingTab extends PluginSettingTab {
         }
         dd.setValue(this.plugin.settings.activeProfileId);
         dd.onChange(async (value) => {
+          const prev = this.plugin.settings.activeProfileId;
           this.plugin.settings.activeProfileId = value;
           await this.plugin.saveSettings();
+          // Warn when switching TO a cloud profile; revert on cancel.
+          this.plugin.maybeWarnCloudProfile(async () => {
+            this.plugin.settings.activeProfileId = prev;
+            await this.plugin.saveSettings();
+            dd.setValue(prev);
+          });
         });
       });
 
@@ -1105,6 +1113,11 @@ export default class AntinomiaPlugin extends Plugin {
           void this.activateView(VIEW_TYPE_GRAPH, "tab");
         }
       }
+      // Cloud-profile privacy reminder for returning users. Skipped on the very
+      // first launch, where the WelcomeModal already covers cloud-vs-local.
+      if (this.settings.onboardingCompleted) {
+        this.maybeWarnCloudProfile();
+      }
     });
 
     // ---- Creation (guided + bypass) ----
@@ -1554,6 +1567,29 @@ export default class AntinomiaPlugin extends Plugin {
         (p) => p.id === this.settings.activeProfileId
       ) ?? this.settings.profiles[0]
     );
+  }
+
+  /**
+   * If the active profile points at a third-party cloud backend (not a local
+   * server) and the user hasn't dismissed the warning, show the cloud-privacy
+   * modal. `onCancel` runs when the user backs out (used to revert a profile
+   * switch). No-op when the active profile is local or the warning is off.
+   */
+  maybeWarnCloudProfile(onCancel: () => void = () => {}): void {
+    if (this.settings.cloudWarningDismissed) return;
+    const p = this.activeProfile();
+    if (!p || isLocalBaseUrl(p.baseUrl)) return;
+    new CloudWarningModal(
+      this.app,
+      this,
+      async (dontWarnAgain) => {
+        if (dontWarnAgain) {
+          this.settings.cloudWarningDismissed = true;
+          await this.saveSettings();
+        }
+      },
+      onCancel
+    ).open();
   }
 
   /**
