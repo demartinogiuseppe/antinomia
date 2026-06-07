@@ -44,6 +44,26 @@ import type {
   GraphFilters,
 } from "./core/types";
 
+import {
+  FOLDER,
+  TYPE,
+  VIEW_TYPE_OPEN_TENSIONS,
+  VIEW_TYPE_HUNTER_RESULTS,
+  VIEW_TYPE_DISMISSED_PAIRS,
+  VIEW_TYPE_SUBSTRATE_LIST,
+  VIEW_TYPE_PRINCIPLES_LIST,
+  VIEW_TYPE_DEFEATED_LIST,
+  VIEW_TYPE_ONBOARDING,
+  VIEW_TYPE_DASHBOARD,
+  VIEW_TYPE_AUDIT,
+  VIEW_TYPE_GRAPH,
+  VIEW_TYPE_UNCLASSIFIED,
+  GRAPH_STYLE_PRESETS,
+  DEFAULT_GRAPH_FILTERS,
+  LAYER_COLORS,
+  LAYER_SHAPES,
+} from "./core/constants";
+
 // Antinomia V1 — Step 5e: guided creation modals + human titles + Hunter v2.1
 //
 // Design invariants (do not violate without explicit user reconfirmation):
@@ -53,27 +73,6 @@ import type {
 //   - Backend pluggable (Anthropic cloud / LM Studio / custom).
 //   - Modals for new tension/substrate are opt-out: "Salta e apri nota vuota"
 //     button lets the savvy user bypass and write directly in markdown.
-
-const FOLDER = { notes: "notes" } as const;
-
-const TYPE = {
-  tension: "tension",
-  substrate: "substrate",
-  principle: "principle",
-  defeated: "defeated",
-  meta: "meta_note",
-} as const;
-
-const VIEW_TYPE_OPEN_TENSIONS = "antinomia-open-tensions";
-const VIEW_TYPE_HUNTER_RESULTS = "antinomia-hunter-results";
-const VIEW_TYPE_DISMISSED_PAIRS = "antinomia-dismissed-pairs";
-const VIEW_TYPE_SUBSTRATE_LIST = "antinomia-substrate-list";
-const VIEW_TYPE_PRINCIPLES_LIST = "antinomia-principles-list";
-const VIEW_TYPE_DEFEATED_LIST = "antinomia-defeated-list";
-const VIEW_TYPE_ONBOARDING = "antinomia-onboarding-checklist";
-const VIEW_TYPE_DASHBOARD = "antinomia-dashboard";
-const VIEW_TYPE_AUDIT = "antinomia-audit";
-const VIEW_TYPE_GRAPH = "antinomia-graph";
 
 interface AntinomiaSettings {
   profiles: Profile[];
@@ -108,81 +107,6 @@ interface AntinomiaSettings {
   // cross unrelated nodes. Slower initial layout, cleaner visual result.
   graphSpaciousLayout?: boolean;
 }
-
-const GRAPH_STYLE_PRESETS: Record<string, GraphColors> = {
-  default: {
-    tensione_aperta: "#ff8c42",
-    tensione_risolta: "#fbc02d",
-    tensione_elevata: "#4caf50",
-    substrate: "#9aa0a6",
-    principio: "#2e7d32",
-    defeated: "#e53935",
-    meta_nota: "#7e57c2",
-    label: "#999999",
-    edge: "rgba(128,128,128,0.25)",
-    background: "",
-  },
-  scuro: {
-    tensione_aperta: "#ff6b35",
-    tensione_risolta: "#ffb300",
-    tensione_elevata: "#66bb6a",
-    substrate: "#546e7a",
-    principio: "#1b5e20",
-    defeated: "#c62828",
-    meta_nota: "#5e35b1",
-    label: "#cfcfcf",
-    edge: "rgba(180,180,180,0.18)",
-    background: "#0e0e10",
-  },
-  chiaro: {
-    tensione_aperta: "#f57c00",
-    tensione_risolta: "#fdd835",
-    tensione_elevata: "#388e3c",
-    substrate: "#90a4ae",
-    principio: "#1b5e20",
-    defeated: "#d32f2f",
-    meta_nota: "#5e35b1",
-    label: "#444444",
-    edge: "rgba(100,100,100,0.3)",
-    background: "#fafafa",
-  },
-  sepia: {
-    tensione_aperta: "#bf6b27",
-    tensione_risolta: "#c89b3d",
-    tensione_elevata: "#6b8e23",
-    substrate: "#a68d6e",
-    principio: "#556b2f",
-    defeated: "#a0312f",
-    meta_nota: "#7a5e8c",
-    label: "#5a4530",
-    edge: "rgba(120,90,60,0.3)",
-    background: "#f5ecd9",
-  },
-  minimal: {
-    tensione_aperta: "#444444",
-    tensione_risolta: "#666666",
-    tensione_elevata: "#222222",
-    substrate: "#999999",
-    principio: "#000000",
-    defeated: "#aa0000",
-    meta_nota: "#555555",
-    label: "#333333",
-    edge: "rgba(0,0,0,0.15)",
-    background: "#ffffff",
-  },
-  neon: {
-    tensione_aperta: "#ff5722",
-    tensione_risolta: "#ffff00",
-    tensione_elevata: "#00e676",
-    substrate: "#00bcd4",
-    principio: "#76ff03",
-    defeated: "#ff1744",
-    meta_nota: "#d500f9",
-    label: "#e0e0e0",
-    edge: "rgba(0,229,255,0.3)",
-    background: "#0a0a0f",
-  },
-};
 
 const DEFAULT_SETTINGS: AntinomiaSettings = {
   profiles: [
@@ -6448,7 +6372,6 @@ class OnboardingChecklistView extends ItemView {
   }
 }
 
-const VIEW_TYPE_UNCLASSIFIED = "antinomia-unclassified";
 
 /**
  * Dashboard: vault status at a glance. Counters per layer + last Hunter run +
@@ -7118,39 +7041,6 @@ class UnclassifiedNotesView extends ItemView {
 // ============================================================================
 // Antinomia Graph View — vista grafo custom con filtri per layer
 // ============================================================================
-
-const DEFAULT_GRAPH_FILTERS: GraphFilters = {
-  tensione_aperta: true,
-  tensione_risolta: true,
-  tensione_elevata: true,
-  substrate: true,
-  principle: true,
-  defeated: true,
-  meta_note: true,
-};
-
-const LAYER_COLORS: Record<string, string> = {
-  tensione_aperta: "#ff8c42",   // arancione caldo
-  tensione_risolta: "#fbc02d",  // giallo
-  tensione_elevata: "#4caf50",  // verde (gia\' diventata principio nello stesso file)
-  substrate: "#9aa0a6",         // grigio
-  principle: "#2e7d32",         // verde scuro
-  defeated: "#e53935",          // rosso
-  meta_note: "#7e57c2",         // viola
-  unknown: "#607d8b",
-};
-
-// Tutti pallini — il colore basta per identificare il layer (vs Obsidian default style)
-const LAYER_SHAPES: Record<string, string> = {
-  tensione_aperta: "ellipse",
-  tensione_risolta: "ellipse",
-  tensione_elevata: "ellipse",
-  substrate: "ellipse",
-  principio: "ellipse",
-  defeated: "ellipse",
-  meta_nota: "ellipse",
-  unknown: "ellipse",
-};
 
 class AntinomiaGraphView extends ItemView {
   plugin: AntinomiaPlugin;
