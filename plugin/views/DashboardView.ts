@@ -43,6 +43,10 @@ export class DashboardView extends ItemView {
     renderAntinomiaNav(this.plugin, container as HTMLElement, this.leaf);
     renderVaultLabel(container, this.plugin.settings.vaultDisplayName);
     container.createEl("h4", { text: "Dashboard" });
+    const ver = container.createEl("div", {
+      text: `Antinomia v${this.plugin.manifest.version}`,
+    });
+    ver.style.cssText = "font-size:0.75em; opacity:0.5; margin:-6px 0 10px;";
 
     const files = this.app.vault.getMarkdownFiles();
     const byType = (t: string) =>
