@@ -15,12 +15,17 @@ import { ElevateToPrincipleModal } from "../modals/ElevateToPrincipleModal";
 
 export async function openElevateModal(plugin: AntinomiaPlugin, file: TFile): Promise<void> {
     if (plugin.elevateModalOpen) {
-      console.warn("[Antinomia] openElevateModal: gia' aperto, ignoro richiesta duplicata");
+      console.warn("[Antinomia] openElevateModal: already open, ignoring duplicate request");
       return;
     }
+    // Claim the guard SYNCHRONOUSLY, before the first await below. Otherwise two
+    // rapid clicks both pass the check (the flag is still false while the first
+    // is awaiting vault.read) and two modals open. Release on every early exit.
+    plugin.elevateModalOpen = true;
     const fm0 = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
     if (fm0?.antinomia_type !== TYPE.tension) {
       new Notice("Elevate: active note is not a tension.");
+      plugin.elevateModalOpen = false;
       return;
     }
     let rawElev = "";
@@ -28,9 +33,9 @@ export async function openElevateModal(plugin: AntinomiaPlugin, file: TFile): Pr
       rawElev = await plugin.app.vault.read(file);
     } catch (e) {
       new Notice(`Read error: ${(e as Error).message}`);
+      plugin.elevateModalOpen = false;
       return;
     }
-    plugin.elevateModalOpen = true;
     const modal = new ElevateToPrincipleModal(
       plugin.app,
       plugin,
