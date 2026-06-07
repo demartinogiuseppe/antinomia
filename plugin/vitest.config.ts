@@ -23,7 +23,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reportsDirectory: "coverage",
-      include: ["core/**/*.ts", "ai/**/*.ts"],
+      include: ["core/**/*.ts", "ai/**/*.ts", "flows/migration.ts"],
       exclude: ["**/*.test.ts", "tests/**", "main.ts"],
       reporter: ["text", "html"],
     },

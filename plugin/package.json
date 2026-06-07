@@ -19,10 +19,12 @@
   "license": "MIT",
   "devDependencies": {
     "@types/cytoscape": "^3.21.9",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.11.0",
     "@vitest/coverage-v8": "^4.1.8",
     "builtin-modules": "^3.3.0",
     "esbuild": "^0.21.4",
+    "js-yaml": "^4.2.0",
     "moment": "^2.30.1",
     "obsidian": "^1.4.16",
     "tslib": "^2.6.2",
