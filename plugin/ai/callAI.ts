@@ -76,6 +76,23 @@ export async function callAI(opts: {
       ? `${baseClean}/v1/messages`
       : `${baseClean}/chat/completions`;
 
+  // Detect local backend EARLY (before body construction) so we can decide
+  // which optional body fields are safe to send. Cloud providers (Groq,
+  // OpenAI, OpenRouter) reject `chat_template_kwargs` / `extra_body` with
+  // 400 — those are runtime-specific (LM Studio / vLLM / Ollama) and must
+  // not leak to cloud.
+  let isLocal = false;
+  try {
+    const u = new URL(url);
+    isLocal =
+      u.hostname === "localhost" ||
+      u.hostname === "127.0.0.1" ||
+      u.hostname === "0.0.0.0" ||
+      u.hostname.endsWith(".local");
+  } catch {
+    /* malformed URL — fall back to requestUrl */
+  }
+
   // Build the request body in the right shape for each API style.
   const body: any =
     apiFormat === "anthropic"
@@ -112,18 +129,26 @@ export async function callAI(opts: {
   //     regardless of runtime version. Harmless on backends that ignore it.
   if (shouldDisableThinking && apiFormat !== "anthropic") {
     if (caps.reasoningVocab === "openai") {
+      // `reasoning_effort: "low"` is a recognized OpenAI field — safe to send
+      // to cloud (OpenAI o-series / GPT-5). Ignored by Groq/Llama and others.
       body.reasoning_effort = "low";
     }
-    // Template-level signal — survives LM Studio version churn:
-    body.chat_template_kwargs = {
-      ...(body.chat_template_kwargs ?? {}),
-      enable_thinking: false,
-    };
-    // Ollama / some vLLM deployments use extra_body:
-    body.extra_body = {
-      ...(body.extra_body ?? {}),
-      enable_thinking: false,
-    };
+    // `chat_template_kwargs` (LM Studio / vLLM) and `extra_body` (Ollama) are
+    // RUNTIME-SPECIFIC fields. Groq cloud rejects them with HTTP 400
+    // ("property 'chat_template_kwargs' is unsupported"). Send them ONLY to
+    // local backends — for cloud we rely on `reasoning_effort` (when it's an
+    // OpenAI reasoning model) or nothing at all (cloud non-reasoning models
+    // don't have a thinking mode to disable in the first place).
+    if (isLocal) {
+      body.chat_template_kwargs = {
+        ...(body.chat_template_kwargs ?? {}),
+        enable_thinking: false,
+      };
+      body.extra_body = {
+        ...(body.extra_body ?? {}),
+        enable_thinking: false,
+      };
+    }
   }
 
   // Friendly heads-up the first time per session: reasoning model used for
@@ -154,20 +179,7 @@ export async function callAI(opts: {
     headers["anthropic-dangerous-direct-browser-access"] = "true";
   }
 
-  // Detect local backend: localhost, 127.0.0.1, or any *.local hostname.
-  // For local backends we use native fetch() so AbortSignal actually closes
-  // the connection — LM Studio / Ollama stop generating when the socket dies.
-  let isLocal = false;
-  try {
-    const u = new URL(url);
-    isLocal =
-      u.hostname === "localhost" ||
-      u.hostname === "127.0.0.1" ||
-      u.hostname === "0.0.0.0" ||
-      u.hostname.endsWith(".local");
-  } catch {
-    /* malformed URL — fall back to requestUrl */
-  }
+  // (isLocal already detected above before body construction.)
 
   // Pre-check: for local backends, ping the server first so we fail fast with
   // a friendly message instead of a cryptic ECONNREFUSED deep in the request.
