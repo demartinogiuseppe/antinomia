@@ -6,7 +6,7 @@
 
 [![tests](https://github.com/demartinogiuseppe/antinomia/actions/workflows/test.yml/badge.svg)](https://github.com/demartinogiuseppe/antinomia/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.2.8--beta-orange)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.4.5-blue)](CHANGELOG.md)
 [![Obsidian](https://img.shields.io/badge/Obsidian-1.4%2B-7c3aed)](https://obsidian.md)
 [![Paper DOI](https://img.shields.io/badge/Paper%20DOI-10.5281%2Fzenodo.20369124-blue)](https://doi.org/10.5281/zenodo.20369124)
 [![Software DOI](https://img.shields.io/badge/Software%20DOI-10.5281%2Fzenodo.20506815-blue)](https://doi.org/10.5281/zenodo.20506815)
@@ -16,7 +16,7 @@
 
 ---
 
-## ⚠️ Status: research preview (v1.2.8 beta)
+## ⚠️ Status: research preview (v1.4.5 beta)
 
 Antinomia is in **public beta** distributed via BRAT. Features are stable, but a few edge-case flows (e.g., duplicate Elevate modal in certain conditions) are under observation. Please open an issue if you find anything odd.
 
