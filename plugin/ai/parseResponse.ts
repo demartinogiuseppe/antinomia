@@ -7,7 +7,38 @@ import type {
   FreeInputAnalysis,
   HunterContradiction,
   HunterConfidence,
+  PresuppositionProposal,
 } from "../core/types";
+
+/**
+ * Parse the AI "map presuppositions" response into proposals. Accepts a bare
+ * JSON array or a `{ presuppositions: [...] }` wrapper, tolerating prose around
+ * it (via extractJson). Returns null if nothing usable.
+ */
+export function parsePresuppositionsFromAIResponse(
+  rawText: string
+): PresuppositionProposal[] | null {
+  if (!rawText || !rawText.trim()) return null;
+  const parsed = extractJson<any>(rawText);
+  if (!parsed) return null;
+  const arr: unknown = Array.isArray(parsed) ? parsed : parsed.presuppositions;
+  if (!Array.isArray(arr)) return null;
+  const out: PresuppositionProposal[] = [];
+  for (const item of arr) {
+    const text = String(item?.text ?? "").trim();
+    if (!text) continue;
+    const rawConf = String(item?.confidence ?? "").toLowerCase().trim();
+    const confidence: "high" | "medium" | "low" =
+      rawConf === "high" || rawConf === "low" ? rawConf : "medium";
+    const sim = item?.similar_existing;
+    const similar_existing =
+      typeof sim === "string" && sim.trim() && sim.toLowerCase() !== "null"
+        ? sim.trim()
+        : null;
+    out.push({ text, confidence, similar_existing });
+  }
+  return out.length > 0 ? out : null;
+}
 
 /**
  * Normalize one raw Hunter pair object into a HunterContradiction. Accepts the
