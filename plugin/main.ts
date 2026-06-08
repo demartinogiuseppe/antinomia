@@ -36,6 +36,11 @@ import {
   scanVaultForLegacyNotes,
   restoreFromLatestBackup,
 } from "./flows/migration";
+import {
+  mapPresuppositionsOfPrinciple,
+  showCollapseImpact,
+  removePresuppositionFromPrinciples,
+} from "./flows/presuppositionMap";
 
 import { ConfirmModal } from "./modals/ConfirmModal";
 
@@ -1063,6 +1068,16 @@ export default class AntinomiaPlugin extends Plugin {
     await this.loadSettings();
     this.addSettingTab(new AntinomiaSettingTab(this.app, this));
 
+    // Delete-sync: when a presupposition (U-) note is removed, strip its
+    // basename from every principle's `presupposes` list.
+    this.registerEvent(
+      this.app.vault.on("delete", (f) => {
+        if (f instanceof TFile && f.extension === "md" && f.basename.startsWith("U-")) {
+          void removePresuppositionFromPrinciples(this.app, f.basename);
+        }
+      })
+    );
+
     // Show welcome modal on first launch only. Slight delay so Obsidian
     // finishes setting up the workspace and doesn't fight for focus.
     if (!this.settings.onboardingCompleted) {
@@ -1186,6 +1201,30 @@ export default class AntinomiaPlugin extends Plugin {
       id: "restore-backup",
       name: "Restore pre-migration backup (latest)",
       callback: () => void restoreFromLatestBackup(this.app),
+    });
+    this.addCommand({
+      id: "map-presuppositions",
+      name: "Map presuppositions of this principle",
+      checkCallback: (checking) => {
+        const file = this.app.workspace.getActiveFile();
+        if (!file) return false;
+        const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+        const ok = fm?.antinomia_type === TYPE.principle;
+        if (ok && !checking) void mapPresuppositionsOfPrinciple(this, file);
+        return ok;
+      },
+    });
+    this.addCommand({
+      id: "show-collapse-impact",
+      name: "What collapses if this fails?",
+      checkCallback: (checking) => {
+        const file = this.app.workspace.getActiveFile();
+        if (!file) return false;
+        const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+        const ok = fm?.antinomia_type === TYPE.presupposition;
+        if (ok && !checking) void showCollapseImpact(this, file);
+        return ok;
+      },
     });
     this.addCommand({
       id: "new-tension",
