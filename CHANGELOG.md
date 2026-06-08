@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.4.6 (June 8, 2026) — 3D parallax graph
+
+**Features**
+- **3D depth effect** on the Antinomia Graph view via parallax pan. Three independent layers stacked behind the graph:
+  - **Nebula** (deepest): the existing galaxy backdrop, now translates at 0.15× pan velocity — barely moves, simulating cosmic distance.
+  - **Stars** (mid): ~100 randomly placed white pinpoints generated at view-open (fresh seed each session), translate at 0.5× — middle distance.
+  - **Nodes + edges** (front): unchanged 1:1 pan.
+- Drag the graph and watch nodes glide past stars, while the nebula remains nearly fixed — convincing depth on a 2D canvas.
+
+**Notes**
+- Parallax fires on `pan` events only — zoom keeps the background fixed in size (intentional, no scale parallax).
+- Layers are `pointer-events:none` + `will-change:transform` so the GPU handles the translates without dropping frames.
+- Layers anchor with `isolation:isolate` and z-index -2/-1 to coexist with the Cytoscape canvases (z 1–3) and the edge-glow SVG (z 0).
+- Toggle in Settings → Graph view → **"Galaxy background"** (default ON) controls all three layers together; OFF restores a flat container.
+
 ## v1.4.5 (June 7, 2026) — Galaxy nebula background for the Graph view
 
 **Features**
