@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.5.0 (June 8, 2026) — PTM Core: invariant presuppositions map
+
+The first PTM Core release. A new layer that surfaces the **load-bearing assumptions** your principles silently rest on — and, crucially, the **invariants** shared by several principles. When an invariant fails, you see exactly which principles fall with it.
+
+**New layer: presuppositions (`U-`)**
+- A new `antinomia_type: presupposition` (file prefix `U-`, "Underlying"). Each presupposition is an implicit assumption a principle takes for granted; `presupposes_of` lists the principles that depend on it. Principles gain a `presupposes` list. The two are kept in sync automatically (and a deleted `U-` note is stripped from every principle). Additive — existing vaults are unaffected.
+
+**AI command — "Map presuppositions of this principle"** (principle notes only)
+- Reads the principle's IF/THEN and body and proposes 3–5 genuinely implicit assumptions (not restatements). It is **deduplication-aware**: it sees the presuppositions already in your vault and prefers linking to an existing one over creating a near-duplicate. A review modal lets you, per item, create new / link existing / edit / skip; on confirm the bidirectional links are written.
+
+**Invariants in the Graph**
+- A 7th filter — **Presuppositions** (gold nodes, default on) — plus `principle → presupposes → presupposition` edges. A presupposition shared by **more than one** principle is a **load-bearing assumption**: it renders larger, brighter, ringed in gold, with a tooltip naming how many principles it supports.
+
+**Dedicated Presuppositions Map** (ribbon, key icon)
+- Lists every presupposition with the principles resting on it. Filter to **load-bearing only**, sort by **most-supported**, click to open, or ask **"What collapses if this fails?"** — a modal listing the affected principles, with a button to mark the assumption **undermined**.
+
+**Example vault** now seeds two principles plus five presuppositions where one — *"Budget clarity signals client seriousness"* — is shared by both, so opening the example and the graph shows a real gold invariant. `EXAMPLE-KEY.md` explains the concept.
+
+Tests: 132 → 148 (presupposition parser, dedup/sync helpers, and an integration test of the full create→link→sync→delete cycle).
+
 ## v1.4.6 (June 8, 2026) — 3D parallax graph
 
 **Features**
