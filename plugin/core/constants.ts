@@ -13,6 +13,7 @@ export const TYPE = {
   principle: "principle",
   defeated: "defeated",
   meta: "meta_note",
+  presupposition: "presupposition",
 } as const;
 
 export const VIEW_TYPE_OPEN_TENSIONS = "antinomia-open-tensions";
@@ -26,6 +27,7 @@ export const VIEW_TYPE_DASHBOARD = "antinomia-dashboard";
 export const VIEW_TYPE_AUDIT = "antinomia-audit";
 export const VIEW_TYPE_GRAPH = "antinomia-graph";
 export const VIEW_TYPE_UNCLASSIFIED = "antinomia-unclassified";
+export const VIEW_TYPE_PRESUPPOSITIONS_MAP = "antinomia-presuppositions-map";
 
 export const GRAPH_STYLE_PRESETS: Record<string, GraphColors> = {
   default: {
@@ -110,6 +112,7 @@ export const DEFAULT_GRAPH_FILTERS: GraphFilters = {
   principle: true,
   defeated: true,
   meta_note: true,
+  presupposition: true,
 };
 
 export const LAYER_COLORS: Record<string, string> = {
@@ -120,6 +123,7 @@ export const LAYER_COLORS: Record<string, string> = {
   principle: "#2e7d32",         // verde scuro
   defeated: "#e53935",          // rosso
   meta_note: "#7e57c2",         // viola
+  presupposition: "#fbbf24",    // gold — load-bearing assumptions
   unknown: "#607d8b",
 };
 
@@ -132,6 +136,7 @@ export const LAYER_SHAPES: Record<string, string> = {
   principio: "ellipse",
   defeated: "ellipse",
   meta_nota: "ellipse",
+  presupposition: "ellipse",
   unknown: "ellipse",
 };
 
