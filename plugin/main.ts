@@ -1596,7 +1596,7 @@ export default class AntinomiaPlugin extends Plugin {
 
     this.addCommand({
       id: "map-presupposti",
-      name: "map presuppositions (AI)",
+      name: "Map tension presuppositions",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file) return false;

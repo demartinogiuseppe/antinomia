@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.5.1 (June 8, 2026) — UX polish for the presuppositions map
+
+- **UX:** the **Presuppositions Map** is now reachable from the global Antinomia nav menu (🔑 Presuppositions, between Graph and Audit) — not just the ribbon icon and command palette.
+- **UX:** renamed the legacy tension command **"map presuppositions (AI)" → "Map tension presuppositions"** so it no longer collides with the v1.5.0 "Map presuppositions of this principle". The inline tension-card button tooltip is clarified to match.
+
 ## v1.5.0 (June 8, 2026) — PTM Core: invariant presuppositions map
 
 The first PTM Core release. A new layer that surfaces the **load-bearing assumptions** your principles silently rest on — and, crucially, the **invariants** shared by several principles. When an invariant fails, you see exactly which principles fall with it.

@@ -208,7 +208,7 @@ export class OpenTensionsView extends ItemView {
           void this.plugin.linkActiveTo(file, target);
         }).open();
       });
-      mkBtn("Presuppositions", "Map presuppositions A/B (AI-assisted)", () => {
+      mkBtn("Presuppositions", "Map tension presuppositions A/B (AI-assisted)", () => {
         void this.plugin.openMapPresupposti(file);
       });
       const elBtn = mkBtn(

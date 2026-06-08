@@ -2,7 +2,7 @@
 
 import { Menu, Notice, TFile, WorkspaceLeaf, setIcon } from "obsidian";
 import type AntinomiaPlugin from "../main";
-import { TYPE, VIEW_TYPE_AUDIT, VIEW_TYPE_DASHBOARD, VIEW_TYPE_DEFEATED_LIST, VIEW_TYPE_DISMISSED_PAIRS, VIEW_TYPE_GRAPH, VIEW_TYPE_HUNTER_RESULTS, VIEW_TYPE_ONBOARDING, VIEW_TYPE_OPEN_TENSIONS, VIEW_TYPE_PRINCIPLES_LIST, VIEW_TYPE_SUBSTRATE_LIST, VIEW_TYPE_UNCLASSIFIED } from "../core/constants";
+import { TYPE, VIEW_TYPE_AUDIT, VIEW_TYPE_DASHBOARD, VIEW_TYPE_DEFEATED_LIST, VIEW_TYPE_DISMISSED_PAIRS, VIEW_TYPE_GRAPH, VIEW_TYPE_HUNTER_RESULTS, VIEW_TYPE_ONBOARDING, VIEW_TYPE_OPEN_TENSIONS, VIEW_TYPE_PRESUPPOSITIONS_MAP, VIEW_TYPE_PRINCIPLES_LIST, VIEW_TYPE_SUBSTRATE_LIST, VIEW_TYPE_UNCLASSIFIED } from "../core/constants";
 import { substrateTemplate, tensionTemplate } from "../core/templates";
 import { FreeInputModal } from "../modals/FreeInputModal";
 import { GuidanceModal } from "../modals/GuidanceModal";
@@ -177,6 +177,9 @@ export function renderAntinomiaNav(
 
   // -- Graph (custom)
   mkBtn("🕸 Graph", () => goTo(VIEW_TYPE_GRAPH));
+
+  // -- Presuppositions Map (opens in the right sidebar, like its ribbon icon)
+  mkBtn("🔑 Presuppositions", () => goTo(VIEW_TYPE_PRESUPPOSITIONS_MAP));
 
   // -- Audit
   mkBtn("🩺 Audit", () => goTo(VIEW_TYPE_AUDIT));
