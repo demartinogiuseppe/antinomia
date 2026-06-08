@@ -14,6 +14,10 @@ export class AntinomiaGraphView extends ItemView {
   layoutName = "clusters";
   cy: any = null; // cytoscape Core, kept any for build size
   graphContainer: HTMLElement | null = null;
+  // Parallax background layers (3D galaxy effect). Null when the galaxy
+  // background setting is off.
+  private galaxyLayer: HTMLElement | null = null;
+  private starsLayer: HTMLElement | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: AntinomiaPlugin) {
     super(leaf);
@@ -184,11 +188,14 @@ export class AntinomiaGraphView extends ItemView {
     const container = contentEl.createDiv();
     container.style.flex = "1";
     container.style.minHeight = "0"; // permette al flex item di restringersi
-    // backgroundColor (not the `background` shorthand) so the galaxy class's
-    // background-image can compose over the base colour instead of resetting it.
+    // backgroundColor is the base shown when the galaxy background is off.
     container.style.backgroundColor = "var(--background-primary)";
     container.style.overflow = "hidden";
     container.style.position = "relative";
+    // isolation:isolate makes the container a stacking context so the parallax
+    // background layers (negative z-index) stay contained above its base colour
+    // and strictly below the graph content (edge SVG, canvases, label SVG).
+    container.style.isolation = "isolate";
     this.graphContainer = container;
     this.applyGalaxyClass();
 
@@ -391,14 +398,63 @@ export class AntinomiaGraphView extends ItemView {
    * colors vengono riapplicati. Chiamato quando l'utente cambia stile.
    */
   /**
-   * Add/remove the static galaxy-nebula background class on the container per
-   * the `galaxyBackground` setting (default on). Pure CSS toggle — no rebuild,
-   * applies live.
+   * Build a CSS background-image string of `count` randomly-placed white stars
+   * (radial-gradients). Static per layer creation (a fresh seed each time the
+   * layer is built / view opened).
+   */
+  private generateStarsBackground(count: number): string {
+    const stars: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const x = (Math.random() * 100).toFixed(1);
+      const y = (Math.random() * 100).toFixed(1);
+      const size = (0.8 + Math.random() * 1.5).toFixed(1); // 0.8–2.3 px
+      const opacity = (0.4 + Math.random() * 0.6).toFixed(2); // 0.4–1.0
+      stars.push(
+        `radial-gradient(circle ${size}px at ${x}% ${y}%, rgba(255,255,255,${opacity}) 0%, transparent 100%)`
+      );
+    }
+    return stars.join(", ");
+  }
+
+  /** Translate the background layers per the current cy pan (parallax on PAN). */
+  private applyParallaxTransform(): void {
+    if (!this.cy) return;
+    const GALAXY_PARALLAX = 0.15;
+    const STARS_PARALLAX = 0.5;
+    const pan = this.cy.pan();
+    if (this.galaxyLayer)
+      this.galaxyLayer.style.transform = `translate(${pan.x * GALAXY_PARALLAX}px, ${pan.y * GALAXY_PARALLAX}px)`;
+    if (this.starsLayer)
+      this.starsLayer.style.transform = `translate(${pan.x * STARS_PARALLAX}px, ${pan.y * STARS_PARALLAX}px)`;
+  }
+
+  /**
+   * Create or tear down the 3 parallax background layers per the
+   * `galaxyBackground` setting (default on). Live — no full rebuild. Robust to
+   * the container being emptied (uses isConnected, not just the field).
    */
   applyGalaxyClass(): void {
     if (!this.graphContainer) return;
     const on = this.plugin.settings.galaxyBackground !== false;
-    this.graphContainer.classList.toggle("antinomia-graph-galaxy", on);
+    const present = !!this.galaxyLayer?.isConnected;
+    if (on && !present) {
+      const galaxy = this.graphContainer.createDiv({
+        cls: "antinomia-graph-galaxy-layer",
+      });
+      galaxy.createDiv({ cls: "antinomia-graph-galaxy-overlay" });
+      const stars = this.graphContainer.createDiv({
+        cls: "antinomia-graph-stars-layer",
+      });
+      stars.style.backgroundImage = this.generateStarsBackground(100);
+      this.galaxyLayer = galaxy;
+      this.starsLayer = stars;
+      this.applyParallaxTransform(); // align with current pan immediately
+    } else if (!on) {
+      this.galaxyLayer?.remove();
+      this.starsLayer?.remove();
+      this.galaxyLayer = null;
+      this.starsLayer = null;
+    }
   }
 
   applyStyleChange(): void {
@@ -1004,6 +1060,11 @@ export class AntinomiaGraphView extends ItemView {
     // on top of the Cytoscape canvases. Each path is wrapped in an SVG
     // <filter> with <feGaussianBlur>, which gives a true gradient halo.
     this.setupEdgeGlowOverlay();
+
+    // Parallax on PAN only (not zoom): translate the galaxy/stars layers a
+    // fraction of the pan so nodes move 1:1, stars ~half, nebula barely.
+    this.cy.on("pan", () => this.applyParallaxTransform());
+    this.applyParallaxTransform(); // initial alignment
 
     // Custom wheel handler: ogni step della rotella raddoppia/dimezza lo zoom,
     // centrato sulla posizione del cursore (zoom-to-pointer).
