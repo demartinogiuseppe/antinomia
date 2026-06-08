@@ -7,7 +7,7 @@ import { App, Notice, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf } 
 
 import type { Profile, GraphColors, BackendPreset, TutorialStep, PdfExtractResult, ClassifyResult, TitleProposal, PresuppostiFields, PdfConcept, PdfConceptsResult, AIUsageMeta, FreeInputAnalysis, HunterConfidence, HunterContradiction, HunterResult, HunterRunMetadata, HunterRun, DefeatedSubmit, TensionFields, SubstrateFields, PrincipleFields, GraphFilters, ClaudeResponse } from "./core/types";
 
-import { FOLDER, TYPE, VIEW_TYPE_OPEN_TENSIONS, VIEW_TYPE_HUNTER_RESULTS, VIEW_TYPE_DISMISSED_PAIRS, VIEW_TYPE_SUBSTRATE_LIST, VIEW_TYPE_PRINCIPLES_LIST, VIEW_TYPE_DEFEATED_LIST, VIEW_TYPE_ONBOARDING, VIEW_TYPE_DASHBOARD, VIEW_TYPE_AUDIT, VIEW_TYPE_GRAPH, VIEW_TYPE_UNCLASSIFIED, GRAPH_STYLE_PRESETS, BACKEND_PRESETS } from "./core/constants";
+import { FOLDER, TYPE, VIEW_TYPE_OPEN_TENSIONS, VIEW_TYPE_HUNTER_RESULTS, VIEW_TYPE_DISMISSED_PAIRS, VIEW_TYPE_SUBSTRATE_LIST, VIEW_TYPE_PRINCIPLES_LIST, VIEW_TYPE_DEFEATED_LIST, VIEW_TYPE_ONBOARDING, VIEW_TYPE_DASHBOARD, VIEW_TYPE_AUDIT, VIEW_TYPE_GRAPH, VIEW_TYPE_UNCLASSIFIED, VIEW_TYPE_PRESUPPOSITIONS_MAP, GRAPH_STYLE_PRESETS, BACKEND_PRESETS } from "./core/constants";
 
 import { todayISO, timestampId, ensureFolder, isLocalBaseUrl } from "./core/utils";
 
@@ -88,6 +88,7 @@ import { DashboardView } from "./views/DashboardView";
 import { AuditVaultView } from "./views/AuditVaultView";
 
 import { UnclassifiedNotesView } from "./views/UnclassifiedNotesView";
+import { PresuppositionsMapView } from "./views/PresuppositionsMapView";
 
 import { AntinomiaGraphView } from "./views/AntinomiaGraphView";
 
@@ -1127,6 +1128,10 @@ export default class AntinomiaPlugin extends Plugin {
       (leaf) => new UnclassifiedNotesView(leaf, this)
     );
     this.registerView(
+      VIEW_TYPE_PRESUPPOSITIONS_MAP,
+      (leaf) => new PresuppositionsMapView(leaf, this)
+    );
+    this.registerView(
       VIEW_TYPE_GRAPH,
       (leaf) => new AntinomiaGraphView(leaf, this)
     );
@@ -1142,6 +1147,9 @@ export default class AntinomiaPlugin extends Plugin {
     );
     this.addRibbonIcon("git-fork", "Antinomia: Graph View", () =>
       this.activateView(VIEW_TYPE_GRAPH, "tab")
+    );
+    this.addRibbonIcon("key", "Antinomia: Presuppositions Map", () =>
+      this.activateView(VIEW_TYPE_PRESUPPOSITIONS_MAP, "right")
     );
 
     // Auto-open Dashboard + Graph on startup if their settings are on.
@@ -1225,6 +1233,11 @@ export default class AntinomiaPlugin extends Plugin {
         if (ok && !checking) void showCollapseImpact(this, file);
         return ok;
       },
+    });
+    this.addCommand({
+      id: "open-presuppositions-map",
+      name: "Open Presuppositions Map",
+      callback: () => void this.activateView(VIEW_TYPE_PRESUPPOSITIONS_MAP, "right"),
     });
     this.addCommand({
       id: "new-tension",
