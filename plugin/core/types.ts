@@ -157,6 +157,28 @@ export interface GraphFilters {
   principle: boolean;
   defeated: boolean;
   meta_note: boolean;
+  presupposition: boolean;
+}
+
+// --- Presuppositions (v1.5 — PTM Core) ---
+
+export interface PresuppositionFields {
+  title?: string;
+  text?: string;
+  confidence?: "high" | "medium" | "low";
+  presupposes_of?: string[];
+}
+
+/** One AI-proposed presupposition for a principle. */
+export interface PresuppositionProposal {
+  text: string;
+  confidence: "high" | "medium" | "low";
+  /** Basename of an existing U- note this overlaps with, or null to create new. */
+  similar_existing: string | null;
+}
+
+export interface PresuppositionMapResult {
+  presuppositions: PresuppositionProposal[];
 }
 
 // AI transport (wire) types. Kept here rather than in ai/callAI.ts so that

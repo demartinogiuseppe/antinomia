@@ -105,6 +105,51 @@ links: []
 > Replaced by: [[${sostituitaDaBasename}]]
 `;
 
+    // Presupposition-demo templates (v1.5): a principle that lists the U- notes
+    // it rests on, and a presupposition that lists the principles resting on it.
+    const links = (ids: string[]) => ids.map((i) => `"[[${i}]]"`).join(", ");
+    const presupPrincipleTpl = (
+      title: string,
+      ifClause: string,
+      thenClause: string,
+      presupposes: string[]
+    ) => `---
+antinomia_type: ${TYPE.principle}
+title: ${yamlQuote(title)}
+date: ${today}
+modified_date: ${today}
+origin: example
+antinomia_example: true
+presupposes: [${links(presupposes)}]
+links: []
+---
+- **IF ${ifClause} -> THEN ${thenClause}**
+- **GREY ZONE:**
+`;
+    const presuppositionTpl = (
+      title: string,
+      text: string,
+      confidence: string,
+      of: string[]
+    ) => `---
+antinomia_type: ${TYPE.presupposition}
+title: ${yamlQuote(title)}
+status: active
+confidence: ${confidence}
+presupposes_of: [${links(of)}]
+creation_date: ${today}
+modified_date: ${today}
+base_language: en
+antinomia_example: true
+---
+${text}
+
+> Describe when this assumption holds, counter-examples, and sources.
+`;
+    const P_A = "EXAMPLE-P-decline-vague-budget";
+    const P_B = "EXAMPLE-P-require-written-scope";
+    const U_SHARED = "EXAMPLE-U-budget-seriousness";
+
     // 18 messy-vault notes + 2 Design C (P + D linked).
     // Basenames use the EXAMPLE- prefix for easy visual identification.
     const PRINC_ID = "EXAMPLE-P-quantity-quality";
@@ -196,6 +241,57 @@ links: []
           "There is a grey zone when exploration and consolidation overlap (e.g. professional creative work): in that case the criterion becomes the cost of a single error.",
           DEF_ID
         )},
+      // --- Presupposition demo (v1.5): 2 principles, 5 presuppositions, one
+      // shared (EXAMPLE-U-budget-seriousness has degree 2 -> load-bearing). ---
+      { id: P_A,
+        content: presupPrincipleTpl(
+          "EXAMPLE - Principle: decline projects with a vague budget",
+          "the client's budget is still vague after one clarification",
+          "decline the project",
+          [U_SHARED, "EXAMPLE-U-cant-clarify-quickly", "EXAMPLE-U-bad-fit-costly"]
+        )},
+      { id: P_B,
+        content: presupPrincipleTpl(
+          "EXAMPLE - Principle: require a written scope before starting",
+          "the scope was agreed only verbally",
+          "require a written scope first",
+          [U_SHARED, "EXAMPLE-U-verbal-scope-drifts", "EXAMPLE-U-clients-accept-process"]
+        )},
+      { id: U_SHARED,
+        content: presuppositionTpl(
+          "EXAMPLE - Budget clarity signals client seriousness",
+          "If a client cannot articulate a budget range, the project usually is not a real priority for them.",
+          "high",
+          [P_A, P_B]
+        )},
+      { id: "EXAMPLE-U-cant-clarify-quickly",
+        content: presuppositionTpl(
+          "EXAMPLE - A vague budget cannot be clarified in a short call",
+          "One clarifying conversation is not enough to turn a vague budget into a reliable one.",
+          "medium",
+          [P_A]
+        )},
+      { id: "EXAMPLE-U-bad-fit-costly",
+        content: presuppositionTpl(
+          "EXAMPLE - A bad-fit project costs more than its revenue",
+          "The hidden cost of a misaligned project (rework, stress, reputation) outweighs the money it brings in.",
+          "high",
+          [P_A]
+        )},
+      { id: "EXAMPLE-U-verbal-scope-drifts",
+        content: presuppositionTpl(
+          "EXAMPLE - Verbal scope inevitably drifts",
+          "Scope agreed only in conversation expands over time because neither side has a fixed reference.",
+          "high",
+          [P_B]
+        )},
+      { id: "EXAMPLE-U-clients-accept-process",
+        content: presuppositionTpl(
+          "EXAMPLE - Good clients accept a written process",
+          "A client worth working with will not refuse to put the scope in writing.",
+          "medium",
+          [P_B]
+        )},
     ];
 
     let created = 0;
@@ -276,6 +372,19 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
 
 ---
 
+## Load-bearing assumptions (presuppositions, v1.5)
+
+Two example principles are seeded with the implicit assumptions they rest on:
+
+- **"Decline projects with a vague budget"** presupposes: *budget clarity signals client seriousness*, *a vague budget can't be clarified in a short call*, *a bad-fit project costs more than its revenue*.
+- **"Require a written scope before starting"** presupposes: *budget clarity signals client seriousness*, *verbal scope inevitably drifts*, *good clients accept a written process*.
+
+Notice that **"Budget clarity signals client seriousness"** is shared by BOTH principles. In the Graph (or the dedicated **Presuppositions Map**, key icon in the ribbon) it shows up as a larger, gold, glowing node — a **load-bearing assumption**. If that single assumption turned out to be false, BOTH principles would collapse with it. Run **"What collapses if this fails?"** on it to see exactly which.
+
+That is the point of the presupposition layer: surfacing the invariants your principles silently depend on, so you can see what your thinking is actually resting on.
+
+---
+
 ## How to measure the Hunter
 
 - **Recall on CN1, CN2** (sharp): if even one is missed, serious model problem.
@@ -292,7 +401,7 @@ Open the Antinomia Graph — you'll see the two nodes connected by a red edge (d
     }
 
     new Notice(
-      `Examples created: ${created} notes (18 messy + 2 Design C + 1 KEY). Removable via 'delete examples'.`
+      `Examples created: ${created} notes (18 messy + 2 Design C + 2 principles + 5 presuppositions + 1 KEY). Removable via 'delete examples'.`
     );
     await plugin.activateView(VIEW_TYPE_OPEN_TENSIONS);
 

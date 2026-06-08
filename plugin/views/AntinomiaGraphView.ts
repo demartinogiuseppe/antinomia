@@ -151,6 +151,7 @@ export class AntinomiaGraphView extends ItemView {
     mkChk("principle", "Principles", "principle");
     mkChk("defeated", "Defeated", "defeated");
     mkChk("meta_note", "Meta", "meta_note");
+    mkChk("presupposition", "Presuppositions", "presupposition");
 
     // Spacer
     const spacer = toolbar.createDiv();
@@ -372,12 +373,40 @@ export class AntinomiaGraphView extends ItemView {
         }
       }
 
+      // presupposes: array of "[[U-X]]" — principle -> presupposition (gold)
+      if (Array.isArray(fm.presupposes)) {
+        for (const u of fm.presupposes) {
+          const b = extractBasenameFromWikilink(u);
+          if (b) addEdge(f.basename, b, "presupposes");
+        }
+      }
+
       // wikilinks in body (resolved via metadataCache.links is better but we keep simple)
       const cache = this.app.metadataCache.getFileCache(f);
       if (cache?.links) {
         for (const lk of cache.links) {
           const target = lk.link.split("/").pop() || lk.link;
           addEdge(f.basename, target, "body");
+        }
+      }
+    }
+
+    // Invariant detection: a presupposition with > 1 incoming `presupposes`
+    // edge is "load-bearing" (shared by multiple principles). Flag it so the
+    // style can enlarge + brighten it and the tooltip can name the count.
+    const supportCount = new Map<string, number>();
+    for (const e of edges) {
+      if (e.data.kind === "presupposes") {
+        supportCount.set(e.data.target, (supportCount.get(e.data.target) ?? 0) + 1);
+      }
+    }
+    for (const n of nodes) {
+      if (n.data.layer === "presupposition") {
+        const deg = supportCount.get(n.data.id) ?? 0;
+        n.data.degree = deg;
+        if (deg > 1) {
+          n.data.loadBearing = true;
+          n.data.fullTitle = `${n.data.fullTitle}\n⭐ Load-bearing assumption — supports ${deg} principles`;
         }
       }
     }
@@ -965,6 +994,20 @@ export class AntinomiaGraphView extends ItemView {
               "opacity, text-opacity, background-image-opacity, width, height, color",
             "transition-duration": 130,
             "transition-timing-function": "ease-out",
+          },
+        },
+        // Load-bearing presuppositions (shared by >1 principle): 1.5x size,
+        // brighter glow, and a thick gold ring — the invariants that, if they
+        // fail, take multiple principles down with them.
+        {
+          selector: "node[?loadBearing]",
+          style: {
+            width: 48,
+            height: 48,
+            "background-image": "data(glowBright)",
+            "border-width": 22,
+            "border-color": "#fbbf24",
+            "border-opacity": 0.55,
           },
         },
         // All edges are kept in the graph (for the layout engine and

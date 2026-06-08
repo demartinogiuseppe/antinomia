@@ -1,10 +1,40 @@
 // Antinomia — markdown note templates (raw frontmatter + body).
 // Extracted from main.ts (refactor v1.5).
 
-import type { TensionFields, SubstrateFields, PrincipleFields } from "./types";
+import type {
+  TensionFields,
+  SubstrateFields,
+  PrincipleFields,
+  PresuppositionFields,
+} from "./types";
 import { TYPE } from "./constants";
 import { todayISO } from "./utils";
 import { yamlQuote } from "./frontmatter";
+
+/**
+ * Build a presupposition (U-) note: an implicit assumption a principle rests on.
+ * `presupposes_of` lists the principle basenames that depend on it.
+ */
+export function presuppositionTemplate(fields: PresuppositionFields = {}): string {
+  const date = todayISO();
+  const titleLine = fields.title ? `title: ${yamlQuote(fields.title)}` : "title:";
+  const of = (fields.presupposes_of ?? []).map((p) => `"[[${p}]]"`).join(", ");
+  const text = fields.text?.trim() ?? "";
+  return `---
+antinomia_type: ${TYPE.presupposition}
+${titleLine}
+status: active
+confidence: ${fields.confidence ?? "medium"}
+presupposes_of: [${of}]
+creation_date: ${date}
+modified_date: ${date}
+base_language: en
+---
+${text}
+
+> Describe when this assumption holds, counter-examples, and sources.
+`;
+}
 
 export function tensionTemplate(fields: TensionFields = {}): string {
   const date = todayISO();

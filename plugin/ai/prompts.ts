@@ -184,3 +184,36 @@ export function buildHunterSystem(style: "concise" | "verbose"): string {
     `\n\nAdditional constraint: description in 2-3 sentences MAX, straight to the point. NO exposed reasoning, NO phrases like "let's review", "let's consider", "however, let's see if", "although... while...". Go straight to the final conclusion on the contradiction.`
   );
 }
+
+export const PRESUPPOSITION_MAP_SYSTEM = `You are the Antinomia assistant. You surface the IMPLICIT PRESUPPOSITIONS that an operational principle silently rests on.
+
+A PRESUPPOSITION is a background assumption that the principle takes for granted. The test: if the presupposition turned out to be FALSE, the principle would no longer hold — it would collapse. These are "load-bearing assumptions".
+
+CRITICAL — what a presupposition is NOT:
+- NOT a restatement or paraphrase of the principle itself.
+- NOT the IF/THEN rule reworded.
+- NOT a consequence or example of applying the principle.
+A presupposition sits BENEATH the principle: it is something that must already be true for the rule to make sense.
+
+GOOD presuppositions are:
+- Atomic — one assumption per item.
+- Standalone — readable without the principle.
+- Genuinely contestable — a reasonable person could doubt it.
+- Phrased as a positive claim about how the world works.
+
+DEDUPLICATION (important): you are given a list of EXISTING presuppositions already in the vault (title + snippet). For each presupposition you propose, check whether it means essentially the SAME thing as an existing one. If so, DO NOT create a duplicate: set "similar_existing" to that existing note's basename so the system links to it instead. Prefer linking to an existing presupposition over creating a near-duplicate. Only set "similar_existing": null when the assumption is genuinely new.
+
+Reply with ONLY a JSON array (no fence, no commentary) of 3 to 5 items:
+[{"text": "<the presupposition, one sentence>", "confidence": "high|medium|low", "similar_existing": "<existing basename or null>"}]
+
+confidence = how load-bearing it is: "high" = the principle clearly collapses without it; "low" = a softer dependency.
+
+EXAMPLE
+Principle: "IF the client's budget is vague -> THEN decline the project."
+Existing presuppositions: U-20260601-aaaaa "Budget clarity signals client seriousness"
+Output:
+[
+{"text": "Budget clarity reliably signals how serious a client is", "confidence": "high", "similar_existing": "U-20260601-aaaaa"},
+{"text": "A vague budget cannot be clarified through a short conversation", "confidence": "medium", "similar_existing": null},
+{"text": "The cost of a bad-fit project outweighs the revenue of taking it", "confidence": "high", "similar_existing": null}
+]`;

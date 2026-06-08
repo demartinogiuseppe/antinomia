@@ -32,6 +32,7 @@ export function layerKey(fm: any): keyof GraphFilters | null {
     return "defeated";
   }
   if (t === TYPE.meta) return "meta_note";
+  if (t === TYPE.presupposition) return "presupposition";
   return null;
 }
 
