@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.5.7 (June 10, 2026) — YouTube concept extraction (AI)
+
+New ingest pipeline at full PDF-parity for YouTube videos: instead of capturing a video's transcript as a single substrate, the AI now extracts the key concepts and creates a cluster of substrates plus a meta_note hub that holds the full transcript inline.
+
+- **New command:** *"Substrate from YouTube — extract concepts (AI)"*. Flow: paste URL → fetch transcript (auto + paste-manual fallback) → `AIProgressModal` with Stop button → concepts preview/pick modal → bulk-create substrates + meta_note hub note `H-…` in `notes/from-youtube-<title>/`.
+- **Hub note** preserves the full untruncated transcript inline (unlike PDF, the source video is external — YouTube can remove captions, the video can go private, the channel can close; the hub is the preserved source of truth).
+- **Shared `fetchTranscriptWithFallback`** helper so both the old single-substrate command and the new concept-extraction command go through the same fetch path with the same paste-assisted fallback when YouTube blocks the auto fetch.
+- **Old command** *"Substrate from YouTube (fetch transcript)"* unchanged — single-substrate quick path still available.
+- **Bonus:** `ConceptsPreviewModal` generalized (source-agnostic; was PDF-specific); `extractConceptsFromPdfText` gains optional `operationLabel` so the token notice reads "YouTube concepts" vs "PDF concepts"; residual Italian strings in the YouTube fallback modal translated.
+- **Tech:** AI input capped at 30k chars (PDF parity, protects small local-model context windows) — full transcript still stored in the hub.
+
+No schema changes, no breaking, no new settings.
+
 ## v1.5.6 (June 9, 2026) — Map presuppositions: standard AI progress modal
 
 - **UX:** Map presuppositions AI flow now uses the standard progress modal (Stop + token usage notice). Launching *"Map presuppositions of this principle"* (command palette or the 🔑 card button) now shows the same loading UI as Hunter / PDF extract / title flows: a modal with a live elapsed timer and a **⛔ Stop** button that aborts the in-flight AI call. On completion the modal closes, a clickable *"tokens used"* notice appears (→ token details), and the review modal opens. Stop closes the modal with no notice and no review; errors (e.g. local backend offline) show the standard error modal.
