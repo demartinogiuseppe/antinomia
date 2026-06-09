@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.5.3 (June 9, 2026) — Map presuppositions button on principle cards
+
+Small UX add: each principle card in the **Principles (Truth Archive)** sidebar now exposes a **🔑 Presuppositions** button that runs *"Map presuppositions of this principle"* directly — no need to open the command palette and re-find the action every time.
+
+- **UX:** added inline 🔑 Presuppositions button on each principle card (next to Title / Link / × Defeated). Tooltip: *"Map presuppositions of this principle (AI)"*.
+- Same AI flow as the command palette entry — opens the review modal with deduplication against existing `U-` notes.
+
+No schema changes, no breaking, no new settings.
+
 ## v1.5.2 (June 9, 2026) — IT residual cleanup in Principles view and elevation flow
 
 Bonifica di 5 stringhe italiane mai tradotte dalla v1.2.0 English release. Sono tutte user-visible: emergevano nell'header della Principles view, nel prefix di origine delle card principio, e nelle note generate quando si eleva una tensione a principio.

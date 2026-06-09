@@ -63,6 +63,7 @@ export class PrinciplesListView extends ItemView {
       renderNoteCard(container, this.app, this.plugin, file, {
         showCollega: true,
         showDefeated: true,
+        showMapPresuppositions: true,
         extraInfo: (card, fm) => {
           const origin = fm?.origin_tension;
           if (typeof origin === "string" && origin.length > 0) {

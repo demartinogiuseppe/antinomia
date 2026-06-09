@@ -4,6 +4,7 @@ import { App, TFile } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { humanTitle } from "../core/frontmatter";
 import { NotePickerModal } from "../modals/NotePickerModal";
+import { mapPresuppositionsOfPrinciple } from "../flows/presuppositionMap";
 
 export function renderNoteCard(
   container: HTMLElement,
@@ -14,6 +15,7 @@ export function renderNoteCard(
     showLink?: boolean;
     showCollega?: boolean;
     showDefeated?: boolean;
+    showMapPresuppositions?: boolean;
     extraInfo?: (card: HTMLElement, fm: Record<string, unknown> | undefined) => void;
   }
 ): void {
@@ -72,6 +74,11 @@ export function renderNoteCard(
   if (options.showDefeated) {
     mkBtn("× Defeated", "Archive as defeated (opens motive modal)", () => {
       void plugin.archiveAsDefeated(file);
+    });
+  }
+  if (options.showMapPresuppositions) {
+    mkBtn("🔑 Presuppositions", "Map presuppositions of this principle (AI)", () => {
+      void mapPresuppositionsOfPrinciple(plugin, file);
     });
   }
 }
