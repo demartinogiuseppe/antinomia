@@ -1,16 +1,21 @@
-// PDF concepts preview modal. Extracted from main.ts (refactor v1.5).
+// Concepts preview modal — source-agnostic (PDF, YouTube, …). Lets the user
+// pick which AI-extracted concepts become substrates. Extracted from the
+// former PdfConceptsPreviewModal and generalized over the source.
 
-import { App, Modal, Notice, Setting, TFile } from "obsidian";
+import { App, Modal, Notice, Setting } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { renderUsageMetaBanner } from "../ai/notifyUsage";
 import type { AIUsageMeta, PdfConcept } from "../core/types";
 
-export class PdfConceptsPreviewModal extends Modal {
+export class ConceptsPreviewModal extends Modal {
   private selected: Set<number> = new Set();
   constructor(
     app: App,
     private plugin: AntinomiaPlugin,
-    private pdfFile: TFile,
+    /** Human source label, e.g. a PDF basename or a video title. */
+    private sourceName: string,
+    /** Destination folder the substrates will be created in (display hint). */
+    private folderName: string,
     private concepts: PdfConcept[],
     private extractionMeta: AIUsageMeta,
     private onConfirm: (selectedConcepts: PdfConcept[]) => void
@@ -25,7 +30,7 @@ export class PdfConceptsPreviewModal extends Modal {
     contentEl.style.maxWidth = "780px";
 
     contentEl.createEl("h3", {
-      text: `Concepts from "${this.pdfFile.basename}"`,
+      text: `Concepts from "${this.sourceName}"`,
     });
 
     // Usage meta banner (persistent, clickable for details).
@@ -36,16 +41,16 @@ export class PdfConceptsPreviewModal extends Modal {
     intro.style.opacity = "0.8";
     intro.style.lineHeight = "1.5";
     intro.setText(
-      `Antinomia extracted ${this.concepts.length} concept(s) from the PDF. ` +
+      `Antinomia extracted ${this.concepts.length} concept(s). ` +
         `Pick which ones to save as substrates. They will be created in ` +
-        `notes/from-pdf-${this.pdfFile.basename.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "_")}/.`
+        `${this.folderName}/.`
     );
 
     if (this.concepts.length === 0) {
       const empty = contentEl.createEl("p");
       empty.style.fontStyle = "italic";
       empty.style.opacity = "0.7";
-      empty.setText("No concepts extracted. Try again, or the PDF is too thin / image-only.");
+      empty.setText("No concepts extracted. Try again, or the source is too thin.");
       new Setting(contentEl).addButton((b) =>
         b.setButtonText("Close").setCta().onClick(() => this.close())
       );

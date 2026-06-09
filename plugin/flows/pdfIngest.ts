@@ -12,13 +12,14 @@ import type { AIUsageMeta, PdfConcept, PdfConceptsResult, PdfExtractResult, Prof
 import { ensureFolder, todayISO } from "../core/utils";
 import { withLoadingButton } from "../helpers/withLoadingButton";
 import { PdfAnalyzingModal } from "../modals/PdfAnalyzingModal";
-import { PdfConceptsPreviewModal } from "../modals/PdfConceptsPreviewModal";
+import { ConceptsPreviewModal } from "../modals/ConceptsPreviewModal";
 import { PdfSourcePickerModal } from "../modals/PdfSourcePickerModal";
 
-export async function extractConceptsFromPdfText(plugin: AntinomiaPlugin, 
+export async function extractConceptsFromPdfText(plugin: AntinomiaPlugin,
     text: string,
     signal?: AbortSignal,
-    attachUsageTo?: HTMLButtonElement
+    attachUsageTo?: HTMLButtonElement,
+    operationLabel: string = "PDF concepts"
   ): Promise<{ concepts: PdfConcept[]; meta: AIUsageMeta } | null> {
     const profile = plugin.profileFor("default");
     if (!profile.apiKey) {
@@ -41,7 +42,7 @@ export async function extractConceptsFromPdfText(plugin: AntinomiaPlugin,
         signal,
       });
       notifyAIUsage(
-        "PDF concepts",
+        operationLabel,
         result.usage,
         Date.now() - t0,
         {
@@ -77,7 +78,7 @@ export async function extractConceptsFromPdfText(plugin: AntinomiaPlugin,
         profile: profile.name,
         model: profile.model,
         url: profile.baseUrl,
-        operation: "PDF concepts",
+        operation: operationLabel,
       };
       return { concepts: cleaned, meta };
     } catch (e) {
@@ -400,10 +401,14 @@ export async function runPdfIngest(plugin: AntinomiaPlugin, pdf: TFile): Promise
     if (!result) return; // error modal already shown by extractConcepts (or silent abort)
 
     // Step 3: preview & let the user pick.
-    new PdfConceptsPreviewModal(
+    const pdfFolderHint = `notes/from-pdf-${pdf.basename
+      .replace(/[\\/:*?"<>|]/g, "-")
+      .replace(/\s+/g, "_")}`;
+    new ConceptsPreviewModal(
       plugin.app,
       plugin,
-      pdf,
+      pdf.basename,
+      pdfFolderHint,
       result.concepts,
       result.meta,
       async (picks) => {

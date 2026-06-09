@@ -106,7 +106,7 @@ import { runHunter, undismissContradiction } from "./flows/hunter";
 
 import { openElevateModal, elevateToPrinciple, elevateTransform, elevateSplit, proposeIfThenFromContent } from "./flows/elevation";
 
-import { openSubstrateFromYouTube } from "./flows/youtubeFetch";
+import { openSubstrateFromYouTube, runYouTubeConceptIngest } from "./flows/youtubeFetch";
 
 import { extractConceptsFromPdfText, bulkCreateSubstratesFromConcepts, createOrUpdatePdfHubNote, importPdfFromDisk, openSubstrateFromPDF, runPdfIngest } from "./flows/pdfIngest";
 
@@ -1297,6 +1297,11 @@ export default class AntinomiaPlugin extends Plugin {
       id: "substrate-from-youtube",
       name: "substrate from YouTube (fetch transcript)",
       callback: () => void this.openSubstrateFromYouTube(),
+    });
+    this.addCommand({
+      id: "youtube-extract-concepts",
+      name: "Substrate from YouTube — extract concepts (AI)",
+      callback: () => void runYouTubeConceptIngest(this),
     });
     this.addCommand({
       id: "setup-attachments-folder",
