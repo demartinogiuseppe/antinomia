@@ -16,6 +16,7 @@ import { presuppositionTemplate } from "../core/templates";
 import type { PresuppositionProposal } from "../core/types";
 import { PresuppositionMapModal } from "../modals/PresuppositionMapModal";
 import { CollapseImpactModal } from "../modals/CollapseImpactModal";
+import { AIProgressModal } from "../modals/AIProgressModal";
 
 // --- pure helpers (exported for tests) ------------------------------------
 
@@ -156,7 +157,16 @@ export async function mapPresuppositionsOfPrinciple(
     `PRINCIPLE\nTitle: ${title}\n\n${body}\n\n` +
     `EXISTING PRESUPPOSITIONS IN THE VAULT (prefer linking via similar_existing when meaning matches):\n${existingList}`;
 
-  new Notice("Mapping presuppositions…");
+  // Standard AI-progress UI: spinner + live timer + Stop. The modal owns the
+  // AbortController whose signal we hand to callAI, so Stop interrupts the
+  // in-flight request. Consistent with Hunter / PDF extract / title flows.
+  const progress = new AIProgressModal(
+    app,
+    "Mapping presuppositions…",
+    "Analyzing the principle…"
+  );
+  progress.open();
+
   const t0 = Date.now();
   let proposals: PresuppositionProposal[] | null = null;
   try {
@@ -167,7 +177,13 @@ export async function mapPresuppositionsOfPrinciple(
       system: PRESUPPOSITION_MAP_SYSTEM,
       messages: [{ role: "user", content: userContent }],
       taskClass: "medium",
+      signal: progress.controller.signal,
     });
+    progress.setStatus("Preparing review…");
+    proposals = parsePresuppositionsFromAIResponse(result.text);
+    progress.close();
+    // Token-usage notice (click → details). Only after a real completion, so
+    // an aborted run never reports phantom tokens.
     notifyAIUsage(
       "Presuppositions",
       result.usage,
@@ -175,13 +191,16 @@ export async function mapPresuppositionsOfPrinciple(
       { app, profile: profile.name, model: profile.model, url: profile.baseUrl },
       attachToButton
     );
-    proposals = parsePresuppositionsFromAIResponse(result.text);
   } catch (e) {
+    progress.close();
+    // Silent on user abort — no error modal, no token notice.
+    const msg = (e as Error).message;
+    if (progress.controller.signal.aborted || msg === "hunter_aborted") return;
     showErrorModal(
       app,
       "Presupposition mapping error",
-      `Couldn't map presuppositions. ${(e as Error).message}`,
-      `Profile: ${profile.name} (${profile.model})\n\n${(e as Error).message}`
+      `Couldn't map presuppositions. ${msg}`,
+      `Profile: ${profile.name} (${profile.model})\n\n${msg}`
     );
     return;
   }

@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.5.6 (June 9, 2026) — Map presuppositions: standard AI progress modal
+
+- **UX:** Map presuppositions AI flow now uses the standard progress modal (Stop + token usage notice). Launching *"Map presuppositions of this principle"* (command palette or the 🔑 card button) now shows the same loading UI as Hunter / PDF extract / title flows: a modal with a live elapsed timer and a **⛔ Stop** button that aborts the in-flight AI call. On completion the modal closes, a clickable *"tokens used"* notice appears (→ token details), and the review modal opens. Stop closes the modal with no notice and no review; errors (e.g. local backend offline) show the standard error modal.
+- New reusable `modals/AIProgressModal` (title + dynamic status line + elapsed timer + Stop → `AbortController.abort()`), shared loading UI for command-context AI flows.
+- **Polish:** load-bearing presupposition nodes in the graph no longer draw a gold ring — the translucent border read as a detached second circle. Size + brighter glow alone flag the invariants.
+
+No schema changes, no breaking, no new settings.
+
 ## v1.5.5 (June 9, 2026) — Cross-pane hover highlight + presupposition polish
 
 Hovering now connects the **Antinomia Graph** to the rest of Obsidian. The link is bidirectional and goes through a single central "hover bus", so there are no feedback loops and everything is torn down cleanly on unload.

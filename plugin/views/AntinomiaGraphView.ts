@@ -1019,19 +1019,16 @@ export class AntinomiaGraphView extends ItemView {
             "transition-timing-function": "ease-out",
           },
         },
-        // Load-bearing presuppositions (shared by >1 principle): 1.5x size,
-        // brighter glow, and a soft gold ring — the invariants that, if they
-        // fail, take multiple principles down with them. Ring kept thin and
-        // semi-transparent so it reads as a soft glow halo, not a marker.
+        // Load-bearing presuppositions (shared by >1 principle): 1.5x size +
+        // brighter glow. No border — a translucent border ring would visually
+        // detach from the disc and read as "two circles". The size + glow
+        // delta alone is enough to flag the invariants.
         {
           selector: "node[?loadBearing]",
           style: {
             width: 48,
             height: 48,
             "background-image": "data(glowBright)",
-            "border-width": 8,
-            "border-color": "#fbbf24",
-            "border-opacity": 0.28,
           },
         },
         // All edges are kept in the graph (for the layout engine and
