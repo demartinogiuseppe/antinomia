@@ -31,9 +31,33 @@ export function basenamesFromFrontmatter(value: unknown): string[] {
   return value.map((v) => linkToBasename(String(v))).filter(Boolean);
 }
 
-/** Wrap basenames as wikilinks for writing to frontmatter. */
-export function toWikilinks(basenames: string[]): string[] {
-  return basenames.map((b) => `[[${b}]]`);
+/**
+ * Wrap basenames as wikilinks for writing to frontmatter.
+ * If a `titles` map is provided, basenames with a known human title become
+ * aliased wikilinks `[[basename|title]]` — so the frontmatter reads naturally
+ * in source view, not as opaque `U-1749…` IDs.
+ */
+export function toWikilinks(basenames: string[], titles?: Map<string, string>): string[] {
+  return basenames.map((b) => {
+    const t = titles?.get(b);
+    return t && t !== b ? `[[${b}|${t}]]` : `[[${b}]]`;
+  });
+}
+
+/**
+ * Build a basename → human title lookup from every markdown file in the vault.
+ * Uses the `title` frontmatter field (set by the Antinomia title flow / Front
+ * Matter Title plugin). Files without a title are simply absent from the map.
+ */
+export function buildTitleLookup(app: App): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const f of app.vault.getMarkdownFiles()) {
+    const fm = app.metadataCache.getFileCache(f)?.frontmatter;
+    if (typeof fm?.title === "string" && fm.title.trim().length > 0) {
+      map.set(f.basename, fm.title.trim());
+    }
+  }
+  return map;
 }
 
 /** Union of two basename lists, de-duplicated, order-stable. */
@@ -196,26 +220,39 @@ export async function applyPresuppositionDecisions(
   const app = plugin.app;
   const principleBasename = principleFile.basename;
   const uBasenames: string[] = [];
+  // Track titles of just-created U notes — the metadataCache may not have
+  // indexed them yet by the time we write the principle's frontmatter.
+  const newlyCreatedTitles = new Map<string, string>();
 
   for (const d of decisions) {
     if (d.action === "link") {
       uBasenames.push(d.basename);
     } else if (d.action === "new") {
+      const title = presuppositionTitle(d.text);
       const content = presuppositionTemplate({
-        title: presuppositionTitle(d.text),
+        title,
         text: d.text,
         confidence: d.confidence,
         presupposes_of: [principleBasename],
       });
       const created = await plugin.createNote("U", content, undefined, false);
-      if (created) uBasenames.push(created.basename);
+      if (created) {
+        uBasenames.push(created.basename);
+        newlyCreatedTitles.set(created.basename, title);
+      }
     }
   }
 
-  // principle.presupposes = union of existing + new
+  // Build a basename → title map so the frontmatter wikilinks read as
+  // `[[U-…|Human title]]` instead of opaque IDs. Merge in just-created
+  // notes (whose titles we know directly).
+  const titleMap = buildTitleLookup(app);
+  for (const [b, t] of newlyCreatedTitles) titleMap.set(b, t);
+
+  // principle.presupposes = union of existing + new (aliased wikilinks)
   await app.fileManager.processFrontMatter(principleFile, (fm) => {
     const prev = basenamesFromFrontmatter(fm.presupposes);
-    fm.presupposes = toWikilinks(mergeUnique(prev, uBasenames));
+    fm.presupposes = toWikilinks(mergeUnique(prev, uBasenames), titleMap);
   });
 
   // each LINKED U: append the principle to presupposes_of (new ones already have it)
@@ -225,7 +262,7 @@ export async function applyPresuppositionDecisions(
     if (!uFile) continue;
     await app.fileManager.processFrontMatter(uFile, (fm) => {
       const prev = basenamesFromFrontmatter(fm.presupposes_of);
-      fm.presupposes_of = toWikilinks(mergeUnique(prev, [principleBasename]));
+      fm.presupposes_of = toWikilinks(mergeUnique(prev, [principleBasename]), titleMap);
     });
   }
 
@@ -290,13 +327,14 @@ export async function removePresuppositionFromPrinciples(
   app: App,
   uBasename: string
 ): Promise<void> {
+  const titleMap = buildTitleLookup(app);
   for (const f of app.vault.getMarkdownFiles()) {
     const fm = app.metadataCache.getFileCache(f)?.frontmatter;
     if (fm?.antinomia_type !== TYPE.principle) continue;
     const cur = basenamesFromFrontmatter(fm.presupposes);
     if (!cur.includes(uBasename)) continue;
     await app.fileManager.processFrontMatter(f, (m) => {
-      m.presupposes = toWikilinks(cur.filter((b) => b !== uBasename));
+      m.presupposes = toWikilinks(cur.filter((b) => b !== uBasename), titleMap);
     });
   }
 }

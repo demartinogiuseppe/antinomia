@@ -7,6 +7,7 @@ import { DEFAULT_GRAPH_FILTERS, GRAPH_STYLE_PRESETS, LAYER_COLORS, LAYER_SHAPES,
 import { humanTitle, layerKey } from "../core/frontmatter";
 import type { GraphColors, GraphFilters } from "../core/types";
 import { renderAntinomiaNav } from "../helpers/renderAntinomiaNav";
+import { hoverBus, type HoverPayload } from "../core/hoverBus";
 
 export class AntinomiaGraphView extends ItemView {
   plugin: AntinomiaPlugin;
@@ -18,6 +19,8 @@ export class AntinomiaGraphView extends ItemView {
   // background setting is off.
   private galaxyLayer: HTMLElement | null = null;
   private starsLayer: HTMLElement | null = null;
+  // Unsubscribe handle for the cross-pane hover bus (set in onOpen).
+  private hoverUnsub: (() => void) | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: AntinomiaPlugin) {
     super(leaf);
@@ -46,6 +49,21 @@ export class AntinomiaGraphView extends ItemView {
     this.registerEvent(
       this.app.vault.on("rename", () => this.scheduleRefresh())
     );
+
+    // Cross-pane hover: react to hovers originating elsewhere (file explorer,
+    // Antinomia sidebars, backlinks). Events we emit ourselves carry
+    // source "graph" and are skipped — that's the loop guard.
+    this.hoverUnsub = hoverBus.on((ev, p: HoverPayload) => {
+      if (p.source === "graph" || !this.cy) return;
+      const node = this.cy.getElementById(p.basename);
+      if (!node || node.empty()) return;
+      if (ev === "enter") {
+        node.addClass("hover-focus");
+        node.openNeighborhood().nodes().addClass("hover-neighbor");
+      } else {
+        this.cy.elements().removeClass("hover-focus hover-neighbor");
+      }
+    });
   }
 
   private refreshTimer: number | null = null;
@@ -59,6 +77,10 @@ export class AntinomiaGraphView extends ItemView {
 
   async onClose(): Promise<void> {
     this.stopContinuousPhysics();
+    if (this.hoverUnsub) {
+      this.hoverUnsub();
+      this.hoverUnsub = null;
+    }
     if (this.cy) {
       this.cy.destroy();
       this.cy = null;
@@ -317,6 +339,7 @@ export class AntinomiaGraphView extends ItemView {
       nodes.push({
         data: {
           id: f.basename,
+          path: f.path,
           label: shortLabel,
           fullTitle: title,
           layer: key,
@@ -997,17 +1020,18 @@ export class AntinomiaGraphView extends ItemView {
           },
         },
         // Load-bearing presuppositions (shared by >1 principle): 1.5x size,
-        // brighter glow, and a thick gold ring — the invariants that, if they
-        // fail, take multiple principles down with them.
+        // brighter glow, and a soft gold ring — the invariants that, if they
+        // fail, take multiple principles down with them. Ring kept thin and
+        // semi-transparent so it reads as a soft glow halo, not a marker.
         {
           selector: "node[?loadBearing]",
           style: {
             width: 48,
             height: 48,
             "background-image": "data(glowBright)",
-            "border-width": 22,
+            "border-width": 8,
             "border-color": "#fbbf24",
-            "border-opacity": 0.55,
+            "border-opacity": 0.28,
           },
         },
         // All edges are kept in the graph (for the layout engine and
@@ -1208,11 +1232,23 @@ export class AntinomiaGraphView extends ItemView {
       // no size change). The rest of the graph stays untouched.
       node.addClass("hover-focus");
       node.openNeighborhood().nodes().addClass("hover-neighbor");
+      // Publish so other panes can highlight the same file.
+      hoverBus.emit("enter", {
+        path: node.data("path") || "",
+        basename: node.id(),
+        source: "graph",
+      });
     });
-    this.cy.on("mouseout", "node", () => {
+    this.cy.on("mouseout", "node", (evt: any) => {
       if (this.graphContainer) this.graphContainer.title = "";
       if (!this.cy) return;
       this.cy.elements().removeClass("hover-focus hover-neighbor");
+      const node = evt.target;
+      hoverBus.emit("leave", {
+        path: node.data("path") || "",
+        basename: node.id(),
+        source: "graph",
+      });
     });
   }
 

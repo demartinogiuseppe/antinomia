@@ -13,6 +13,8 @@ import { todayISO, timestampId, ensureFolder, isLocalBaseUrl } from "./core/util
 
 import { yamlQuote } from "./core/frontmatter";
 
+import { hoverBus, throttle, type HoverPayload } from "./core/hoverBus";
+
 import { tensionTemplate, substrateTemplate } from "./core/templates";
 
 import { DEFAULT_SETTINGS, type AntinomiaSettings } from "./core/settings";
@@ -1199,6 +1201,9 @@ export default class AntinomiaPlugin extends Plugin {
       }
     });
 
+    // Cross-pane hover highlight: graph node ↔ file entries in other panes.
+    this.setupCrossPaneHover();
+
     // ---- Creation (guided + bypass) ----
     this.addCommand({
       id: "migrate-v1",
@@ -1611,8 +1616,83 @@ export default class AntinomiaPlugin extends Plugin {
     this.refreshStatusBar();
   }
 
+  /** Unsubscribe handle for the DOM-highlight hover subscriber. */
+  private hoverDomUnsub: (() => void) | null = null;
+
+  /**
+   * Cross-pane hover highlight. Two halves, joined by the central hoverBus:
+   *
+   *  Publisher — delegated mouseover/mouseout on document. When the pointer is
+   *  over a file entry in the file explorer (.nav-file-title), the
+   *  backlinks/outgoing panes (.tree-item-self), or an Antinomia note card
+   *  ([data-antinomia-path]), we resolve its path + basename and emit on the
+   *  bus with source "dom".
+   *
+   *  Subscriber — listens to the bus and, for events NOT from source "dom"
+   *  (i.e. coming from the graph), toggles `.antinomia-hover-highlight` on
+   *  every DOM entry for that path. The source check is the loop guard.
+   *
+   *  registerDomEvent auto-removes the listeners on unload; the bus
+   *  subscription is torn down explicitly in onunload.
+   */
+  private setupCrossPaneHover(): void {
+    const SELECTOR =
+      ".nav-file-title[data-path], .tree-item-self[data-path], [data-antinomia-path]";
+
+    const pathOf = (el: HTMLElement): string | null =>
+      el.dataset.antinomiaPath || el.getAttribute("data-path") || null;
+
+    const basenameOf = (path: string): string => {
+      const file = path.split("/").pop() || path;
+      return file.replace(/\.md$/i, "");
+    };
+
+    const emitFor = (ev: "enter" | "leave", target: EventTarget | null): void => {
+      if (!(target instanceof HTMLElement)) return;
+      const el = target.closest<HTMLElement>(SELECTOR);
+      if (!el) return;
+      const path = pathOf(el);
+      if (!path) return;
+      hoverBus.emit(ev, { path, basename: basenameOf(path), source: "dom" });
+    };
+
+    // ~50ms trailing throttle keeps rapid pointer travel from flooding the bus.
+    const onEnter = throttle(
+      (t: EventTarget | null) => emitFor("enter", t),
+      50
+    );
+    this.registerDomEvent(document, "mouseover", (e) => onEnter(e.target));
+    this.registerDomEvent(document, "mouseout", (e) => emitFor("leave", e.target));
+
+    // Subscriber: highlight DOM entries for hovers coming from the graph.
+    const highlighted = new Set<HTMLElement>();
+    const clearHighlights = (): void => {
+      for (const el of highlighted) el.removeClass("antinomia-hover-highlight");
+      highlighted.clear();
+    };
+    this.hoverDomUnsub = hoverBus.on((ev, p: HoverPayload) => {
+      if (p.source === "dom") return; // our own events — skip
+      clearHighlights();
+      if (ev !== "enter") return;
+      const sel = [
+        `.nav-file-title[data-path="${CSS.escape(p.path)}"]`,
+        `.tree-item-self[data-path="${CSS.escape(p.path)}"]`,
+        `[data-antinomia-path="${CSS.escape(p.path)}"]`,
+      ].join(", ");
+      document.querySelectorAll<HTMLElement>(sel).forEach((el) => {
+        el.addClass("antinomia-hover-highlight");
+        highlighted.add(el);
+      });
+    });
+  }
+
   onunload(): void {
     console.log("[Antinomia] onunload");
+    if (this.hoverDomUnsub) {
+      this.hoverDomUnsub();
+      this.hoverDomUnsub = null;
+    }
+    hoverBus.clear();
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_OPEN_TENSIONS);
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_HUNTER_RESULTS);
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_DISMISSED_PAIRS);

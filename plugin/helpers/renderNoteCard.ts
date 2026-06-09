@@ -20,6 +20,8 @@ export function renderNoteCard(
   }
 ): void {
   const card = container.createEl("div");
+  // Tag the card with its file path so the cross-pane hover bus can match it.
+  card.dataset.antinomiaPath = file.path;
   card.style.padding = "8px 10px";
   card.style.marginBottom = "8px";
   card.style.border = "1px solid var(--background-modifier-border)";

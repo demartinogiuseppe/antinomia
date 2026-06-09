@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.5.5 (June 9, 2026) — Cross-pane hover highlight + presupposition polish
+
+Hovering now connects the **Antinomia Graph** to the rest of Obsidian. The link is bidirectional and goes through a single central "hover bus", so there are no feedback loops and everything is torn down cleanly on unload.
+
+- **Feature — cross-pane hover highlight:**
+  - Hover a node in the Antinomia Graph → its file lights up in the **File Explorer**, the **Antinomia sidebars** (note cards), and the **Backlinks / Outgoing Links** panes (`.antinomia-hover-highlight`: accent outline + hover background).
+  - Hover a file entry in any of those panes → the matching graph node gets `hover-focus` (size bump + brighter glow) and its neighbors get `hover-neighbor` — same reaction as hovering the node directly.
+  - Implemented via a singleton `hoverBus` (`core/hoverBus.ts`): publishers emit `enter`/`leave` tagged with a `source`; subscribers skip their own source (the loop guard). DOM publishers are delegated + ~50ms throttled; listeners use `registerDomEvent` and the bus is cleared on unload.
+- **Polish — presupposition wikilinks:** `presupposes` / `presupposes_of` frontmatter now writes **aliased wikilinks** `[[U-…|Human title]]` when a title is known, so the source view reads naturally instead of showing opaque `U-` IDs.
+- **Polish — load-bearing nodes:** the gold ring on load-bearing presuppositions is now a thin, semi-transparent halo (border 8 / opacity 0.28) instead of a thick marker — reads as a soft glow.
+
+No schema changes, no breaking, no new settings.
+
 ## v1.5.4 (June 9, 2026) — Disambiguate "Presuppositions" in the global nav
 
 Follow-up to v1.5.3. The new card button "🔑 Presuppositions" and the global nav entry "🔑 Presuppositions" had the same label but did different things, which was confusing. The nav entry is renamed.
