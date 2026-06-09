@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Antinomia — strip AI attribution trailers from any commit message
+# Catches Claude Code, Anthropic, and any "Generated with..." markers
+LC_ALL=C.UTF-8 sed -i \
+  -e '/Co-Authored-By: Claude/d' \
+  -e '/Co-Authored-By: Anthropic/d' \
+  -e '/Co-authored-by: Claude/d' \
+  -e '/Co-authored-by: Anthropic/d' \
+  -e '/Generated with.*Claude.*Code/d' \
+  -e '/Generated with.*Claude/d' \
+  -e '/^.*🤖.*Generated.*$/d' \
+  "$1"

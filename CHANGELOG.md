@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.5.2 (June 9, 2026) — IT residual cleanup in Principles view and elevation flow
+
+Bonifica di 5 stringhe italiane mai tradotte dalla v1.2.0 English release. Sono tutte user-visible: emergevano nell'header della Principles view, nel prefix di origine delle card principio, e nelle note generate quando si eleva una tensione a principio.
+
+- **fix:** `PrinciplesListView` subtitle from *"Regole operative IF/THEN/GREY emerse dalla risoluzione delle tensioni"* → *"Operational IF/THEN/GREY rules emerged from resolving tensions"*.
+- **fix:** principle card origin prefix *"Origine:"* → *"Origin:"*.
+- **fix:** elevation flow — generated principle note title *"Principio da X"* → *"Principle from X"*.
+- **fix:** orphan-principle defeated companion title *"Tensione originaria di X"* → *"Original tension of X"* (4 occurrences in `main.ts`).
+
+No schema changes, no breaking, no new settings.
+
 ## v1.5.1 (June 8, 2026) — UX polish for the presuppositions map
 
 - **UX:** the **Presuppositions Map** is now reachable from the global Antinomia nav menu (🔑 Presuppositions, between Graph and Audit) — not just the ribbon icon and command palette.

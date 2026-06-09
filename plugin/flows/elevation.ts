@@ -115,7 +115,7 @@ export async function elevateSplit(plugin: AntinomiaPlugin, file: TFile, fields?
     const principleContent =
       "---\n" +
       `antinomia_type: ${TYPE.principle}\n` +
-      `title: ${yamlQuote("Principio da " + tensionTitle)}\n` +
+      `title: ${yamlQuote("Principle from " + tensionTitle)}\n` +
       `data: ${today}\n` +
       `modified_date: ${today}\n` +
       `origin_tension: "[[${tensionBasename}]]"\n` +

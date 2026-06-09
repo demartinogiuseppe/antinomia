@@ -44,7 +44,7 @@ export class PrinciplesListView extends ItemView {
     desc.style.fontSize = "0.85em";
     desc.style.opacity = "0.7";
     desc.setText(
-      "Regole operative IF/THEN/GREY emerse dalla risoluzione delle tensioni."
+      "Operational IF/THEN/GREY rules emerged from resolving tensions."
     );
 
     const items = this.app.vault.getMarkdownFiles().filter((f) => {
@@ -69,7 +69,7 @@ export class PrinciplesListView extends ItemView {
             const o = card.createEl("div");
             o.style.fontSize = "0.78em";
             o.style.opacity = "0.6";
-            o.setText(`Origine: ${origin}`);
+            o.setText(`Origin: ${origin}`);
           }
         },
       });

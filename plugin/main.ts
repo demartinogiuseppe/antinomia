@@ -2120,8 +2120,8 @@ export default class AntinomiaPlugin extends Plugin {
       if (!originContent) { skipped++; continue; }
       const pFm = this.app.metadataCache.getFileCache(p)?.frontmatter ?? {};
       const title = typeof pFm.title === "string"
-        ? `Tensione originaria di ${pFm.title}`
-        : `Tensione originaria di ${p.basename}`;
+        ? `Original tension of ${pFm.title}`
+        : `Original tension of ${p.basename}`;
       const defeatedContent =
         "---\n" +
         `antinomia_type: ${TYPE.defeated}\n` +
@@ -2160,8 +2160,8 @@ export default class AntinomiaPlugin extends Plugin {
     }
     const today = todayISO();
     const title = typeof fm?.title === "string"
-      ? `Tensione originaria di ${fm.title}`
-      : `Tensione originaria di ${principleFile.basename}`;
+      ? `Original tension of ${fm.title}`
+      : `Original tension of ${principleFile.basename}`;
     const defeatedContent =
       "---\n" +
       `antinomia_type: ${TYPE.defeated}\n` +
