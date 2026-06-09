@@ -1,11 +1,19 @@
 # Changelog
 
-## v1.5.3 (June 9, 2026) — Presuppositions UX disambiguation
+## v1.5.4 (June 9, 2026) — Disambiguate "Presuppositions" in the global nav
 
-Two related UX touch-ups around presuppositions, to remove a naming collision.
+Follow-up to v1.5.3. The new card button "🔑 Presuppositions" and the global nav entry "🔑 Presuppositions" had the same label but did different things, which was confusing. The nav entry is renamed.
 
-- **UX:** added inline **🔑 Presuppositions** button on each principle card in the **Principles (Truth Archive)** sidebar (next to Title / Link / × Defeated). Runs *"Map presuppositions of this principle (AI)"* directly — no need to open the command palette.
-- **UX:** renamed the global nav menu entry **"🔑 Presuppositions" → "🔑 Presuppositions Map"** so it no longer collides with the new card button. The nav menu opens the *view* (list of presuppositions and their dependent principles); the card button runs the *AI mapping flow* on the active principle.
+- **UX:** renamed the global nav menu entry **"🔑 Presuppositions" → "🔑 Presuppositions Map"**. The nav menu opens the *view* (list of presuppositions with their dependent principles); the card button (v1.5.3) runs the *AI mapping flow* on the active principle.
+
+No schema changes, no breaking, no new settings.
+
+## v1.5.3 (June 9, 2026) — Map presuppositions button on principle cards
+
+Small UX add: each principle card in the **Principles (Truth Archive)** sidebar now exposes a **🔑 Presuppositions** button that runs *"Map presuppositions of this principle"* directly — no need to open the command palette and re-find the action every time.
+
+- **UX:** added inline 🔑 Presuppositions button on each principle card (next to Title / Link / × Defeated). Tooltip: *"Map presuppositions of this principle (AI)"*.
+- Same AI flow as the command palette entry — opens the review modal with deduplication against existing `U-` notes.
 
 No schema changes, no breaking, no new settings.
 
