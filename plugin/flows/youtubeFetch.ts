@@ -79,38 +79,54 @@ function askYouTubeUrl(
   });
 }
 
-export async function openSubstrateFromYouTube(plugin: AntinomiaPlugin, prefillUrl = ""): Promise<void> {
-    const url = await askYouTubeUrl(plugin, prefillUrl, "Download transcript");
-    if (!url) return;
+/** A transcript obtained either automatically or via the paste fallback. */
+interface TranscriptResult {
+  text: string;
+  lang: string;
+  videoId: string;
+  videoTitle?: string;
+  /** "paste" when the user supplied it manually (no page metadata available). */
+  source: "auto" | "paste";
+}
 
-    new Notice("Attempting automatic YouTube transcript fetch...");
-    const result = await fetchYouTubeTranscript(url);
+/**
+ * Fetch a YouTube transcript with the paste-assisted fallback. Tries the
+ * automatic timedtext fetch first; when YouTube blocks it (auth wall / no
+ * recognized caption track), opens the "Automatic fetch failed" modal with an
+ * Open-external button + a paste textarea. Shared by both YouTube entry points.
+ *
+ * Resolves null if the user cancels, or if both paths yield nothing.
+ */
+async function fetchTranscriptWithFallback(
+  plugin: AntinomiaPlugin,
+  url: string
+): Promise<TranscriptResult | null> {
+  new Notice("Attempting automatic YouTube transcript fetch...");
+  const auto = await fetchYouTubeTranscript(url);
+  if (auto && auto.text.trim().length > 0) {
+    new Notice(
+      `Transcript downloaded: ${auto.text.length} characters (language: ${auto.lang}).`
+    );
+    return {
+      text: auto.text,
+      lang: auto.lang,
+      videoId: auto.videoId,
+      videoTitle: auto.title,
+      source: "auto",
+    };
+  }
 
-    if (result) {
-      // Auto-fetch success
-      new Notice(
-        `Transcript downloaded: ${result.text.length} characters (language: ${result.lang}).`
-      );
-      const titoloSuggerito = `Video YouTube — ${result.videoId}`;
-      const contenutoIniziale = `> Video: ${url}\n\n${result.text}`;
-      new NewSubstrateModal(
-        plugin.app,
-        plugin,
-        (fields, skipped) => {
-          if (fields === null && !skipped) return;
-          const content = fields
-            ? substrateTemplate(fields)
-            : substrateTemplate();
-          void plugin.createNote("S", content);
-        },
-        { title: titoloSuggerito, contenuto: contenutoIniziale }
-      ).open();
-      return;
-    }
-
-    // ---- Auto-fetch failed: paste-assisted fallback ----
-    const videoId = extractYouTubeId(url) ?? "video";
+  // ---- Auto-fetch failed: paste-assisted fallback ----
+  const videoId = extractYouTubeId(url) ?? "video";
+  return new Promise<TranscriptResult | null>((resolve) => {
     const fallbackModal = new Modal(plugin.app);
+    let settled = false;
+    const finish = (val: TranscriptResult | null) => {
+      if (settled) return;
+      settled = true;
+      resolve(val);
+    };
+
     fallbackModal.onOpen = () => {
       const c = fallbackModal.contentEl;
       c.createEl("h3", { text: "Automatic fetch failed" });
@@ -118,19 +134,19 @@ export async function openSubstrateFromYouTube(plugin: AntinomiaPlugin, prefillU
       p.style.fontSize = "0.9em";
       p.style.lineHeight = "1.5";
       p.setText(
-        "YouTube blocca il fetch diretto della trascrizione (richiede sessione autenticata). Workaround in 3 click:"
+        "YouTube blocks the direct transcript fetch (it requires an authenticated session). Workaround in 3 clicks:"
       );
       const steps = c.createEl("ol");
       steps.style.lineHeight = "1.5";
       steps.style.marginBottom = "12px";
       steps.createEl("li", {
-        text: "Click sul bottone qui sotto per aprire youtubetotranscript.com nel browser.",
+        text: "Click the button below to open youtubetotranscript.com in your browser.",
       });
       steps.createEl("li", {
         text: "On the site, the video URL is already pasted. Click 'Get Transcript'.",
       });
       steps.createEl("li", {
-        text: "Seleziona tutta la trascrizione, Ctrl+C, torna qui e incollala nel campo sotto.",
+        text: "Select the whole transcript, Ctrl+C, come back here and paste it in the field below.",
       });
 
       new Setting(c)
@@ -156,7 +172,7 @@ export async function openSubstrateFromYouTube(plugin: AntinomiaPlugin, prefillU
         );
 
       const label = c.createEl("label", {
-        text: "Incolla qui la trascrizione",
+        text: "Paste the transcript here",
       });
       label.style.display = "block";
       label.style.fontWeight = "bold";
@@ -178,34 +194,50 @@ export async function openSubstrateFromYouTube(plugin: AntinomiaPlugin, prefillU
         )
         .addButton((b) =>
           b
-            .setButtonText("Create substrate")
+            .setButtonText("Use transcript")
             .setCta()
             .onClick(() => {
               const txt = pasted.trim();
               if (!txt) {
-                new Notice("Paste the transcript before saving.");
+                new Notice("Paste the transcript before continuing.");
                 return;
               }
+              // Paste path: no page metadata, so lang is unknown and the title
+              // is absent (callers fall back to the videoId).
+              finish({ text: txt, lang: "", videoId, source: "paste" });
               fallbackModal.close();
-              const titoloSuggerito = `Video YouTube — ${videoId}`;
-              const contenutoIniziale = `> Video: ${url}\n\n${txt}`;
-              new NewSubstrateModal(
-                plugin.app,
-                plugin,
-                (fields, skipped) => {
-                  if (fields === null && !skipped) return;
-                  const content = fields
-                    ? substrateTemplate(fields)
-                    : substrateTemplate();
-                  void plugin.createNote("S", content);
-                },
-                { title: titoloSuggerito, contenuto: contenutoIniziale }
-              ).open();
             })
         );
     };
-    fallbackModal.onClose = () => fallbackModal.contentEl.empty();
+    // Covers both the Cancel button and the window's X: resolve null unless a
+    // transcript was already supplied.
+    fallbackModal.onClose = () => {
+      fallbackModal.contentEl.empty();
+      finish(null);
+    };
     fallbackModal.open();
+  });
+}
+
+export async function openSubstrateFromYouTube(plugin: AntinomiaPlugin, prefillUrl = ""): Promise<void> {
+    const url = await askYouTubeUrl(plugin, prefillUrl, "Download transcript");
+    if (!url) return;
+
+    const tr = await fetchTranscriptWithFallback(plugin, url);
+    if (!tr) return;
+
+    const titoloSuggerito = tr.videoTitle?.trim() || `Video YouTube — ${tr.videoId}`;
+    const contenutoIniziale = `> Video: ${url}\n\n${tr.text}`;
+    new NewSubstrateModal(
+      plugin.app,
+      plugin,
+      (fields, skipped) => {
+        if (fields === null && !skipped) return;
+        const content = fields ? substrateTemplate(fields) : substrateTemplate();
+        void plugin.createNote("S", content);
+      },
+      { title: titoloSuggerito, contenuto: contenutoIniziale }
+    ).open();
 }
 
 async function fetchYouTubeTranscript(
@@ -628,10 +660,10 @@ export async function runYouTubeConceptIngest(
   const url = await askYouTubeUrl(plugin, prefillUrl, "Extract concepts");
   if (!url) return;
 
-  new Notice("Fetching YouTube transcript…");
-  const fetched = await fetchYouTubeTranscript(url);
-  if (!fetched) return; // fetchYouTubeTranscript already notified the failure
-  const { text, lang, videoId, title } = fetched;
+  // Auto fetch + paste-assisted fallback (shared with the quick path).
+  const tr = await fetchTranscriptWithFallback(plugin, url);
+  if (!tr) return; // user cancelled, or both paths failed (already notified)
+  const { text, lang, videoId, videoTitle: title } = tr;
   if (!text || text.trim().length === 0) {
     new Notice("Transcript is empty — nothing to extract.");
     return;
