@@ -179,7 +179,7 @@ export function renderAntinomiaNav(
   mkBtn("🕸 Graph", () => goTo(VIEW_TYPE_GRAPH));
 
   // -- Presuppositions Map (opens in the right sidebar, like its ribbon icon)
-  mkBtn("🔑 Presuppositions", () => goTo(VIEW_TYPE_PRESUPPOSITIONS_MAP));
+  mkBtn("🔑 Presuppositions Map", () => goTo(VIEW_TYPE_PRESUPPOSITIONS_MAP));
 
   // -- Audit
   mkBtn("🩺 Audit", () => goTo(VIEW_TYPE_AUDIT));
