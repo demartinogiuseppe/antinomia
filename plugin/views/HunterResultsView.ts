@@ -7,6 +7,7 @@ import { humanTitle } from "../core/frontmatter";
 import type { HunterRun } from "../core/types";
 import { renderVaultLabel } from "../core/utils";
 import { renderAntinomiaNav } from "../helpers/renderAntinomiaNav";
+import { renderFrictionCard } from "../modals/FrictionCard";
 import { OpenTensionsView } from "../views/OpenTensionsView";
 
 export class HunterResultsView extends ItemView {
@@ -184,6 +185,15 @@ export class HunterResultsView extends ItemView {
       warn.style.color = "var(--text-warning, orange)";
       warn.setText(
         `Excluded ${meta.totalCandidates - meta.notesExamined} notes (over the limit).`
+      );
+    }
+
+    // Friction card (PTM): one card for the whole run, above the pairs.
+    if (this.plugin.lastFriction) {
+      renderFrictionCard(
+        container as HTMLElement,
+        this.plugin.lastFriction,
+        this.plugin.settings.aiFrictionLevel ?? "medium"
       );
     }
 

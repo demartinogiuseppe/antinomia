@@ -2,6 +2,8 @@
 
 import { App, Modal, Setting } from "obsidian";
 import { withLoadingButton } from "../helpers/withLoadingButton";
+import type { FrictionLevel, FrictionPayload } from "../core/aiFriction";
+import { renderFrictionCard } from "./FrictionCard";
 
 export class TitleEditModal extends Modal {
   constructor(
@@ -13,7 +15,9 @@ export class TitleEditModal extends Modal {
     // Optional AI-suggest hook. When provided, an extra "Propose title (AI)"
     // button is rendered above the input. It must return the proposed title
     // (string) or null on failure.
-    private aiSuggestFn?: () => Promise<string | null>
+    private aiSuggestFn?: () => Promise<string | null>,
+    // Optional friction card (PTM) shown when the title came from the AI.
+    private frictionOpts?: { friction: FrictionPayload; level: FrictionLevel }
   ) {
     super(app);
   }
@@ -25,6 +29,9 @@ export class TitleEditModal extends Modal {
       hint.style.fontSize = "0.85em";
       hint.style.opacity = "0.7";
       hint.setText(this.hintText);
+    }
+    if (this.frictionOpts) {
+      renderFrictionCard(contentEl, this.frictionOpts.friction, this.frictionOpts.level);
     }
     let currentValue = this.initialValue;
     const input = contentEl.createEl("input", {

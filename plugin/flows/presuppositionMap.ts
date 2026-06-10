@@ -17,6 +17,7 @@ import type { PresuppositionProposal } from "../core/types";
 import { PresuppositionMapModal } from "../modals/PresuppositionMapModal";
 import { CollapseImpactModal } from "../modals/CollapseImpactModal";
 import { AIProgressModal } from "../modals/AIProgressModal";
+import { buildFrictionPayload, parseFrictionFields, type FrictionPayload } from "../core/aiFriction";
 
 // --- pure helpers (exported for tests) ------------------------------------
 
@@ -169,7 +170,11 @@ export async function mapPresuppositionsOfPrinciple(
 
   const t0 = Date.now();
   let proposals: PresuppositionProposal[] | null = null;
+  let friction: FrictionPayload | undefined;
   try {
+    // PRESUPPOSITION_MAP_SYSTEM outputs a bare JSON array, so the friction
+    // suffix (which adds object keys) is NOT applied here — the AI fields fall
+    // back to "not provided" and only the hardcoded limitations show.
     const result = await callAI({
       baseUrl: profile.baseUrl,
       apiKey: profile.apiKey,
@@ -181,6 +186,13 @@ export async function mapPresuppositionsOfPrinciple(
     });
     progress.setStatus("Preparing review…");
     proposals = parsePresuppositionsFromAIResponse(result.text);
+    friction = buildFrictionPayload({
+      operation: "mapPresuppositions",
+      modelName: profile.model,
+      baseUrl: profile.baseUrl,
+      usage: result.usage,
+      ai: parseFrictionFields(result.text),
+    });
     progress.close();
     // Token-usage notice (click → details). Only after a real completion, so
     // an aborted run never reports phantom tokens.
@@ -222,7 +234,8 @@ export async function mapPresuppositionsOfPrinciple(
     existing,
     async (decisions) => {
       await applyPresuppositionDecisions(plugin, file, decisions);
-    }
+    },
+    friction
   ).open();
 }
 

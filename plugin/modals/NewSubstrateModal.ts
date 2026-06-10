@@ -5,6 +5,7 @@ import type AntinomiaPlugin from "../main";
 import { renderUsageMetaBanner } from "../ai/notifyUsage";
 import type { AIUsageMeta, SubstrateFields } from "../core/types";
 import { withLoadingButton } from "../helpers/withLoadingButton";
+import { renderFrictionCard } from "./FrictionCard";
 
 export class NewSubstrateModal extends Modal {
   private plugin: AntinomiaPlugin;
@@ -26,6 +27,10 @@ export class NewSubstrateModal extends Modal {
     const { contentEl } = this;
     contentEl.createEl("h3", { text: "New substrate" });
     if (this.prefillUsageMeta) renderUsageMetaBanner(contentEl, this.prefillUsageMeta, this.app);
+    // AI-prefilled (e.g. free-input flow) → show the friction card.
+    if (this.prefillUsageMeta && this.plugin.lastFriction) {
+      renderFrictionCard(contentEl, this.plugin.lastFriction, this.plugin.settings.aiFrictionLevel ?? "medium");
+    }
     const intro = contentEl.createEl("p");
     intro.style.fontSize = "0.9em";
     intro.style.opacity = "0.8";

@@ -6,6 +6,7 @@ import { humanTitle, stripFrontmatter } from "../core/frontmatter";
 import type { PrincipleFields } from "../core/types";
 import { renderTensionContext } from "../helpers/renderTensionContext";
 import { withLoadingButton } from "../helpers/withLoadingButton";
+import { renderFrictionCard } from "./FrictionCard";
 
 export class ElevateToPrincipleModal extends Modal {
   private originBasename: string;
@@ -112,6 +113,8 @@ export class ElevateToPrincipleModal extends Modal {
     aiBtn.style.cursor = "pointer";
     aiBtn.title =
       "Asks the AI model to propose the 5 IF/THEN/GREY fields by reading the tension's text.";
+    // Friction card (PTM) container — populated after the AI proposes.
+    const frictionContainer = contentEl.createEl("div");
     aiBtn.onclick = async (e) => {
       e.preventDefault();
       const proposed = await withLoadingButton(
@@ -138,6 +141,15 @@ export class ElevateToPrincipleModal extends Modal {
       thenB = proposed.thenB ?? "";
       greyTextarea.value = proposed.greyZone ?? "";
       greyZone = proposed.greyZone ?? "";
+      // Show the friction card for this proposal.
+      frictionContainer.empty();
+      if (this.plugin.lastFriction) {
+        renderFrictionCard(
+          frictionContainer,
+          this.plugin.lastFriction,
+          this.plugin.settings.aiFrictionLevel ?? "medium"
+        );
+      }
     };
 
     new Setting(contentEl)

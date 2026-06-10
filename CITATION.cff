@@ -28,8 +28,8 @@ keywords:
   - epistemology
   - note-taking
 license: MIT
-version: "1.5.6"
-date-released: "2026-06-09"
+version: "1.5.8"
+date-released: "2026-06-10"
 identifiers:
   - type: doi
     value: "10.5281/zenodo.20369124"

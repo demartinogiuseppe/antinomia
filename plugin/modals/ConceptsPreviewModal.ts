@@ -6,6 +6,8 @@ import { App, Modal, Notice, Setting } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { renderUsageMetaBanner } from "../ai/notifyUsage";
 import type { AIUsageMeta, PdfConcept } from "../core/types";
+import type { FrictionPayload } from "../core/aiFriction";
+import { renderFrictionCard, gateAcceptButton } from "./FrictionCard";
 
 export class ConceptsPreviewModal extends Modal {
   private selected: Set<number> = new Set();
@@ -18,7 +20,9 @@ export class ConceptsPreviewModal extends Modal {
     private folderName: string,
     private concepts: PdfConcept[],
     private extractionMeta: AIUsageMeta,
-    private onConfirm: (selectedConcepts: PdfConcept[]) => void
+    private onConfirm: (selectedConcepts: PdfConcept[]) => void,
+    /** Friction payload for the extraction run (one card for the whole run). */
+    private friction?: FrictionPayload
   ) {
     super(app);
     // Default: all selected.
@@ -35,6 +39,15 @@ export class ConceptsPreviewModal extends Modal {
 
     // Usage meta banner (persistent, clickable for details).
     renderUsageMetaBanner(contentEl, this.extractionMeta, this.app);
+
+    // Friction card (PTM): one card for the whole extraction run.
+    if (this.friction) {
+      renderFrictionCard(
+        contentEl,
+        this.friction,
+        this.plugin.settings.aiFrictionLevel ?? "medium"
+      );
+    }
 
     const intro = contentEl.createEl("p");
     intro.style.fontSize = "0.88em";
@@ -150,7 +163,7 @@ export class ConceptsPreviewModal extends Modal {
       .addButton((b) =>
         b.setButtonText("Cancel").onClick(() => this.close())
       )
-      .addButton((b) =>
+      .addButton((b) => {
         b
           .setButtonText("Create selected")
           .setCta()
@@ -163,8 +176,13 @@ export class ConceptsPreviewModal extends Modal {
             this.selected.forEach((i) => picks.push(this.concepts[i]));
             this.close();
             this.onConfirm(picks);
-          })
-      );
+          });
+        // High friction: gate "Create selected" behind an acknowledge checkbox.
+        if (this.friction) {
+          gateAcceptButton(b.buttonEl, this.plugin.settings.aiFrictionLevel ?? "medium");
+        }
+        return b;
+      });
   }
   onClose(): void {
     this.contentEl.empty();

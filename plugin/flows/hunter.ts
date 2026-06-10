@@ -6,6 +6,7 @@ import { callAI } from "../ai/callAI";
 import { notifyAIUsage, showErrorModal } from "../ai/notifyUsage";
 import { extractJson, normalizeHunterPair } from "../ai/parseResponse";
 import { buildHunterSystem } from "../ai/prompts";
+import { buildFrictionPayload, parseFrictionFields, withFrictionSuffix } from "../core/aiFriction";
 import { TYPE, VIEW_TYPE_HUNTER_RESULTS } from "../core/constants";
 import { stripFrontmatter } from "../core/frontmatter";
 import { HunterResultsView } from "../views/HunterResultsView";
@@ -114,9 +115,10 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
           apiKey: profile.apiKey,
           model: profile.model,
           format: profile.format,
-          system:
+          system: withFrictionSuffix(
             buildHunterSystem(plugin.settings.hunterReasoningStyle) +
-            (attempt === 1 ? REINFORCE : ""),
+              (attempt === 1 ? REINFORCE : "")
+          ),
           messages: [{ role: "user", content: userContent }],
           // Hunter is a "deep" task — the model has to compare many notes
           // pairwise and emit a structured list. Autoadaptive budget per
@@ -247,6 +249,13 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
     plugin.settings.lastHunterRunCount = filtered.length;
     void plugin.saveSettings();
 
+    plugin.lastFriction = buildFrictionPayload({
+      operation: "hunter",
+      modelName: profile.model,
+      baseUrl: profile.baseUrl,
+      usage: result.usage,
+      ai: parseFrictionFields(result.text),
+    });
     hunterView?.setRun(run);
     new Notice(`Hunter: ${filtered.length} pairs in ${(durationMs / 1000).toFixed(1)}s.`);
     notifyAIUsage(

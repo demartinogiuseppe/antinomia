@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.5.8 (June 10, 2026) — AI friction & model transparency (PTM Core complete)
+
+PTM means staying *in* a contradiction to think it through — the AI is the opposite pole (fluid, persuasive, fast). Left unchecked, you accept AI output blindly, which is the anti-PTM move. Every AI output now carries a **friction card** to keep you the thinker.
+
+- **Feature — AI Friction & Model Transparency:** every AI command (Hunter, map presuppositions, elevate IF/THEN, propose title, free input, PDF + YouTube concept extraction) now shows a friction card with:
+  - **Model transparency** (always): model name, backend, temperature, tokens used.
+  - **AI self-report** (best effort): a 2-sentence reasoning note + the model's own confidence, parsed from its response.
+  - **Limitations**: hardcoded *universal* limits per operation type (always shown, never depend on the model cooperating) plus any the AI declared.
+  - Footer: *"This is a prompt for thinking, not a truth to act on."*
+- **Friction levels** (Settings → AI Friction, default **Medium**):
+  - **Off** — no card (pre-friction behaviour).
+  - **Low** — model line only.
+  - **Medium** — collapsible card, default closed.
+  - **High** — card always open + a *"I acknowledge these limitations"* checkbox you must tick before the **Accept anyway** button (concept extraction + presupposition review) enables.
+- **Prompts** extended to ask cooperating models for `reasoning_short` / `confidence_self` / `limitations`; uncooperative or older models simply fall back to "not provided" while the hardcoded limitations still show. Array-output prompts (presupposition map) are left untouched.
+- New tutorial card **"Why friction?"** (linked from the settings group), new `core/aiFriction.ts` + `modals/FrictionCard.ts`, and a unit suite for the parsing/payload helpers.
+
+No breaking changes. New setting `aiFrictionLevel` (default Medium); existing vaults get the card automatically.
+
 ## v1.5.7 (June 10, 2026) — YouTube concept extraction (AI)
 
 New ingest pipeline at full PDF-parity for YouTube videos: instead of capturing a video's transcript as a single substrate, the AI now extracts the key concepts and creates a cluster of substrates plus a meta_note hub that holds the full transcript inline.

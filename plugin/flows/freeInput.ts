@@ -6,6 +6,7 @@ import { callAI } from "../ai/callAI";
 import { notifyAIUsage, showErrorModal } from "../ai/notifyUsage";
 import { parseFreeInputFromAIResponse } from "../ai/parseResponse";
 import { FREE_INPUT_SYSTEM } from "../ai/prompts";
+import { buildFrictionPayload, parseFrictionFields, withFrictionSuffix } from "../core/aiFriction";
 import { substrateTemplate, tensionTemplate } from "../core/templates";
 import type { AIUsageMeta, FreeInputAnalysis, Profile } from "../core/types";
 import { extractYouTubeId } from "../core/utils";
@@ -189,7 +190,7 @@ export async function analyzeFreeInput(plugin: AntinomiaPlugin,
           baseUrl: profile.baseUrl,
           apiKey: profile.apiKey,
           model: profile.model,
-          system: attempt === 0 ? FREE_INPUT_SYSTEM : FREE_INPUT_SYSTEM + REINFORCE,
+          system: withFrictionSuffix(attempt === 0 ? FREE_INPUT_SYSTEM : FREE_INPUT_SYSTEM + REINFORCE),
           messages: [{ role: "user", content: text }],
           taskClass: "short",
           signal,
@@ -219,6 +220,13 @@ export async function analyzeFreeInput(plugin: AntinomiaPlugin,
             url: profile.baseUrl,
             operation: "Free input",
           };
+          plugin.lastFriction = buildFrictionPayload({
+            operation: "freeInput",
+            modelName: profile.model,
+            baseUrl: profile.baseUrl,
+            usage: result.usage,
+            ai: parseFrictionFields(result.text),
+          });
           return { analysis: parsed, meta };
         }
         // else: loop retries once, then drops to the escape hatch below.

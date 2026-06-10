@@ -10,6 +10,7 @@ import { VIEW_TYPE_SUBSTRATE_LIST } from "../core/constants";
 import { substrateTemplate } from "../core/templates";
 import type { AIUsageMeta, PdfConcept, PdfConceptsResult, PdfExtractResult, Profile, SubstrateFields } from "../core/types";
 import { ensureFolder, todayISO } from "../core/utils";
+import { buildFrictionPayload, parseFrictionFields, withFrictionSuffix, type FrictionPayload } from "../core/aiFriction";
 import { withLoadingButton } from "../helpers/withLoadingButton";
 import { PdfAnalyzingModal } from "../modals/PdfAnalyzingModal";
 import { ConceptsPreviewModal } from "../modals/ConceptsPreviewModal";
@@ -20,7 +21,7 @@ export async function extractConceptsFromPdfText(plugin: AntinomiaPlugin,
     signal?: AbortSignal,
     attachUsageTo?: HTMLButtonElement,
     operationLabel: string = "PDF concepts"
-  ): Promise<{ concepts: PdfConcept[]; meta: AIUsageMeta } | null> {
+  ): Promise<{ concepts: PdfConcept[]; meta: AIUsageMeta; friction: FrictionPayload } | null> {
     const profile = plugin.profileFor("default");
     if (!profile.apiKey) {
       showErrorModal(
@@ -36,7 +37,7 @@ export async function extractConceptsFromPdfText(plugin: AntinomiaPlugin,
         baseUrl: profile.baseUrl,
         apiKey: profile.apiKey,
         model: profile.model,
-        system: EXTRACT_CONCEPTS_SYSTEM,
+        system: withFrictionSuffix(EXTRACT_CONCEPTS_SYSTEM),
         messages: [{ role: "user", content: text }],
         taskClass: "deep",
         signal,
@@ -80,7 +81,14 @@ export async function extractConceptsFromPdfText(plugin: AntinomiaPlugin,
         url: profile.baseUrl,
         operation: operationLabel,
       };
-      return { concepts: cleaned, meta };
+      const friction = buildFrictionPayload({
+        operation: "conceptExtraction",
+        modelName: profile.model,
+        baseUrl: profile.baseUrl,
+        usage: result.usage,
+        ai: parseFrictionFields(result.text),
+      });
+      return { concepts: cleaned, meta, friction };
     } catch (e) {
       const msg = (e as Error).message;
       if (msg === "hunter_aborted" || msg === "ai_aborted" || signal?.aborted) {
@@ -389,7 +397,7 @@ export async function runPdfIngest(plugin: AntinomiaPlugin, pdf: TFile): Promise
     const profile = plugin.profileFor("default");
     const progressModal = new PdfAnalyzingModal(plugin.app, pdf.basename, profile.model);
     progressModal.open();
-    let result: { concepts: PdfConcept[]; meta: AIUsageMeta } | null = null;
+    let result: Awaited<ReturnType<typeof plugin.extractConceptsFromPdfText>> = null;
     try {
       result = await plugin.extractConceptsFromPdfText(
         extracted.text,
@@ -428,7 +436,8 @@ export async function runPdfIngest(plugin: AntinomiaPlugin, pdf: TFile): Promise
           }
           plugin.refreshOpenGraphViews();
         }, 700);
-      }
+      },
+      result.friction
     ).open();
 }
 

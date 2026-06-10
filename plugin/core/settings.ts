@@ -2,6 +2,7 @@
 // Extracted from main.ts (refactor v1.5).
 
 import type { Profile, GraphColors } from "./types";
+import type { FrictionLevel } from "./aiFriction";
 
 export interface AntinomiaSettings {
   profiles: Profile[];
@@ -43,6 +44,9 @@ export interface AntinomiaSettings {
   migrationCheckEnabled?: boolean;
   // Static galaxy-nebula background behind the Graph view. CSS-only. Default true.
   galaxyBackground?: boolean;
+  // AI Friction & Model Transparency (PTM Core). How much friction every AI
+  // output carries to keep the user a thinker, not a consumer. Default "medium".
+  aiFrictionLevel?: FrictionLevel;
 }
 
 export const DEFAULT_SETTINGS: AntinomiaSettings = {
@@ -77,6 +81,7 @@ export const DEFAULT_SETTINGS: AntinomiaSettings = {
   cloudWarningDismissed: false,
   migrationCheckEnabled: true,
   galaxyBackground: true,
+  aiFrictionLevel: "medium",
   graphCustomColors: {
     tensione_aperta: "#ff8c42",
     tensione_risolta: "#fbc02d",

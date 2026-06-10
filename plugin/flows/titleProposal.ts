@@ -6,6 +6,7 @@ import { callAI } from "../ai/callAI";
 import { notifyAIUsage, showErrorModal } from "../ai/notifyUsage";
 import { parseTitleFromAIResponse } from "../ai/parseResponse";
 import { TITLE_SYSTEM } from "../ai/prompts";
+import { buildFrictionPayload, parseFrictionFields, withFrictionSuffix } from "../core/aiFriction";
 import type { ClaudeResponse, Profile } from "../core/types";
 import { todayISO } from "../core/utils";
 import { TitleEditModal } from "../modals/TitleEditModal";
@@ -29,7 +30,7 @@ export async function proposeTitleAI(plugin: AntinomiaPlugin, file: TFile): Prom
         baseUrl: profile.baseUrl,
         apiKey: profile.apiKey,
         model: profile.model,
-        system: TITLE_SYSTEM,
+        system: withFrictionSuffix(TITLE_SYSTEM),
         messages: [
           {
             role: "user",
@@ -76,6 +77,13 @@ export async function proposeTitleAI(plugin: AntinomiaPlugin, file: TFile): Prom
       );
       return;
     }
+    const friction = buildFrictionPayload({
+      operation: "title",
+      modelName: profile.model,
+      baseUrl: profile.baseUrl,
+      usage: result.usage,
+      ai: parseFrictionFields(result.text),
+    });
     new TitleEditModal(
       plugin.app,
       proposed,
@@ -92,7 +100,9 @@ export async function proposeTitleAI(plugin: AntinomiaPlugin, file: TFile): Prom
         } catch (e) {
           new Notice(`Error: ${(e as Error).message}`);
         }
-      }
+      },
+      undefined,
+      { friction, level: plugin.settings.aiFrictionLevel ?? "medium" }
     ).open();
 }
 

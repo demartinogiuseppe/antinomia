@@ -734,6 +734,7 @@ export async function runYouTubeConceptIngest(
         }
         plugin.refreshOpenGraphViews();
       }, 700);
-    }
+    },
+    result.friction
   ).open();
 }

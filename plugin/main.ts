@@ -15,6 +15,8 @@ import { yamlQuote } from "./core/frontmatter";
 
 import { hoverBus, throttle, type HoverPayload } from "./core/hoverBus";
 
+import type { FrictionLevel, FrictionPayload } from "./core/aiFriction";
+
 import { tensionTemplate, substrateTemplate } from "./core/templates";
 
 import { DEFAULT_SETTINGS, type AntinomiaSettings } from "./core/settings";
@@ -48,7 +50,7 @@ import { ConfirmModal } from "./modals/ConfirmModal";
 
 import { GuidanceModal } from "./modals/GuidanceModal";
 
-import { TutorialModal } from "./modals/TutorialModal";
+import { TutorialModal, WHY_FRICTION_STEP } from "./modals/TutorialModal";
 
 import { ClassifyConfirmModal } from "./modals/ClassifyConfirmModal";
 
@@ -375,6 +377,41 @@ class AntinomiaSettingTab extends PluginSettingTab {
           }
         });
       });
+
+    // ---- AI Friction & Model Transparency (PTM Core) ----
+    containerEl.createEl("h3", { text: "AI Friction" });
+    const frictionDesc = containerEl.createEl("p");
+    frictionDesc.style.fontSize = "0.85em";
+    frictionDesc.style.opacity = "0.8";
+    frictionDesc.style.lineHeight = "1.5";
+    frictionDesc.setText(
+      "PTM means staying in a contradiction to think, not resolving it fast. Every AI output carries a friction card (model transparency + limitations) to keep you the thinker. Off = no card. Low = model line only. Medium = collapsible card (default). High = card always open + you must acknowledge limitations before accepting an AI result."
+    );
+    new Setting(containerEl)
+      .setName("AI friction level")
+      .setDesc("How much friction every AI output carries.")
+      .addDropdown((dd) => {
+        dd.addOption("off", "Off — no card (pre-friction)");
+        dd.addOption("low", "Low — model line only");
+        dd.addOption("medium", "Medium — collapsible card (default)");
+        dd.addOption("high", "High — always open + acknowledge to accept");
+        dd.setValue(this.plugin.settings.aiFrictionLevel ?? "medium");
+        dd.onChange(async (v) => {
+          this.plugin.settings.aiFrictionLevel = v as FrictionLevel;
+          await this.plugin.saveSettings();
+        });
+      });
+    const whyLink = containerEl.createEl("a", {
+      text: "Why PTM friction? Read more →",
+      href: "#",
+    });
+    whyLink.style.fontSize = "0.85em";
+    whyLink.style.display = "inline-block";
+    whyLink.style.marginBottom = "10px";
+    whyLink.onclick = (e) => {
+      e.preventDefault();
+      new TutorialModal(this.app, WHY_FRICTION_STEP).open();
+    };
 
     if ((this.plugin.settings.graphStyleName || "default") === "custom") {
       const cust = this.plugin.settings.graphCustomColors;
@@ -909,6 +946,11 @@ export default class AntinomiaPlugin extends Plugin {
   statusBarEl: HTMLElement | null = null;
   // AbortController active while a Hunter run is in progress, null otherwise
   hunterAbortController: AbortController | null = null;
+  // Friction payload from the most recent AI call (PTM Core). Flows stash it
+  // here right before opening their result UI, which reads it synchronously to
+  // render the FrictionCard. Only one AI command runs at a time, so there's no
+  // interleaving. See core/aiFriction.ts.
+  lastFriction?: FrictionPayload;
 
   /**
    * Signal an in-progress Hunter run to stop. The HTTP request itself
@@ -2002,7 +2044,7 @@ export default class AntinomiaPlugin extends Plugin {
     text: string,
     signal?: AbortSignal,
     attachUsageTo?: HTMLButtonElement
-  ): Promise<{ concepts: PdfConcept[]; meta: AIUsageMeta } | null> {
+  ): ReturnType<typeof extractConceptsFromPdfText> {
     return extractConceptsFromPdfText(this, text, signal, attachUsageTo);
   }
 

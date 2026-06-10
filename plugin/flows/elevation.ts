@@ -6,6 +6,7 @@ import { callAI } from "../ai/callAI";
 import { notifyAIUsage, showErrorModal } from "../ai/notifyUsage";
 import { extractJson } from "../ai/parseResponse";
 import { PRINCIPLE_SYSTEM } from "../ai/prompts";
+import { buildFrictionPayload, parseFrictionFields, withFrictionSuffix } from "../core/aiFriction";
 import { TYPE } from "../core/constants";
 import { stripFrontmatter, yamlQuote } from "../core/frontmatter";
 import { principleBodyTemplate } from "../core/templates";
@@ -165,7 +166,7 @@ export async function proposeIfThenFromContent(plugin: AntinomiaPlugin,
         baseUrl: profile.baseUrl,
         apiKey: profile.apiKey,
         model: profile.model,
-        system: PRINCIPLE_SYSTEM,
+        system: withFrictionSuffix(PRINCIPLE_SYSTEM),
         messages: [{ role: "user", content }],
         taskClass: "medium",
         signal,
@@ -184,6 +185,13 @@ export async function proposeIfThenFromContent(plugin: AntinomiaPlugin,
       );
       // Silent abort if user clicked Stop after backend started streaming.
       if (signal?.aborted) return null;
+      plugin.lastFriction = buildFrictionPayload({
+        operation: "elevation",
+        modelName: profile.model,
+        baseUrl: profile.baseUrl,
+        usage: result.usage,
+        ai: parseFrictionFields(result.text),
+      });
       const parsed = extractJson<PrincipleFields>(result.text);
       if (!parsed) {
         console.error("[Antinomia] proposeIfThenFromContent unparseable:", result.text);

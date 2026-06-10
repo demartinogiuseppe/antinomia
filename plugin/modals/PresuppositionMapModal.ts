@@ -8,6 +8,8 @@ import type {
   PresupDecision,
   ExistingPresupposition,
 } from "../flows/presuppositionMap";
+import type { FrictionPayload } from "../core/aiFriction";
+import { renderFrictionCard, gateAcceptButton } from "./FrictionCard";
 
 export class PresuppositionMapModal extends Modal {
   private rows: { textarea: HTMLTextAreaElement; select: HTMLSelectElement; confidence: "high" | "medium" | "low" }[] = [];
@@ -18,7 +20,8 @@ export class PresuppositionMapModal extends Modal {
     private principleTitle: string,
     private proposals: PresuppositionProposal[],
     private existing: ExistingPresupposition[],
-    private onConfirm: (decisions: PresupDecision[]) => void | Promise<void>
+    private onConfirm: (decisions: PresupDecision[]) => void | Promise<void>,
+    private friction?: FrictionPayload
   ) {
     super(app);
   }
@@ -30,6 +33,14 @@ export class PresuppositionMapModal extends Modal {
     contentEl.createEl("p", {
       text: `Implicit assumptions behind "${this.principleTitle}". For each, create a new presupposition, link to an existing one, edit the text, or skip.`,
     }).style.opacity = "0.85";
+
+    if (this.friction) {
+      renderFrictionCard(
+        contentEl,
+        this.friction,
+        this.plugin.settings.aiFrictionLevel ?? "medium"
+      );
+    }
 
     for (const p of this.proposals) {
       const row = contentEl.createDiv();
@@ -68,7 +79,7 @@ export class PresuppositionMapModal extends Modal {
 
     new Setting(contentEl)
       .addButton((b) => b.setButtonText("Cancel").onClick(() => this.close()))
-      .addButton((b) =>
+      .addButton((b) => {
         b
           .setButtonText("Confirm")
           .setCta()
@@ -86,8 +97,13 @@ export class PresuppositionMapModal extends Modal {
             }
             this.close();
             await this.onConfirm(decisions);
-          })
-      );
+          });
+        // High friction: gate "Confirm" behind an acknowledge checkbox.
+        if (this.friction) {
+          gateAcceptButton(b.buttonEl, this.plugin.settings.aiFrictionLevel ?? "medium");
+        }
+        return b;
+      });
   }
 
   onClose(): void {

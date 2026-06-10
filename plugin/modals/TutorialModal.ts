@@ -5,8 +5,9 @@ import type { TutorialStep } from "../core/types";
 
 export class TutorialModal extends Modal {
   private currentStep = 0;
-  constructor(app: App) {
+  constructor(app: App, startStep = 0) {
     super(app);
+    if (startStep > 0) this.currentStep = startStep;
   }
   onOpen(): void {
     this.render();
@@ -184,4 +185,21 @@ const TUTORIAL_STEPS: TutorialStep[] = [
       "The resulting graph is NOT the network of contradictions found by the Hunter — that one is implicit. The graph is the map of connections that YOU have declared.",
     ],
   },
+  {
+    title: "Why friction?",
+    paragraphs: [
+      "PTM (Personal Tension Management) means STAYING in a contradiction long enough to think it through — not resolving it as fast as possible. The AI is the opposite pole: fluid, persuasive, fast. Left unchecked, it nudges you to accept its output blindly, which is exactly the anti-PTM move.",
+      "So every AI output in Antinomia carries a small friction card: which model and backend produced it, its own stated confidence and reasoning, and — always — the structural limitations of what an LLM can and cannot know here. The card is a brake, not a verdict: 'a prompt for thinking, not a truth to act on.'",
+      "Pick your level in Settings → AI Friction. 'Off' removes the card entirely (pre-friction behaviour). 'Low' shows just the model line. 'Medium' (default) adds a collapsible card. 'High' keeps the card open and asks you to tick 'I acknowledge these limitations' before you can accept an AI result.",
+    ],
+    exampleTitle: "The point",
+    exampleLines: [
+      "The AI identifies; YOU decide. Friction keeps you in the loop as the thinker.",
+    ],
+  },
 ];
+
+/** Index of the "Why friction?" card — for deep-linking from settings. */
+export const WHY_FRICTION_STEP = TUTORIAL_STEPS.findIndex(
+  (s) => s.title === "Why friction?"
+);
