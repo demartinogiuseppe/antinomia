@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.5.9 (June 10, 2026) — Cytoscape hover-tracking race fix + YouTube concept-extraction nav button
+
+Patch. Uncaught `TypeError: Cannot read properties of null (reading 'isHeadless')` was appearing in the DevTools console when the mouse moved over the Antinomia Graph during a `rebuildGraph()` (node add/remove). The error originated inside Cytoscape's internal `findNearestElements` → `boundingBox` → `headless()` chain, when a node was removed while still in the mouse's hover-tracking state — its `_private.cy` became null and the deref blew up. Harmless (the graph kept working, state recovered on the next mouse event) but it polluted the console.
+
+- **Defensive cleanup in `rebuildGraph`**: before computing the removal set, every element's `hover-focus` / `hover-neighbor` classes are cleared. The cursor-still-over-a-doomed-node race no longer happens.
+- **Try/catch in the hover bus subscriber**: any internal Cytoscape exception during cross-pane hover propagation is swallowed (logged at `debug` level only). Silent recovery on the next event.
+- **UX:** "Substrate from YouTube — extract concepts (AI)" (introduced in v1.5.7) is now also reachable from the global nav menu (Create ▾ submenu), alongside the existing single-substrate YouTube command. No more command-palette gymnastics.
+
+No schema changes, no new settings.
+
 ## v1.5.8 (June 10, 2026) — AI friction & model transparency (PTM Core complete)
 
 PTM means staying *in* a contradiction to think it through — the AI is the opposite pole (fluid, persuasive, fast). Left unchecked, you accept AI output blindly, which is the anti-PTM move. Every AI output now carries a **friction card** to keep you the thinker.

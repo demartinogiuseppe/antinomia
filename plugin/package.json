@@ -1,6 +1,6 @@
 {
   "name": "antinomia",
-  "version": "1.5.8",
+  "version": "1.5.9",
   "description": "Antinomia Obsidian plugin: PKM based on contradiction as fundamental unit.",
   "main": "main.js",
   "scripts": {

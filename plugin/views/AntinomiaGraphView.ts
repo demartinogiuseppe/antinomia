@@ -54,14 +54,22 @@ export class AntinomiaGraphView extends ItemView {
     // Antinomia sidebars, backlinks). Events we emit ourselves carry
     // source "graph" and are skipped — that's the loop guard.
     this.hoverUnsub = hoverBus.on((ev, p: HoverPayload) => {
+      // Defensive: skip own events + bail if cy is gone (view closing/closed).
+      // try/catch covers a Cytoscape edge case where internal hover-tracking
+      // (findNearestElements → boundingBox → headless) accesses a node whose
+      // `_private.cy` is null right after a node removal during rebuildGraph.
       if (p.source === "graph" || !this.cy) return;
-      const node = this.cy.getElementById(p.basename);
-      if (!node || node.empty()) return;
-      if (ev === "enter") {
-        node.addClass("hover-focus");
-        node.openNeighborhood().nodes().addClass("hover-neighbor");
-      } else {
-        this.cy.elements().removeClass("hover-focus hover-neighbor");
+      try {
+        const node = this.cy.getElementById(p.basename);
+        if (!node || node.empty()) return;
+        if (ev === "enter") {
+          node.addClass("hover-focus");
+          node.openNeighborhood().nodes().addClass("hover-neighbor");
+        } else {
+          this.cy.elements().removeClass("hover-focus hover-neighbor");
+        }
+      } catch (e) {
+        console.debug("[Antinomia] hover-bus subscriber swallowed:", e);
       }
     });
   }
@@ -874,6 +882,13 @@ export class AntinomiaGraphView extends ItemView {
           });
         }
       }
+
+      // Defensive cleanup before node removal: clear any lingering hover-focus
+      // / hover-neighbor classes. If the mouse is still over a node that's
+      // about to be removed, Cytoscape's findNearestElements may try to
+      // access the soon-destroyed node's _private.cy → null deref. Clearing
+      // the class state up front avoids that race.
+      this.cy.elements().removeClass("hover-focus hover-neighbor");
 
       const toRemove = this.cy.elements().filter(
         (el: any) => !newIds.has(el.id())

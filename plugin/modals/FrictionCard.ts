@@ -56,8 +56,10 @@ export function renderFrictionCard(
   label.style.overflow = "hidden";
   label.style.textOverflow = "ellipsis";
 
-  const expandable = level === "medium" || level === "high";
-  const caret = expandable ? header.createEl("span") : null;
+  // Only `medium` is interactively expandable. `high` is always-open by design
+  // and the body never collapses → no caret (showing a chevron that doesn't
+  // toggle is confusing UX).
+  const caret = level === "medium" ? header.createEl("span") : null;
 
   // --- Body (built lazily; shown per level) ---
   const body = card.createEl("div");

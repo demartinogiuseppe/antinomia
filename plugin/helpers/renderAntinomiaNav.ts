@@ -10,6 +10,7 @@ import { NewSubstrateModal } from "../modals/NewSubstrateModal";
 import { NewTensionModal } from "../modals/NewTensionModal";
 import { NotePickerModal } from "../modals/NotePickerModal";
 import { TutorialModal } from "../modals/TutorialModal";
+import { runYouTubeConceptIngest } from "../flows/youtubeFetch";
 import { WelcomeModal } from "../modals/WelcomeModal";
 
 export function renderAntinomiaNav(
@@ -173,6 +174,10 @@ export function renderAntinomiaNav(
       i.setTitle("Substrate from YouTube").setIcon("youtube")
         .onClick(() => void plugin.openSubstrateFromYouTube())
     );
+    m.addItem((i) =>
+      i.setTitle("Substrate from YouTube — extract concepts (AI)").setIcon("sparkles")
+        .onClick(() => void runYouTubeConceptIngest(plugin))
+    );
   });
 
   // -- Graph (custom)
@@ -192,7 +197,7 @@ export function renderAntinomiaNav(
     );
     m.addItem((i) =>
       i.setTitle("Key concepts tutorial").setIcon("book-open")
-        .onClick(() => new TutorialModal(plugin.app, plugin).open())
+        .onClick(() => new TutorialModal(plugin.app).open())
     );
     m.addItem((i) =>
       i.setTitle("Welcome (restart)").setIcon("hand")
