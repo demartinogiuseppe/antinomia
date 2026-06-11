@@ -32,8 +32,10 @@ export class MapPresuppostiModal extends Modal {
       text: `Map presuppositions: ${humanTitle(this.app, this.file)}`,
     });
     const intro = contentEl.createEl("p");
-    intro.style.fontSize = "0.9em";
-    intro.style.opacity = "0.8";
+    intro.setCssStyles({
+      fontSize: "0.9em",
+      opacity: "0.8",
+    });
     intro.setText(
       `Identify the epistemic/metaphysical/value assumptions that A and B take for granted. Mapping them makes explicit why the tension doesn't dissolve on its own.`
     );
@@ -50,25 +52,31 @@ export class MapPresuppostiModal extends Modal {
 
     const mkLabel = (text: string) => {
       const l = contentEl.createEl("label", { text });
-      l.style.display = "block";
-      l.style.marginTop = "12px";
-      l.style.fontWeight = "bold";
+      l.setCssStyles({
+        display: "block",
+        marginTop: "12px",
+        fontWeight: "bold",
+      });
       return l;
     };
     const mkHint = (text: string) => {
       const h = contentEl.createEl("div", { text });
-      h.style.fontSize = "0.8em";
-      h.style.opacity = "0.6";
+      h.setCssStyles({
+        fontSize: "0.8em",
+        opacity: "0.6",
+      });
       return h;
     };
 
     mkLabel("Presuppositions A");
     mkHint("The base assumptions that make side A possible.");
     const aTextarea = contentEl.createEl("textarea");
-    aTextarea.style.width = "100%";
-    aTextarea.style.padding = "6px";
-    aTextarea.style.marginTop = "4px";
-    aTextarea.style.minHeight = "70px";
+    aTextarea.setCssStyles({
+      width: "100%",
+      padding: "6px",
+      marginTop: "4px",
+      minHeight: "70px",
+    });
     aTextarea.value = presupA;
     aTextarea.addEventListener("input", (e) => {
       presupA = (e.target as HTMLTextAreaElement).value;
@@ -77,10 +85,12 @@ export class MapPresuppostiModal extends Modal {
     mkLabel("Presuppositions B");
     mkHint("The base assumptions that make side B possible.");
     const bTextarea = contentEl.createEl("textarea");
-    bTextarea.style.width = "100%";
-    bTextarea.style.padding = "6px";
-    bTextarea.style.marginTop = "4px";
-    bTextarea.style.minHeight = "70px";
+    bTextarea.setCssStyles({
+      width: "100%",
+      padding: "6px",
+      marginTop: "4px",
+      minHeight: "70px",
+    });
     bTextarea.value = presupB;
     bTextarea.addEventListener("input", (e) => {
       presupB = (e.target as HTMLTextAreaElement).value;
@@ -90,10 +100,12 @@ export class MapPresuppostiModal extends Modal {
     const aiBtn = contentEl.createEl("button", {
       text: "Propose presuppositions (AI)",
     });
-    aiBtn.style.marginTop = "10px";
-    aiBtn.style.fontSize = "0.85em";
-    aiBtn.style.padding = "4px 12px";
-    aiBtn.style.cursor = "pointer";
+    aiBtn.setCssStyles({
+      marginTop: "10px",
+      fontSize: "0.85em",
+      padding: "4px 12px",
+      cursor: "pointer",
+    });
     aiBtn.title =
       "Asks the AI model to propose the two fields by reading the tension's text.";
     aiBtn.onclick = async (e) => {

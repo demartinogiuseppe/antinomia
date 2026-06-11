@@ -40,8 +40,10 @@ export class UnclassifiedNotesView extends ItemView {
     container.createEl("h4", { text: "Unclassified notes" });
 
     const desc = container.createEl("p");
-    desc.style.fontSize = "0.85em";
-    desc.style.opacity = "0.7";
+    desc.setCssStyles({
+      fontSize: "0.85em",
+      opacity: "0.7",
+    });
     desc.setText(
       "Note del vault senza antinomia_type. Utile per migrare un vault esistente: classifica una per una manualmente o con AI. 'Ignora' aggiunge antinomia_ignora: true (non riapparira'). I file in trash sono esclusi."
     );
@@ -57,9 +59,11 @@ export class UnclassifiedNotesView extends ItemView {
 
     if (items.length === 0) {
       const ok = container.createEl("p");
-      ok.style.padding = "12px";
-      ok.style.background = "var(--background-modifier-success, var(--background-secondary))";
-      ok.style.borderRadius = "4px";
+      ok.setCssStyles({
+        padding: "12px",
+        background: "var(--background-modifier-success, var(--background-secondary))",
+        borderRadius: "4px",
+      });
       ok.setText(
         "✅ Tutte le note del vault sono classificate (o esplicitamente ignorate). Niente da migrare."
       );
@@ -67,8 +71,10 @@ export class UnclassifiedNotesView extends ItemView {
     }
 
     const summary = container.createEl("p");
-    summary.style.fontWeight = "600";
-    summary.style.marginBottom = "10px";
+    summary.setCssStyles({
+      fontWeight: "600",
+      marginBottom: "10px",
+    });
     summary.setText(
       `${items.length} note da classificare. Inizia dalle piu' recenti.`
     );
@@ -81,8 +87,10 @@ export class UnclassifiedNotesView extends ItemView {
     const visible = items.slice(0, MAX);
     if (items.length > MAX) {
       const note = container.createEl("p");
-      note.style.fontSize = "0.78em";
-      note.style.opacity = "0.7";
+      note.setCssStyles({
+        fontSize: "0.78em",
+        opacity: "0.7",
+      });
       note.setText(
         `Showing the first ${MAX} of ${items.length}. Classify (or ignore) them to see the next ones.`
       );
@@ -90,33 +98,41 @@ export class UnclassifiedNotesView extends ItemView {
 
     for (const file of visible) {
       const card = container.createEl("div");
-      card.style.padding = "8px 10px";
-      card.style.marginBottom = "8px";
-      card.style.border = "1px solid var(--background-modifier-border)";
-      card.style.borderRadius = "5px";
-      card.style.background = "var(--background-secondary)";
+      card.setCssStyles({
+        padding: "8px 10px",
+        marginBottom: "8px",
+        border: "1px solid var(--background-modifier-border)",
+        borderRadius: "5px",
+        background: "var(--background-secondary)",
+      });
 
       const titleRow = card.createEl("div");
-      titleRow.style.marginBottom = "6px";
+      titleRow.setCssStyles({ marginBottom: "6px" });
       const title = humanTitle(this.app, file);
       const link = titleRow.createEl("a", { text: title, href: "#" });
-      link.style.cursor = "pointer";
-      link.style.fontWeight = "600";
+      link.setCssStyles({
+        cursor: "pointer",
+        fontWeight: "600",
+      });
       link.title = `${file.path} (clicca per aprire)`;
       link.onclick = (e) => {
         e.preventDefault();
         this.app.workspace.getLeaf(false).openFile(file);
       };
       const pathLine = card.createEl("div");
-      pathLine.style.fontSize = "0.75em";
-      pathLine.style.opacity = "0.55";
+      pathLine.setCssStyles({
+        fontSize: "0.75em",
+        opacity: "0.55",
+      });
       pathLine.setText(file.path);
 
       const btnRow = card.createEl("div");
-      btnRow.style.display = "flex";
-      btnRow.style.flexWrap = "wrap";
-      btnRow.style.gap = "4px";
-      btnRow.style.marginTop = "6px";
+      btnRow.setCssStyles({
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "4px",
+        marginTop: "6px",
+      });
 
       const mkBtn = (
         text: string,
@@ -125,10 +141,12 @@ export class UnclassifiedNotesView extends ItemView {
         warning = false
       ) => {
         const b = btnRow.createEl("button", { text });
-        b.style.padding = "2px 8px";
-        b.style.fontSize = "0.78em";
-        b.style.cursor = "pointer";
-        if (warning) b.style.opacity = "0.7";
+        b.setCssStyles({
+          padding: "2px 8px",
+          fontSize: "0.78em",
+          cursor: "pointer",
+        });
+        if (warning) b.setCssStyles({ opacity: "0.7" });
         b.title = tooltip;
         b.onclick = (e) => {
           e.stopPropagation();

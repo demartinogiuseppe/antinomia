@@ -82,9 +82,11 @@ export function alphabeticOwner(a: string, b: string): string {
 export function renderVaultLabel(parent: HTMLElement, name: string): void {
   if (!name) return;
   const lbl = parent.createEl("div");
-  lbl.style.fontSize = "0.78em";
-  lbl.style.opacity = "0.55";
-  lbl.style.marginBottom = "4px";
-  lbl.style.fontStyle = "italic";
+  lbl.setCssStyles({
+    fontSize: "0.78em",
+    opacity: "0.55",
+    marginBottom: "4px",
+    fontStyle: "italic",
+  });
   lbl.setText(name);
 }

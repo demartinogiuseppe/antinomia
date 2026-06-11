@@ -41,8 +41,10 @@ export class DismissedPairsView extends ItemView {
     container.createEl("h4", { text: "Hunter false positives" });
 
     const desc = container.createEl("p");
-    desc.style.fontSize = "0.85em";
-    desc.style.opacity = "0.7";
+    desc.setCssStyles({
+      fontSize: "0.85em",
+      opacity: "0.7",
+    });
     desc.setText(
       "Pairs marked as false positives (via × in the Hunter sidebar). They won't be proposed again. Click 'Re-include' to remove the dismissal and have them reappear in the next runs."
     );
@@ -88,22 +90,26 @@ export class DismissedPairsView extends ItemView {
     const list = container.createEl("ol");
     for (const p of pairs) {
       const li = list.createEl("li");
-      li.style.marginBottom = "10px";
+      li.setCssStyles({ marginBottom: "10px" });
 
       const row = li.createEl("div");
-      row.style.display = "flex";
-      row.style.alignItems = "center";
-      row.style.gap = "6px";
-      row.style.flexWrap = "wrap";
+      row.setCssStyles({
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        flexWrap: "wrap",
+      });
 
       this.appendNoteLink(row, p.ownerBasename);
       row.appendText(" ⟷ ");
       this.appendNoteLink(row, p.otherBasename);
 
       const undismissBtn = row.createEl("button", { text: "Reincludi" });
-      undismissBtn.style.marginLeft = "auto";
-      undismissBtn.style.padding = "0 8px";
-      undismissBtn.style.cursor = "pointer";
+      undismissBtn.setCssStyles({
+        marginLeft: "auto",
+        padding: "0 8px",
+        cursor: "pointer",
+      });
       undismissBtn.title =
         "Rimuovi il dismiss: la coppia tornera' a essere candidata nei prossimi run del Hunter.";
       undismissBtn.onclick = async () => {
@@ -121,7 +127,7 @@ export class DismissedPairsView extends ItemView {
     if (file) {
       const title = humanTitle(this.app, file);
       const a = parent.createEl("a", { text: title, href: "#" });
-      a.style.cursor = "pointer";
+      a.setCssStyles({ cursor: "pointer" });
       a.title = `${basename} (clicca per aprire)`;
       a.onclick = (e) => {
         e.preventDefault();
@@ -129,7 +135,7 @@ export class DismissedPairsView extends ItemView {
       };
     } else {
       const span = parent.createEl("span", { text: basename + " (?)" });
-      span.style.opacity = "0.5";
+      span.setCssStyles({ opacity: "0.5" });
       span.title = "Nota non trovata nel vault";
     }
   }

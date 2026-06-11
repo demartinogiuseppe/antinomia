@@ -262,7 +262,7 @@ export async function importPdfFromDisk(plugin: AntinomiaPlugin): Promise<TFile 
       const input = document.createElement("input");
       input.type = "file";
       input.accept = "application/pdf,.pdf";
-      input.style.display = "none";
+      input.setCssStyles({ display: "none" });
       document.body.appendChild(input);
 
       let resolved = false;

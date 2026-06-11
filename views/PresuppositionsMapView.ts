@@ -74,9 +74,20 @@ export class PresuppositionsMapView extends ItemView {
 
     // toolbar
     const bar = container.createDiv();
-    bar.style.cssText = "display:flex; gap:12px; align-items:center; margin-bottom:10px; font-size:0.85em;";
+    bar.setCssStyles({
+      display: "flex",
+      gap: "12px",
+      alignItems: "center",
+      marginBottom: "10px",
+      fontSize: "0.85em",
+    });
     const lb = bar.createEl("label");
-    lb.style.cssText = "cursor:pointer; display:flex; gap:4px; align-items:center;";
+    lb.setCssStyles({
+      cursor: "pointer",
+      display: "flex",
+      gap: "4px",
+      alignItems: "center",
+    });
     const lbChk = lb.createEl("input", { type: "checkbox" });
     lbChk.checked = this.loadBearingOnly;
     lb.appendText("Load-bearing only (>1)");
@@ -85,7 +96,12 @@ export class PresuppositionsMapView extends ItemView {
       this.render();
     };
     const sb = bar.createEl("label");
-    sb.style.cssText = "cursor:pointer; display:flex; gap:4px; align-items:center;";
+    sb.setCssStyles({
+      cursor: "pointer",
+      display: "flex",
+      gap: "4px",
+      alignItems: "center",
+    });
     const sbChk = sb.createEl("input", { type: "checkbox" });
     sbChk.checked = this.sortBySupport;
     sb.appendText("Sort by most-supported");
@@ -101,7 +117,7 @@ export class PresuppositionsMapView extends ItemView {
     if (rows.length === 0) {
       container.createEl("p", {
         text: "No presuppositions yet. Open a principle and run 'Map presuppositions of this principle'.",
-      }).style.opacity = "0.7";
+      }).setCssStyles({ opacity: "0.7" });
       return;
     }
 
@@ -109,32 +125,62 @@ export class PresuppositionsMapView extends ItemView {
     for (const r of rows) {
       const loadBearing = r.degree > 1;
       const card = container.createDiv();
-      card.style.cssText =
-        `border:1px solid var(--background-modifier-border); border-left:${loadBearing ? "4px" : "1px"} solid ${loadBearing ? gold : "var(--background-modifier-border)"}; ` +
-        `border-radius:6px; padding:8px 10px; margin-bottom:8px; ${loadBearing ? "background:rgba(251,191,36,0.06);" : ""}`;
+      card.setCssStyles({
+        border: "1px solid var(--background-modifier-border)",
+        borderLeft: `${loadBearing ? "4px" : "1px"} solid ${loadBearing ? gold : "var(--background-modifier-border)"}`,
+        borderRadius: "6px",
+        padding: "8px 10px",
+        marginBottom: "8px",
+        ...(loadBearing ? { background: "rgba(251,191,36,0.06)" } : {}),
+      });
 
       const head = card.createDiv();
-      head.style.cssText = "display:flex; justify-content:space-between; align-items:baseline; gap:8px;";
+      head.setCssStyles({
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "baseline",
+        gap: "8px",
+      });
       const titleEl = head.createEl("a", { text: `${loadBearing ? "⭐ " : ""}${r.title}` });
-      titleEl.style.cssText = `cursor:pointer; font-weight:${loadBearing ? 700 : 500}; ${loadBearing ? `color:${gold};` : ""}`;
+      titleEl.setCssStyles({
+        cursor: "pointer",
+        fontWeight: `${loadBearing ? 700 : 500}`,
+        ...(loadBearing ? { color: gold } : {}),
+      });
       titleEl.onclick = () => void this.app.workspace.getLeaf(false).openFile(r.file);
       const badge = head.createEl("span", {
         text: loadBearing ? `load-bearing · supports ${r.degree}` : `supports ${r.degree}`,
       });
-      badge.style.cssText = "font-size:0.72em; opacity:0.7; white-space:nowrap;";
+      badge.setCssStyles({
+        fontSize: "0.72em",
+        opacity: "0.7",
+        whiteSpace: "nowrap",
+      });
 
       const meta = card.createDiv();
-      meta.style.cssText = "font-size:0.75em; opacity:0.65; margin-top:2px;";
+      meta.setCssStyles({
+        fontSize: "0.75em",
+        opacity: "0.65",
+        marginTop: "2px",
+      });
       meta.setText(`status: ${r.status} · confidence: ${r.confidence}`);
 
       if (r.supporters.length > 0) {
         const sup = card.createDiv();
-        sup.style.cssText = "font-size:0.8em; margin-top:4px;";
+        sup.setCssStyles({
+          fontSize: "0.8em",
+          marginTop: "4px",
+        });
         sup.setText("Supports: " + r.supporters.map((s) => humanTitle(this.app, s)).join(", "));
       }
 
       const collapseBtn = card.createEl("button", { text: "What collapses?" });
-      collapseBtn.style.cssText = "margin-top:6px; font-size:0.78em; padding:2px 8px; cursor:pointer;";
+      collapseBtn.setCssStyles({
+        marginTop: "6px",
+        fontSize: "0.78em",
+        padding: "2px 8px",
+        cursor: "pointer",
+      });
       collapseBtn.onclick = () => void showCollapseImpact(this.plugin, r.file);
     }
   }

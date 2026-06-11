@@ -16,7 +16,7 @@ export class ConfirmModal extends Modal {
     const { contentEl } = this;
     contentEl.createEl("h3", { text: this.titleText });
     const p = contentEl.createEl("p");
-    p.style.lineHeight = "1.5";
+    p.setCssStyles({ lineHeight: "1.5" });
     p.setText(this.bodyText);
     new Setting(contentEl)
       .addButton((b) =>

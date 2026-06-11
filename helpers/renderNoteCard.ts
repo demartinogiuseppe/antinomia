@@ -22,18 +22,22 @@ export function renderNoteCard(
   const card = container.createEl("div");
   // Tag the card with its file path so the cross-pane hover bus can match it.
   card.dataset.antinomiaPath = file.path;
-  card.style.padding = "8px 10px";
-  card.style.marginBottom = "8px";
-  card.style.border = "1px solid var(--background-modifier-border)";
-  card.style.borderRadius = "5px";
-  card.style.background = "var(--background-secondary)";
+  card.setCssStyles({
+    padding: "8px 10px",
+    marginBottom: "8px",
+    border: "1px solid var(--background-modifier-border)",
+    borderRadius: "5px",
+    background: "var(--background-secondary)",
+  });
 
   const title = humanTitle(app, file);
   const link = card.createEl("a", { text: title, href: "#" });
-  link.style.cursor = "pointer";
-  link.style.display = "block";
-  link.style.marginBottom = "4px";
-  link.style.fontWeight = "600";
+  link.setCssStyles({
+    cursor: "pointer",
+    display: "block",
+    marginBottom: "4px",
+    fontWeight: "600",
+  });
   link.title = `${file.basename} (clicca per aprire)`;
   link.onclick = (e) => {
     e.preventDefault();
@@ -46,16 +50,20 @@ export function renderNoteCard(
   if (options.extraInfo) options.extraInfo(card, fm);
 
   const btnRow = card.createEl("div");
-  btnRow.style.display = "flex";
-  btnRow.style.gap = "4px";
-  btnRow.style.flexWrap = "wrap";
-  btnRow.style.marginTop = "4px";
+  btnRow.setCssStyles({
+    display: "flex",
+    gap: "4px",
+    flexWrap: "wrap",
+    marginTop: "4px",
+  });
 
   const mkBtn = (text: string, tooltip: string, onclick: () => void) => {
     const b = btnRow.createEl("button", { text });
-    b.style.padding = "2px 8px";
-    b.style.fontSize = "0.78em";
-    b.style.cursor = "pointer";
+    b.setCssStyles({
+      padding: "2px 8px",
+      fontSize: "0.78em",
+      cursor: "pointer",
+    });
     b.title = tooltip;
     b.onclick = (e) => {
       e.stopPropagation();

@@ -109,8 +109,10 @@ export class OnboardingChecklistView extends ItemView {
     container.createEl("h4", { text: "Getting Started" });
 
     const intro = container.createEl("p");
-    intro.style.fontSize = "0.85em";
-    intro.style.opacity = "0.7";
+    intro.setCssStyles({
+      fontSize: "0.85em",
+      opacity: "0.7",
+    });
     intro.setText(
       "Suggested steps to explore Antinomia. The checkmark appears automatically when you complete them. You can close this sidebar at any time — reopen it from Settings or the command palette."
     );
@@ -234,45 +236,57 @@ export class OnboardingChecklistView extends ItemView {
 
     const completed = steps.filter((x) => x.done).length;
     const progress = container.createEl("p");
-    progress.style.fontWeight = "600";
-    progress.style.marginBottom = "8px";
+    progress.setCssStyles({
+      fontWeight: "600",
+      marginBottom: "8px",
+    });
     progress.setText(`Progresso: ${completed} / ${steps.length}`);
 
     for (const step of steps) {
       const card = container.createEl("div");
-      card.style.padding = "8px 10px";
-      card.style.marginBottom = "6px";
-      card.style.border = "1px solid var(--background-modifier-border)";
-      card.style.borderRadius = "4px";
-      card.style.background = step.done
-        ? "var(--background-modifier-success-hover, var(--background-secondary))"
-        : "var(--background-secondary)";
-      card.style.opacity = step.done ? "0.7" : "1";
+      card.setCssStyles({
+        padding: "8px 10px",
+        marginBottom: "6px",
+        border: "1px solid var(--background-modifier-border)",
+        borderRadius: "4px",
+      });
+      card.setCssStyles({
+        background: step.done
+          ? "var(--background-modifier-success-hover, var(--background-secondary))"
+          : "var(--background-secondary)",
+      });
+      card.setCssStyles({ opacity: step.done ? "0.7" : "1" });
 
       const head = card.createEl("div");
-      head.style.display = "flex";
-      head.style.alignItems = "center";
-      head.style.gap = "6px";
-      head.style.fontWeight = "600";
+      head.setCssStyles({
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        fontWeight: "600",
+      });
       const icon = head.createEl("span", {
         text: step.done ? "✅" : "⬜",
       });
-      icon.style.fontSize = "1.05em";
+      icon.setCssStyles({ fontSize: "1.05em" });
       head.createEl("span", { text: step.label });
 
       const desc = card.createEl("div");
-      desc.style.fontSize = "0.82em";
-      desc.style.opacity = "0.75";
-      desc.style.margin = "4px 0 6px 22px";
+      desc.setCssStyles({
+        fontSize: "0.82em",
+        opacity: "0.75",
+        margin: "4px 0 6px 22px",
+      });
       desc.setText(step.desc);
 
       if (!step.done) {
         const btnRow = card.createEl("div");
-        btnRow.style.marginLeft = "22px";
+        btnRow.setCssStyles({ marginLeft: "22px" });
         const goBtn = btnRow.createEl("button", { text: step.actionLabel });
-        goBtn.style.padding = "2px 10px";
-        goBtn.style.fontSize = "0.82em";
-        goBtn.style.cursor = "pointer";
+        goBtn.setCssStyles({
+          padding: "2px 10px",
+          fontSize: "0.82em",
+          cursor: "pointer",
+        });
         goBtn.onclick = (e) => {
           e.stopPropagation();
           void step.action();
@@ -282,12 +296,14 @@ export class OnboardingChecklistView extends ItemView {
 
     if (completed === steps.length) {
       const done = container.createEl("p");
-      done.style.marginTop = "12px";
-      done.style.padding = "10px";
-      done.style.background = "var(--background-modifier-success, var(--background-secondary))";
-      done.style.borderRadius = "4px";
-      done.style.textAlign = "center";
-      done.style.fontWeight = "600";
+      done.setCssStyles({
+        marginTop: "12px",
+        padding: "10px",
+        background: "var(--background-modifier-success, var(--background-secondary))",
+        borderRadius: "4px",
+        textAlign: "center",
+        fontWeight: "600",
+      });
       done.setText(
         "🎉 You've completed onboarding! From here on it's real work."
       );

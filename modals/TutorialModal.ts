@@ -15,16 +15,20 @@ export class TutorialModal extends Modal {
   private render(): void {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.style.maxHeight = "70vh";
-    contentEl.style.overflowY = "auto";
+    contentEl.setCssStyles({
+      maxHeight: "70vh",
+      overflowY: "auto",
+    });
 
     const step = TUTORIAL_STEPS[this.currentStep];
 
     // Progress indicator
     const progress = contentEl.createEl("div");
-    progress.style.fontSize = "0.8em";
-    progress.style.opacity = "0.6";
-    progress.style.marginBottom = "8px";
+    progress.setCssStyles({
+      fontSize: "0.8em",
+      opacity: "0.6",
+      marginBottom: "8px",
+    });
     progress.setText(
       `Step ${this.currentStep + 1} of ${TUTORIAL_STEPS.length}`
     );
@@ -33,44 +37,56 @@ export class TutorialModal extends Modal {
 
     for (const p of step.paragraphs) {
       const para = contentEl.createEl("p");
-      para.style.lineHeight = "1.5";
+      para.setCssStyles({ lineHeight: "1.5" });
       para.setText(p);
     }
 
     if (step.exampleTitle && step.exampleLines && step.exampleLines.length) {
       const box = contentEl.createEl("div");
-      box.style.padding = "10px 12px";
-      box.style.marginTop = "12px";
-      box.style.background = "var(--background-secondary)";
-      box.style.borderLeft = "3px solid var(--text-accent)";
-      box.style.borderRadius = "4px";
+      box.setCssStyles({
+        padding: "10px 12px",
+        marginTop: "12px",
+        background: "var(--background-secondary)",
+        borderLeft: "3px solid var(--text-accent)",
+        borderRadius: "4px",
+      });
       const exTitle = box.createEl("div");
-      exTitle.style.fontWeight = "600";
-      exTitle.style.marginBottom = "6px";
+      exTitle.setCssStyles({
+        fontWeight: "600",
+        marginBottom: "6px",
+      });
       exTitle.setText(step.exampleTitle);
       for (const line of step.exampleLines) {
         const l = box.createEl("div");
-        l.style.fontSize = "0.9em";
-        l.style.lineHeight = "1.5";
-        l.style.marginBottom = "3px";
+        l.setCssStyles({
+          fontSize: "0.9em",
+          lineHeight: "1.5",
+          marginBottom: "3px",
+        });
         l.setText(line);
       }
     }
 
     // Navigation buttons
     const navRow = contentEl.createEl("div");
-    navRow.style.display = "flex";
-    navRow.style.gap = "8px";
-    navRow.style.justifyContent = "space-between";
-    navRow.style.marginTop = "20px";
+    navRow.setCssStyles({
+      display: "flex",
+      gap: "8px",
+      justifyContent: "space-between",
+      marginTop: "20px",
+    });
 
     const leftGroup = navRow.createEl("div");
-    leftGroup.style.display = "flex";
-    leftGroup.style.gap = "6px";
+    leftGroup.setCssStyles({
+      display: "flex",
+      gap: "6px",
+    });
 
     const backBtn = leftGroup.createEl("button", { text: "← Back" });
-    backBtn.style.padding = "6px 12px";
-    backBtn.style.cursor = "pointer";
+    backBtn.setCssStyles({
+      padding: "6px 12px",
+      cursor: "pointer",
+    });
     backBtn.disabled = this.currentStep === 0;
     backBtn.onclick = () => {
       if (this.currentStep > 0) {
@@ -80,8 +96,10 @@ export class TutorialModal extends Modal {
     };
 
     const exitBtn = leftGroup.createEl("button", { text: "Exit" });
-    exitBtn.style.padding = "6px 12px";
-    exitBtn.style.cursor = "pointer";
+    exitBtn.setCssStyles({
+      padding: "6px 12px",
+      cursor: "pointer",
+    });
     exitBtn.onclick = () => this.close();
 
     const rightGroup = navRow.createEl("div");
@@ -89,11 +107,13 @@ export class TutorialModal extends Modal {
     const nextBtn = rightGroup.createEl("button", {
       text: isLast ? "Finish" : "Next →",
     });
-    nextBtn.style.padding = "6px 14px";
-    nextBtn.style.cursor = "pointer";
-    nextBtn.style.background = "var(--interactive-accent)";
-    nextBtn.style.color = "var(--text-on-accent)";
-    nextBtn.style.fontWeight = "600";
+    nextBtn.setCssStyles({
+      padding: "6px 14px",
+      cursor: "pointer",
+      background: "var(--interactive-accent)",
+      color: "var(--text-on-accent)",
+      fontWeight: "600",
+    });
     nextBtn.onclick = () => {
       if (isLast) {
         this.close();

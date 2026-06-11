@@ -30,8 +30,10 @@ export class ElevateToPrincipleModal extends Modal {
     const { contentEl } = this;
     contentEl.createEl("h3", { text: "Elevate to principle" });
     const intro = contentEl.createEl("p");
-    intro.style.fontSize = "0.9em";
-    intro.style.opacity = "0.8";
+    intro.setCssStyles({
+      fontSize: "0.9em",
+      opacity: "0.8",
+    });
     intro.setText(
       `You're transforming the tension "${humanTitle(this.app, this.file)}" into an operational principle. Fill the fields below: they will become the new body. The original tension text will be preserved under the "## Origin (tension)" section.`
     );
@@ -48,23 +50,29 @@ export class ElevateToPrincipleModal extends Modal {
 
     const mkLabel = (text: string) => {
       const l = contentEl.createEl("label", { text });
-      l.style.display = "block";
-      l.style.marginTop = "12px";
-      l.style.fontWeight = "bold";
+      l.setCssStyles({
+        display: "block",
+        marginTop: "12px",
+        fontWeight: "bold",
+      });
       return l;
     };
     const mkHint = (text: string) => {
       const h = contentEl.createEl("div", { text });
-      h.style.fontSize = "0.8em";
-      h.style.opacity = "0.6";
+      h.setCssStyles({
+        fontSize: "0.8em",
+        opacity: "0.6",
+      });
       return h;
     };
     const mkTextarea = (minHeight: string, onInput: (v: string) => void) => {
       const t = contentEl.createEl("textarea");
-      t.style.width = "100%";
-      t.style.padding = "6px";
-      t.style.marginTop = "4px";
-      t.style.minHeight = minHeight;
+      t.setCssStyles({
+        width: "100%",
+        padding: "6px",
+        marginTop: "4px",
+        minHeight: minHeight,
+      });
       t.addEventListener("input", (e) => {
         onInput((e.target as HTMLTextAreaElement).value);
       });
@@ -72,9 +80,11 @@ export class ElevateToPrincipleModal extends Modal {
     };
     const mkInput = (onInput: (v: string) => void) => {
       const i = contentEl.createEl("input", { type: "text" });
-      i.style.width = "100%";
-      i.style.padding = "6px";
-      i.style.marginTop = "4px";
+      i.setCssStyles({
+        width: "100%",
+        padding: "6px",
+        marginTop: "4px",
+      });
       i.addEventListener("input", (e) => {
         onInput((e.target as HTMLInputElement).value);
       });
@@ -107,10 +117,12 @@ export class ElevateToPrincipleModal extends Modal {
     const aiBtn = contentEl.createEl("button", {
       text: "Propose IF/THEN (AI)",
     });
-    aiBtn.style.marginTop = "10px";
-    aiBtn.style.fontSize = "0.85em";
-    aiBtn.style.padding = "4px 12px";
-    aiBtn.style.cursor = "pointer";
+    aiBtn.setCssStyles({
+      marginTop: "10px",
+      fontSize: "0.85em",
+      padding: "4px 12px",
+      cursor: "pointer",
+    });
     aiBtn.title =
       "Asks the AI model to propose the 5 IF/THEN/GREY fields by reading the tension's text.";
     // Friction card (PTM) container — populated after the AI proposes.

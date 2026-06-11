@@ -33,16 +33,20 @@ function askYouTubeUrl(
       const c = modal.contentEl;
       c.createEl("h3", { text: "Substrate from YouTube" });
       const p = c.createEl("p");
-      p.style.fontSize = "0.88em";
-      p.style.opacity = "0.8";
+      p.setCssStyles({
+        fontSize: "0.88em",
+        opacity: "0.8",
+      });
       p.setText(
         "Paste the video URL. Antinomia will download the transcript (if available) via YouTube's timedtext API."
       );
       let url = prefillUrl;
       const input = c.createEl("input", { type: "text" });
-      input.style.width = "100%";
-      input.style.padding = "6px";
-      input.style.marginBottom = "10px";
+      input.setCssStyles({
+        width: "100%",
+        padding: "6px",
+        marginBottom: "10px",
+      });
       input.value = url;
       input.placeholder = "https://www.youtube.com/watch?v=...";
       input.addEventListener("input", (e) => {
@@ -131,14 +135,18 @@ async function fetchTranscriptWithFallback(
       const c = fallbackModal.contentEl;
       c.createEl("h3", { text: "Automatic fetch failed" });
       const p = c.createEl("p");
-      p.style.fontSize = "0.9em";
-      p.style.lineHeight = "1.5";
+      p.setCssStyles({
+        fontSize: "0.9em",
+        lineHeight: "1.5",
+      });
       p.setText(
         "YouTube blocks the direct transcript fetch (it requires an authenticated session). Workaround in 3 clicks:"
       );
       const steps = c.createEl("ol");
-      steps.style.lineHeight = "1.5";
-      steps.style.marginBottom = "12px";
+      steps.setCssStyles({
+        lineHeight: "1.5",
+        marginBottom: "12px",
+      });
       steps.createEl("li", {
         text: "Click the button below to open youtubetotranscript.com in your browser.",
       });
@@ -174,15 +182,19 @@ async function fetchTranscriptWithFallback(
       const label = c.createEl("label", {
         text: "Paste the transcript here",
       });
-      label.style.display = "block";
-      label.style.fontWeight = "bold";
-      label.style.marginTop = "10px";
+      label.setCssStyles({
+        display: "block",
+        fontWeight: "bold",
+        marginTop: "10px",
+      });
 
       const textarea = c.createEl("textarea");
-      textarea.style.width = "100%";
-      textarea.style.minHeight = "200px";
-      textarea.style.padding = "8px";
-      textarea.style.marginTop = "4px";
+      textarea.setCssStyles({
+        width: "100%",
+        minHeight: "200px",
+        padding: "8px",
+        marginTop: "4px",
+      });
       let pasted = "";
       textarea.addEventListener("input", (e) => {
         pasted = (e.target as HTMLTextAreaElement).value;

@@ -32,8 +32,10 @@ export class NewSubstrateModal extends Modal {
       renderFrictionCard(contentEl, this.plugin.lastFriction, this.plugin.settings.aiFrictionLevel ?? "medium");
     }
     const intro = contentEl.createEl("p");
-    intro.style.fontSize = "0.9em";
-    intro.style.opacity = "0.8";
+    intro.setCssStyles({
+      fontSize: "0.9em",
+      opacity: "0.8",
+    });
     intro.setText(
       "A substrate is raw material: a quote, a fact, a note. The raw stuff from which tensions and principles can emerge."
     );
@@ -43,24 +45,30 @@ export class NewSubstrateModal extends Modal {
 
     const mkLabel = (text: string) => {
       const l = contentEl.createEl("label", { text });
-      l.style.display = "block";
-      l.style.marginTop = "10px";
-      l.style.fontWeight = "bold";
+      l.setCssStyles({
+        display: "block",
+        marginTop: "10px",
+        fontWeight: "bold",
+      });
       return l;
     };
     const mkHint = (text: string) => {
       const h = contentEl.createEl("div", { text });
-      h.style.fontSize = "0.8em";
-      h.style.opacity = "0.6";
+      h.setCssStyles({
+        fontSize: "0.8em",
+        opacity: "0.6",
+      });
       return h;
     };
 
     mkLabel("Title (optional)");
     mkHint("Short label (e.g. 'Kahneman quote on confirmation bias').");
     const titleInput = contentEl.createEl("input", { type: "text" });
-    titleInput.style.width = "100%";
-    titleInput.style.padding = "6px";
-    titleInput.style.marginTop = "4px";
+    titleInput.setCssStyles({
+      width: "100%",
+      padding: "6px",
+      marginTop: "4px",
+    });
     titleInput.value = titolo;
     titleInput.addEventListener("input", (e) => {
       titolo = (e.target as HTMLInputElement).value;
@@ -68,10 +76,12 @@ export class NewSubstrateModal extends Modal {
 
     // ---- "Proponi titolo (AI)" button ----
     const aiBtn = contentEl.createEl("button", { text: "Propose title (AI)" });
-    aiBtn.style.marginTop = "6px";
-    aiBtn.style.fontSize = "0.85em";
-    aiBtn.style.padding = "3px 10px";
-    aiBtn.style.cursor = "pointer";
+    aiBtn.setCssStyles({
+      marginTop: "6px",
+      fontSize: "0.85em",
+      padding: "3px 10px",
+      cursor: "pointer",
+    });
     aiBtn.title =
       "Asks the configured AI model to propose a title from the filled content.";
     aiBtn.onclick = async (e) => {
@@ -98,10 +108,12 @@ export class NewSubstrateModal extends Modal {
     mkLabel("Content");
     mkHint("The quote, the fact, the observation. Without interpreting it.");
     const cInput = contentEl.createEl("textarea");
-    cInput.style.width = "100%";
-    cInput.style.padding = "6px";
-    cInput.style.marginTop = "4px";
-    cInput.style.minHeight = "100px";
+    cInput.setCssStyles({
+      width: "100%",
+      padding: "6px",
+      marginTop: "4px",
+      minHeight: "100px",
+    });
     cInput.value = contenuto;
     cInput.addEventListener("input", (e) => {
       contenuto = (e.target as HTMLTextAreaElement).value;

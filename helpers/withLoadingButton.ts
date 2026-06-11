@@ -28,10 +28,12 @@ export async function withLoadingButton<T>(
   const controller = new AbortController();
   const stopBtn = document.createElement("button");
   stopBtn.textContent = "⛔ Stop";
-  stopBtn.style.marginLeft = "6px";
-  stopBtn.style.padding = "2px 8px";
-  stopBtn.style.fontSize = "0.85em";
-  stopBtn.style.cursor = "pointer";
+  stopBtn.setCssStyles({
+    marginLeft: "6px",
+    padding: "2px 8px",
+    fontSize: "0.85em",
+    cursor: "pointer",
+  });
   stopBtn.title = "Stop the running AI generation.";
   stopBtn.onclick = (e) => {
     e.preventDefault();

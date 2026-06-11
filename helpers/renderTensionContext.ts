@@ -15,25 +15,31 @@ export function renderTensionContext(parent: HTMLElement, rawContent: string): v
   const presupB = extract(/-\s*\*\*Presuppositions B:\*\*\s*([^\n]*)/);
 
   const box = parent.createEl("div");
-  box.style.padding = "10px 12px";
-  box.style.marginBottom = "14px";
-  box.style.background = "var(--background-secondary)";
-  box.style.borderLeft = "3px solid var(--text-accent)";
-  box.style.borderRadius = "4px";
-  box.style.maxHeight = "240px";
-  box.style.overflowY = "auto";
-  box.style.fontSize = "0.88em";
+  box.setCssStyles({
+    padding: "10px 12px",
+    marginBottom: "14px",
+    background: "var(--background-secondary)",
+    borderLeft: "3px solid var(--text-accent)",
+    borderRadius: "4px",
+    maxHeight: "240px",
+    overflowY: "auto",
+    fontSize: "0.88em",
+  });
 
   const header = box.createEl("div");
-  header.style.fontWeight = "bold";
-  header.style.marginBottom = "6px";
+  header.setCssStyles({
+    fontWeight: "bold",
+    marginBottom: "6px",
+  });
   header.setText("Origin tension");
 
   const mkRow = (label: string, value: string) => {
     if (!value) return;
     const r = box.createEl("div");
-    r.style.marginBottom = "4px";
-    r.style.lineHeight = "1.35";
+    r.setCssStyles({
+      marginBottom: "4px",
+      lineHeight: "1.35",
+    });
     const lab = r.createEl("strong");
     lab.setText(`${label}: `);
     r.appendText(value);
@@ -49,9 +55,11 @@ export function renderTensionContext(parent: HTMLElement, rawContent: string): v
   // If absolutely nothing was extracted, show the whole body as fallback
   if (!aBase && !bBase && !presupA && !presupB) {
     const fallback = box.createEl("pre");
-    fallback.style.whiteSpace = "pre-wrap";
-    fallback.style.fontSize = "0.85em";
-    fallback.style.margin = "0";
+    fallback.setCssStyles({
+      whiteSpace: "pre-wrap",
+      fontSize: "0.85em",
+      margin: "0",
+    });
     fallback.setText(body.slice(0, 1000));
   }
 }

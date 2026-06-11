@@ -47,7 +47,7 @@ export class MigrationModal extends Modal {
       text: `Found ${this.legacyCount} notes with the legacy Italian schema (v1.1.x). Migration will rename frontmatter keys, enum values, and body markers to the v1.4 English schema.`,
     });
     const backup = contentEl.createEl("p");
-    backup.style.opacity = "0.85";
+    backup.setCssStyles({ opacity: "0.85" });
     backup.setText(
       "A complete backup is created first in notes/.antinomia-pre-migration-backup-<timestamp>/. You can undo anytime with 'Antinomia: Restore pre-migration backup'."
     );
@@ -76,11 +76,21 @@ export class MigrationModal extends Modal {
     contentEl.createEl("h3", { text: "Migrating…" });
     contentEl.createEl("p", { text: `Migrating ${done} of ${total}…` });
     const track = contentEl.createEl("div");
-    track.style.cssText =
-      "height:8px; background:var(--background-modifier-border); border-radius:4px; overflow:hidden; margin-top:8px;";
+    track.setCssStyles({
+      height: "8px",
+      background: "var(--background-modifier-border)",
+      borderRadius: "4px",
+      overflow: "hidden",
+      marginTop: "8px",
+    });
     const fill = track.createEl("div");
     const pct = total > 0 ? Math.round((done / total) * 100) : 100;
-    fill.style.cssText = `height:100%; width:${pct}%; background:var(--interactive-accent); transition:width 0.1s;`;
+    fill.setCssStyles({
+      height: "100%",
+      width: `${pct}%`,
+      background: "var(--interactive-accent)",
+      transition: "width 0.1s",
+    });
   }
 
   private renderReport(report: MigrationReport): void {
@@ -92,11 +102,18 @@ export class MigrationModal extends Modal {
     });
     if (report.backupPath) {
       const b = contentEl.createEl("p");
-      b.style.cssText = "font-size:0.85em; opacity:0.75; word-break:break-all;";
+      b.setCssStyles({
+        fontSize: "0.85em",
+        opacity: "0.75",
+        wordBreak: "break-all",
+      });
       b.setText(`Backup at: ${report.backupPath}`);
     }
     const hint = contentEl.createEl("p");
-    hint.style.cssText = "font-size:0.85em; opacity:0.75;";
+    hint.setCssStyles({
+      fontSize: "0.85em",
+      opacity: "0.75",
+    });
     hint.setText("Undo anytime with 'Antinomia: Restore pre-migration backup (latest)'.");
 
     new Setting(contentEl).addButton((b) =>

@@ -43,12 +43,14 @@ export class SubstrateListView extends ItemView {
     container.createEl("h4", { text: "Substrate" });
 
     const toolbar = container.createEl("div");
-    toolbar.style.marginBottom = "10px";
+    toolbar.setCssStyles({ marginBottom: "10px" });
     const newBtn = toolbar.createEl("button", { text: "+ New substrate" });
-    newBtn.style.padding = "4px 10px";
-    newBtn.style.fontSize = "0.85em";
-    newBtn.style.cursor = "pointer";
-    newBtn.style.fontWeight = "600";
+    newBtn.setCssStyles({
+      padding: "4px 10px",
+      fontSize: "0.85em",
+      cursor: "pointer",
+      fontWeight: "600",
+    });
     newBtn.onclick = () => {
       new NewSubstrateModal(this.app, this.plugin, (fields, skipped) => {
         if (fields === null && !skipped) return;

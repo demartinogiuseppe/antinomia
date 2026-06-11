@@ -41,8 +41,10 @@ export class DefeatedListView extends ItemView {
     container.createEl("h4", { text: "Defeated archive" });
 
     const desc = container.createEl("p");
-    desc.style.fontSize = "0.85em";
-    desc.style.opacity = "0.7";
+    desc.setCssStyles({
+      fontSize: "0.85em",
+      opacity: "0.7",
+    });
     desc.setText(
       "Defeated beliefs. Historical memory: they are not edited; they remain as a trace of what was NOT true."
     );
@@ -65,9 +67,11 @@ export class DefeatedListView extends ItemView {
           const motivo = fm?.motive;
           const sost = fm?.replaced_by;
           const meta = card.createEl("div");
-          meta.style.fontSize = "0.78em";
-          meta.style.opacity = "0.7";
-          meta.style.marginBottom = "4px";
+          meta.setCssStyles({
+            fontSize: "0.78em",
+            opacity: "0.7",
+            marginBottom: "4px",
+          });
           const parts: string[] = [];
           if (typeof motivo === "string") parts.push(`motive: ${motivo}`);
           if (typeof sost === "string" && sost.length > 0)

@@ -18,8 +18,10 @@ export class PdfSourcePickerModal extends Modal {
     contentEl.createEl("h3", { text: "Choose PDF source" });
 
     const intro = contentEl.createEl("p");
-    intro.style.fontSize = "0.88em";
-    intro.style.opacity = "0.8";
+    intro.setCssStyles({
+      fontSize: "0.88em",
+      opacity: "0.8",
+    });
     intro.setText(
       "Antinomia will extract text from the PDF and ask the AI to propose substrate concepts. You'll preview and pick which to save."
     );

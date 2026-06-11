@@ -48,21 +48,25 @@ export class OpenTensionsView extends ItemView {
     // ---- First-time hint banner ----
     if (!this.plugin.settings.hintsTensionsShown) {
       const hint = container.createEl("div");
-      hint.style.padding = "8px 10px";
-      hint.style.marginBottom = "10px";
-      hint.style.background = "var(--background-modifier-success-hover, var(--background-secondary))";
-      hint.style.borderLeft = "3px solid var(--interactive-accent)";
-      hint.style.borderRadius = "4px";
-      hint.style.fontSize = "0.85em";
+      hint.setCssStyles({
+        padding: "8px 10px",
+        marginBottom: "10px",
+        background: "var(--background-modifier-success-hover, var(--background-secondary))",
+        borderLeft: "3px solid var(--interactive-accent)",
+        borderRadius: "4px",
+        fontSize: "0.85em",
+      });
       const txt = hint.createEl("div");
-      txt.style.marginBottom = "6px";
+      txt.setCssStyles({ marginBottom: "6px" });
       txt.setText(
         "Tip: each tension is a card with quick buttons (Title / Link / Presuppositions / ↑ Elevate / ✓ Resolved / × Defeated). Click the title to open the note. At the top of the sidebar, 4 toolbar buttons: '+ Tension', '+ Substrate', '✨ Free' (AI classifies), '🔍 Hunter'."
       );
       const dismissBtn = hint.createEl("button", { text: "Got it" });
-      dismissBtn.style.padding = "2px 10px";
-      dismissBtn.style.cursor = "pointer";
-      dismissBtn.style.fontSize = "0.85em";
+      dismissBtn.setCssStyles({
+        padding: "2px 10px",
+        cursor: "pointer",
+        fontSize: "0.85em",
+      });
       dismissBtn.onclick = async () => {
         this.plugin.settings.hintsTensionsShown = true;
         await this.plugin.saveSettings();
@@ -72,16 +76,20 @@ export class OpenTensionsView extends ItemView {
 
     // ---- Quick-create toolbar (top) ----
     const toolbar = container.createEl("div");
-    toolbar.style.display = "flex";
-    toolbar.style.gap = "6px";
-    toolbar.style.marginBottom = "12px";
-    toolbar.style.flexWrap = "wrap";
+    toolbar.setCssStyles({
+      display: "flex",
+      gap: "6px",
+      marginBottom: "12px",
+      flexWrap: "wrap",
+    });
 
     const newTBtn = toolbar.createEl("button", { text: "+ New tension" });
-    newTBtn.style.padding = "4px 10px";
-    newTBtn.style.fontSize = "0.85em";
-    newTBtn.style.cursor = "pointer";
-    newTBtn.style.fontWeight = "600";
+    newTBtn.setCssStyles({
+      padding: "4px 10px",
+      fontSize: "0.85em",
+      cursor: "pointer",
+      fontWeight: "600",
+    });
     newTBtn.title = "Create a new tension (guided modal)";
     newTBtn.onclick = () => {
       new NewTensionModal(this.app, this.plugin, (fields, skipped) => {
@@ -92,9 +100,11 @@ export class OpenTensionsView extends ItemView {
     };
 
     const newSBtn = toolbar.createEl("button", { text: "+ New substrate" });
-    newSBtn.style.padding = "4px 10px";
-    newSBtn.style.fontSize = "0.85em";
-    newSBtn.style.cursor = "pointer";
+    newSBtn.setCssStyles({
+      padding: "4px 10px",
+      fontSize: "0.85em",
+      cursor: "pointer",
+    });
     newSBtn.title = "Create a new substrate (guided modal)";
     newSBtn.onclick = () => {
       new NewSubstrateModal(this.app, this.plugin, (fields, skipped) => {
@@ -105,45 +115,55 @@ export class OpenTensionsView extends ItemView {
     };
 
     const freeBtn = toolbar.createEl("button", { text: "✨ Free" });
-    freeBtn.style.padding = "4px 10px";
-    freeBtn.style.fontSize = "0.85em";
-    freeBtn.style.cursor = "pointer";
-    freeBtn.style.fontWeight = "600";
+    freeBtn.setCssStyles({
+      padding: "4px 10px",
+      fontSize: "0.85em",
+      cursor: "pointer",
+      fontWeight: "600",
+    });
     freeBtn.title =
       "Free-form input: write anything, the AI figures out if it's a tension or substrate";
     freeBtn.onclick = () => this.plugin.openFreeInputModal();
 
     const clipBtn = toolbar.createEl("button", { text: "📋 Clipboard" });
-    clipBtn.style.padding = "4px 10px";
-    clipBtn.style.fontSize = "0.85em";
-    clipBtn.style.cursor = "pointer";
+    clipBtn.setCssStyles({
+      padding: "4px 10px",
+      fontSize: "0.85em",
+      cursor: "pointer",
+    });
     clipBtn.title = "Opens 'Free-form input' with clipboard text already pasted: the AI classifies as tension or substrate.";
     clipBtn.onclick = () => void this.plugin.openFreeInputFromClipboard();
 
     const pdfBtn = toolbar.createEl("button", { text: "📎 PDF" });
-    pdfBtn.style.padding = "4px 10px";
-    pdfBtn.style.fontSize = "0.85em";
-    pdfBtn.style.cursor = "pointer";
+    pdfBtn.setCssStyles({
+      padding: "4px 10px",
+      fontSize: "0.85em",
+      cursor: "pointer",
+    });
     pdfBtn.title =
       "Substrate da un PDF nel vault (link + spazio per le tue note)";
     pdfBtn.onclick = () => void this.plugin.openSubstrateFromPDF();
 
     const ytBtn = toolbar.createEl("button", { text: "🎥 YouTube" });
-    ytBtn.style.padding = "4px 10px";
-    ytBtn.style.fontSize = "0.85em";
-    ytBtn.style.cursor = "pointer";
+    ytBtn.setCssStyles({
+      padding: "4px 10px",
+      fontSize: "0.85em",
+      cursor: "pointer",
+    });
     ytBtn.title =
       "Substrate da un video YouTube: chiede URL, scarica trascrizione (se disponibile)";
     ytBtn.onclick = () => void this.plugin.openSubstrateFromYouTube();
 
     // Spacer + Hunter button (visually separated from creation actions)
     const spacer = toolbar.createEl("span");
-    spacer.style.flex = "1";
+    spacer.setCssStyles({ flex: "1" });
 
     const hunterBtn = toolbar.createEl("button", { text: "🔍 Hunter" });
-    hunterBtn.style.padding = "4px 10px";
-    hunterBtn.style.fontSize = "0.85em";
-    hunterBtn.style.cursor = "pointer";
+    hunterBtn.setCssStyles({
+      padding: "4px 10px",
+      fontSize: "0.85em",
+      cursor: "pointer",
+    });
     hunterBtn.title =
       "Run the Contradiction Hunter (scans open tensions + substrate, identifies contradictory pairs)";
     hunterBtn.onclick = () => {
@@ -160,18 +180,22 @@ export class OpenTensionsView extends ItemView {
     }
     for (const file of open) {
       const card = container.createEl("div");
-      card.style.padding = "8px 10px";
-      card.style.marginBottom = "8px";
-      card.style.border = "1px solid var(--background-modifier-border)";
-      card.style.borderRadius = "5px";
-      card.style.background = "var(--background-secondary)";
+      card.setCssStyles({
+        padding: "8px 10px",
+        marginBottom: "8px",
+        border: "1px solid var(--background-modifier-border)",
+        borderRadius: "5px",
+        background: "var(--background-secondary)",
+      });
 
       const title = humanTitle(this.app, file);
       const link = card.createEl("a", { text: title, href: "#" });
-      link.style.cursor = "pointer";
-      link.style.display = "block";
-      link.style.marginBottom = "6px";
-      link.style.fontWeight = "600";
+      link.setCssStyles({
+        cursor: "pointer",
+        display: "block",
+        marginBottom: "6px",
+        fontWeight: "600",
+      });
       link.title = `${file.basename} (clicca per aprire)`;
       link.onclick = (e) => {
         e.preventDefault();
@@ -179,9 +203,11 @@ export class OpenTensionsView extends ItemView {
       };
 
       const btnRow = card.createEl("div");
-      btnRow.style.display = "flex";
-      btnRow.style.gap = "4px";
-      btnRow.style.flexWrap = "wrap";
+      btnRow.setCssStyles({
+        display: "flex",
+        gap: "4px",
+        flexWrap: "wrap",
+      });
 
       const mkBtn = (
         text: string,
@@ -189,9 +215,11 @@ export class OpenTensionsView extends ItemView {
         onclick: () => void
       ): HTMLButtonElement => {
         const b = btnRow.createEl("button", { text });
-        b.style.padding = "2px 8px";
-        b.style.fontSize = "0.78em";
-        b.style.cursor = "pointer";
+        b.setCssStyles({
+          padding: "2px 8px",
+          fontSize: "0.78em",
+          cursor: "pointer",
+        });
         b.title = tooltip;
         b.onclick = (e) => {
           e.stopPropagation();
@@ -218,7 +246,7 @@ export class OpenTensionsView extends ItemView {
           void this.plugin.openElevateModal(file);
         }
       );
-      elBtn.style.borderLeft = "2px solid var(--interactive-accent)";
+      elBtn.setCssStyles({ borderLeft: "2px solid var(--interactive-accent)" });
 
       mkBtn("✓ Resolved", "Mark this tension as resolved", () => {
         void this.plugin.markResolved(file);

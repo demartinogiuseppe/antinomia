@@ -31,7 +31,7 @@ export class ConceptsPreviewModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.style.maxWidth = "780px";
+    contentEl.setCssStyles({ maxWidth: "780px" });
 
     contentEl.createEl("h3", {
       text: `Concepts from "${this.sourceName}"`,
@@ -50,9 +50,11 @@ export class ConceptsPreviewModal extends Modal {
     }
 
     const intro = contentEl.createEl("p");
-    intro.style.fontSize = "0.88em";
-    intro.style.opacity = "0.8";
-    intro.style.lineHeight = "1.5";
+    intro.setCssStyles({
+      fontSize: "0.88em",
+      opacity: "0.8",
+      lineHeight: "1.5",
+    });
     intro.setText(
       `Antinomia extracted ${this.concepts.length} concept(s). ` +
         `Pick which ones to save as substrates. They will be created in ` +
@@ -61,8 +63,10 @@ export class ConceptsPreviewModal extends Modal {
 
     if (this.concepts.length === 0) {
       const empty = contentEl.createEl("p");
-      empty.style.fontStyle = "italic";
-      empty.style.opacity = "0.7";
+      empty.setCssStyles({
+        fontStyle: "italic",
+        opacity: "0.7",
+      });
       empty.setText("No concepts extracted. Try again, or the source is too thin.");
       new Setting(contentEl).addButton((b) =>
         b.setButtonText("Close").setCta().onClick(() => this.close())
@@ -72,52 +76,66 @@ export class ConceptsPreviewModal extends Modal {
 
     // Toolbar (select all / none + counter).
     const toolbar = contentEl.createEl("div");
-    toolbar.style.display = "flex";
-    toolbar.style.alignItems = "center";
-    toolbar.style.gap = "8px";
-    toolbar.style.margin = "8px 0";
+    toolbar.setCssStyles({
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      margin: "8px 0",
+    });
 
     const counter = toolbar.createEl("span");
-    counter.style.fontSize = "0.85em";
-    counter.style.fontWeight = "bold";
+    counter.setCssStyles({
+      fontSize: "0.85em",
+      fontWeight: "bold",
+    });
     const updateCounter = () => {
       counter.setText(`${this.selected.size} of ${this.concepts.length} selected`);
     };
     updateCounter();
 
     const selAll = toolbar.createEl("button", { text: "Select all" });
-    selAll.style.fontSize = "0.8em";
-    selAll.style.padding = "2px 8px";
-    selAll.style.cursor = "pointer";
+    selAll.setCssStyles({
+      fontSize: "0.8em",
+      padding: "2px 8px",
+      cursor: "pointer",
+    });
 
     const deselAll = toolbar.createEl("button", { text: "Deselect all" });
-    deselAll.style.fontSize = "0.8em";
-    deselAll.style.padding = "2px 8px";
-    deselAll.style.cursor = "pointer";
+    deselAll.setCssStyles({
+      fontSize: "0.8em",
+      padding: "2px 8px",
+      cursor: "pointer",
+    });
 
     // Scrollable list of concepts.
     const list = contentEl.createEl("div");
-    list.style.maxHeight = "420px";
-    list.style.overflowY = "auto";
-    list.style.border = "1px solid var(--background-modifier-border)";
-    list.style.borderRadius = "6px";
-    list.style.padding = "4px";
+    list.setCssStyles({
+      maxHeight: "420px",
+      overflowY: "auto",
+      border: "1px solid var(--background-modifier-border)",
+      borderRadius: "6px",
+      padding: "4px",
+    });
 
     const itemEls: HTMLDivElement[] = [];
 
     this.concepts.forEach((c, i) => {
       const item = list.createEl("div");
       itemEls.push(item);
-      item.style.display = "flex";
-      item.style.gap = "8px";
-      item.style.padding = "8px 10px";
-      item.style.borderBottom = "1px solid var(--background-modifier-border)";
-      item.style.alignItems = "flex-start";
+      item.setCssStyles({
+        display: "flex",
+        gap: "8px",
+        padding: "8px 10px",
+        borderBottom: "1px solid var(--background-modifier-border)",
+        alignItems: "flex-start",
+      });
 
       const checkbox = item.createEl("input", { type: "checkbox" });
       checkbox.checked = true;
-      checkbox.style.marginTop = "4px";
-      checkbox.style.cursor = "pointer";
+      checkbox.setCssStyles({
+        marginTop: "4px",
+        cursor: "pointer",
+      });
       checkbox.addEventListener("change", () => {
         if (checkbox.checked) this.selected.add(i);
         else this.selected.delete(i);
@@ -125,20 +143,26 @@ export class ConceptsPreviewModal extends Modal {
       });
 
       const body = item.createEl("div");
-      body.style.flex = "1";
-      body.style.userSelect = "text";
-      (body.style as any).webkitUserSelect = "text";
+      body.setCssStyles({
+        flex: "1",
+        userSelect: "text",
+      });
+      body.setCssStyles({ webkitUserSelect: "text" });
 
       const title = body.createEl("div");
-      title.style.fontWeight = "bold";
-      title.style.fontSize = "0.95em";
-      title.style.marginBottom = "3px";
+      title.setCssStyles({
+        fontWeight: "bold",
+        fontSize: "0.95em",
+        marginBottom: "3px",
+      });
       title.setText(c.title);
 
       const content = body.createEl("div");
-      content.style.fontSize = "0.85em";
-      content.style.opacity = "0.85";
-      content.style.lineHeight = "1.45";
+      content.setCssStyles({
+        fontSize: "0.85em",
+        opacity: "0.85",
+        lineHeight: "1.45",
+      });
       content.setText(c.content);
     });
 

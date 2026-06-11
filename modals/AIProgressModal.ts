@@ -32,18 +32,22 @@ export class AIProgressModal extends Modal {
     titleEl.setText(this.heading);
 
     this.statusEl = contentEl.createEl("p");
-    this.statusEl.style.fontSize = "0.9em";
-    this.statusEl.style.lineHeight = "1.5";
+    this.statusEl.setCssStyles({
+      fontSize: "0.9em",
+      lineHeight: "1.5",
+    });
     this.statusEl.setText(this.initialStatus);
 
     this.elapsedEl = contentEl.createEl("div");
-    this.elapsedEl.style.fontFamily = "var(--font-monospace, monospace)";
-    this.elapsedEl.style.fontSize = "1.1em";
-    this.elapsedEl.style.textAlign = "center";
-    this.elapsedEl.style.padding = "12px";
-    this.elapsedEl.style.background = "var(--background-secondary)";
-    this.elapsedEl.style.borderRadius = "6px";
-    this.elapsedEl.style.margin = "8px 0";
+    this.elapsedEl.setCssStyles({
+      fontFamily: "var(--font-monospace, monospace)",
+      fontSize: "1.1em",
+      textAlign: "center",
+      padding: "12px",
+      background: "var(--background-secondary)",
+      borderRadius: "6px",
+      margin: "8px 0",
+    });
     this.elapsedEl.setText("⏳ 0s");
 
     this.t0 = Date.now();

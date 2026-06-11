@@ -19,8 +19,16 @@ export function renderAntinomiaNav(
   leaf: WorkspaceLeaf
 ): void {
   const nav = container.createDiv({ cls: "antinomia-nav" });
-  nav.style.cssText =
-    "display:flex; gap:4px; padding:6px 8px; border-bottom:1px solid var(--background-modifier-border); flex-wrap:wrap; align-items:center; background:var(--background-secondary); flex-shrink:0;";
+  nav.setCssStyles({
+    display: "flex",
+    gap: "4px",
+    padding: "6px 8px",
+    borderBottom: "1px solid var(--background-modifier-border)",
+    flexWrap: "wrap",
+    alignItems: "center",
+    background: "var(--background-secondary)",
+    flexShrink: "0",
+  });
 
   // View che vogliono il main editor area (wide). Le altre vanno in sidebar destra.
   const WIDE_VIEWS = new Set<string>([VIEW_TYPE_GRAPH, VIEW_TYPE_AUDIT]);
@@ -32,8 +40,14 @@ export function renderAntinomiaNav(
 
   const mkBtn = (label: string, onClick: () => void): HTMLButtonElement => {
     const btn = nav.createEl("button", { text: label });
-    btn.style.cssText =
-      "font-size:0.8em; padding:3px 8px; cursor:pointer; background:transparent; border:1px solid var(--background-modifier-border); border-radius:4px;";
+    btn.setCssStyles({
+      fontSize: "0.8em",
+      padding: "3px 8px",
+      cursor: "pointer",
+      background: "transparent",
+      border: "1px solid var(--background-modifier-border)",
+      borderRadius: "4px",
+    });
     btn.onclick = onClick;
     return btn;
   };
@@ -43,8 +57,14 @@ export function renderAntinomiaNav(
     buildMenu: (m: Menu) => void
   ): HTMLButtonElement => {
     const btn = nav.createEl("button", { text: label });
-    btn.style.cssText =
-      "font-size:0.8em; padding:3px 8px; cursor:pointer; background:transparent; border:1px solid var(--background-modifier-border); border-radius:4px;";
+    btn.setCssStyles({
+      fontSize: "0.8em",
+      padding: "3px 8px",
+      cursor: "pointer",
+      background: "transparent",
+      border: "1px solid var(--background-modifier-border)",
+      borderRadius: "4px",
+    });
     btn.onclick = () => {
       const m = new Menu();
       buildMenu(m);
@@ -212,7 +232,7 @@ export function renderAntinomiaNav(
 
   // -- Spacer + Settings
   const spacer = nav.createDiv();
-  spacer.style.flex = "1";
+  spacer.setCssStyles({ flex: "1" });
 
   const settingsBtn = mkBtn("⚙", () => {
     const setting = (plugin.app as any).setting;

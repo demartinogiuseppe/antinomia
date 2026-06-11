@@ -38,12 +38,14 @@ export class DefeatedReasonModal extends Modal {
 
     // --- Sostituita_da picker (only shown when motivo == "elevated") ---
     const sostBlock = contentEl.createEl("div");
-    sostBlock.style.marginBottom = "10px";
+    sostBlock.setCssStyles({ marginBottom: "10px" });
 
     const labelEl = contentEl.createEl("div");
-    labelEl.style.fontSize = "0.85em";
-    labelEl.style.opacity = "0.7";
-    labelEl.style.marginBottom = "12px";
+    labelEl.setCssStyles({
+      fontSize: "0.85em",
+      opacity: "0.7",
+      marginBottom: "12px",
+    });
 
     const renderSostituitaSection = () => {
       sostBlock.empty();

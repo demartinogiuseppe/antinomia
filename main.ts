@@ -153,12 +153,17 @@ class AntinomiaSettingTab extends PluginSettingTab {
 
     // Disclaimer permanente sull'uso appropriato dello strumento
     const disclaimer = containerEl.createDiv();
-    disclaimer.style.cssText =
-      "background:rgba(220,53,69,0.08); border-left:3px solid #dc3545; " +
-      "padding:10px 12px; margin:8px 0 16px 0; border-radius:4px; font-size:0.88em;";
+    disclaimer.setCssStyles({
+      background: "rgba(220,53,69,0.08)",
+      borderLeft: "3px solid #dc3545",
+      padding: "10px 12px",
+      margin: "8px 0 16px 0",
+      borderRadius: "4px",
+      fontSize: "0.88em",
+    });
     disclaimer.createEl("strong", { text: "⚠ Intended use" });
     const dp = disclaimer.createEl("p");
-    dp.style.margin = "6px 0 0 0";
+    dp.setCssStyles({ margin: "6px 0 0 0" });
     dp.setText(
       "Antinomia is a personal reflective practice, not a decision-support system. Do not use it to decide in real situations (work, health, finance, relationships). Hunter pairs are prompts, not truths: the AI can hallucinate. Any other use is improper."
     );
@@ -168,19 +173,25 @@ class AntinomiaSettingTab extends PluginSettingTab {
 
     // ---- Recommended companion plugin notice ----
     const recBox = containerEl.createEl("div");
-    recBox.style.padding = "10px 12px";
-    recBox.style.marginBottom = "16px";
-    recBox.style.background = "var(--background-secondary)";
-    recBox.style.border = "1px solid var(--background-modifier-border)";
-    recBox.style.borderLeft = "3px solid var(--interactive-accent)";
-    recBox.style.borderRadius = "4px";
+    recBox.setCssStyles({
+      padding: "10px 12px",
+      marginBottom: "16px",
+      background: "var(--background-secondary)",
+      border: "1px solid var(--background-modifier-border)",
+      borderLeft: "3px solid var(--interactive-accent)",
+      borderRadius: "4px",
+    });
     const recTitle = recBox.createEl("div");
-    recTitle.style.fontWeight = "bold";
-    recTitle.style.marginBottom = "4px";
+    recTitle.setCssStyles({
+      fontWeight: "bold",
+      marginBottom: "4px",
+    });
     recTitle.setText("Recommended plugin: Front Matter Title");
     const recText = recBox.createEl("div");
-    recText.style.fontSize = "0.85em";
-    recText.style.opacity = "0.85";
+    recText.setCssStyles({
+      fontSize: "0.85em",
+      opacity: "0.85",
+    });
     recText.setText(
       "Antinomia notes have timestamp basenames for ID stability. To see the human title also in the File Explorer, install 'Front Matter Title' from the community and configure it to read the 'title' property."
     );
@@ -194,11 +205,15 @@ class AntinomiaSettingTab extends PluginSettingTab {
         ? "Configure FMT for Antinomia"
         : "✓ Front Matter Title configured",
     });
-    fmtBtn.style.cssText =
-      "margin-top:8px; padding:4px 10px; cursor:pointer; font-size:0.85em;";
+    fmtBtn.setCssStyles({
+      marginTop: "8px",
+      padding: "4px 10px",
+      cursor: "pointer",
+      fontSize: "0.85em",
+    });
     if (fmtEnabledNow && fmtConfiguredNow) {
       fmtBtn.disabled = true;
-      fmtBtn.style.opacity = "0.7";
+      fmtBtn.setCssStyles({ opacity: "0.7" });
     }
     fmtBtn.onclick = async () => {
       if (!fmtEnabledNow) {
@@ -381,9 +396,11 @@ class AntinomiaSettingTab extends PluginSettingTab {
     // ---- AI Friction & Model Transparency (PTM Core) ----
     containerEl.createEl("h3", { text: "AI Friction" });
     const frictionDesc = containerEl.createEl("p");
-    frictionDesc.style.fontSize = "0.85em";
-    frictionDesc.style.opacity = "0.8";
-    frictionDesc.style.lineHeight = "1.5";
+    frictionDesc.setCssStyles({
+      fontSize: "0.85em",
+      opacity: "0.8",
+      lineHeight: "1.5",
+    });
     frictionDesc.setText(
       "PTM means staying in a contradiction to think, not resolving it fast. Every AI output carries a friction card (model transparency + limitations) to keep you the thinker. Off = no card. Low = model line only. Medium = collapsible card (default). High = card always open + you must acknowledge limitations before accepting an AI result."
     );
@@ -405,9 +422,11 @@ class AntinomiaSettingTab extends PluginSettingTab {
       text: "Why PTM friction? Read more →",
       href: "#",
     });
-    whyLink.style.fontSize = "0.85em";
-    whyLink.style.display = "inline-block";
-    whyLink.style.marginBottom = "10px";
+    whyLink.setCssStyles({
+      fontSize: "0.85em",
+      display: "inline-block",
+      marginBottom: "10px",
+    });
     whyLink.onclick = (e) => {
       e.preventDefault();
       new TutorialModal(this.app, WHY_FRICTION_STEP).open();
@@ -448,17 +467,25 @@ class AntinomiaSettingTab extends PluginSettingTab {
 
     // Info box su API costose vs locali gratuite
     const apiInfo = containerEl.createDiv();
-    apiInfo.style.cssText =
-      "background:rgba(13,110,253,0.08); border-left:3px solid #0d6efd; " +
-      "padding:10px 12px; margin:4px 0 12px 0; border-radius:4px; font-size:0.86em;";
+    apiInfo.setCssStyles({
+      background: "rgba(13,110,253,0.08)",
+      borderLeft: "3px solid #0d6efd",
+      padding: "10px 12px",
+      margin: "4px 0 12px 0",
+      borderRadius: "4px",
+      fontSize: "0.86em",
+    });
     apiInfo.createEl("strong", { text: "ℹ AI models: cloud vs local" });
     const aiP = apiInfo.createEl("p");
-    aiP.style.margin = "6px 0 0 0";
+    aiP.setCssStyles({ margin: "6px 0 0 0" });
     aiP.setText(
       "Antinomia uses AI models for the intelligent features (Hunter, propose IF/THEN, presuppositions, classify). Two options:"
     );
     const ul = apiInfo.createEl("ul");
-    ul.style.cssText = "margin:6px 0 0 0; padding-left:22px;";
+    ul.setCssStyles({
+      margin: "6px 0 0 0",
+      paddingLeft: "22px",
+    });
     const li1 = ul.createEl("li");
     li1.createEl("strong", { text: "Paid cloud APIs" });
     li1.appendText(
@@ -470,8 +497,10 @@ class AntinomiaSettingTab extends PluginSettingTab {
       " (LM Studio, Ollama): full privacy, zero cost, variable quality. Requires ~10GB of RAM/VRAM and an initial model download."
     );
     const aiP2 = apiInfo.createEl("p");
-    aiP2.style.margin = "6px 0 0 0";
-    aiP2.style.opacity = "0.85";
+    aiP2.setCssStyles({
+      margin: "6px 0 0 0",
+      opacity: "0.85",
+    });
     aiP2.setText(
       "You can configure multiple profiles and switch them freely (e.g. LM Studio for daily use, Claude only for deep Hunter scans)."
     );
@@ -637,8 +666,10 @@ class AntinomiaSettingTab extends PluginSettingTab {
       ? "completed"
       : "not yet completed";
     const statusEl = containerEl.createEl("p");
-    statusEl.style.fontSize = "0.85em";
-    statusEl.style.opacity = "0.7";
+    statusEl.setCssStyles({
+      fontSize: "0.85em",
+      opacity: "0.7",
+    });
     statusEl.setText(
       `Current status: onboarding ${statusText}. The welcome modal is shown automatically at launch if onboarding is not completed.`
     );
@@ -1237,8 +1268,10 @@ export default class AntinomiaPlugin extends Plugin {
           span.setText(
             `Antinomia: ${legacy.length} notes use the legacy v1.1 schema. Click to migrate to v1.4.`
           );
-          span.style.cursor = "pointer";
-          span.style.textDecoration = "underline";
+          span.setCssStyles({
+            cursor: "pointer",
+            textDecoration: "underline",
+          });
           span.onclick = () => new MigrationModal(this.app, this).open();
           frag.appendChild(span);
           new Notice(frag, 5000);
@@ -1854,7 +1887,7 @@ export default class AntinomiaPlugin extends Plugin {
       frag.appendChild(span);
       const btn = document.createElement("button");
       btn.textContent = "Fix";
-      btn.style.marginLeft = "8px";
+      btn.setCssStyles({ marginLeft: "8px" });
       btn.onclick = async () => {
         profile.baseUrl = preset.baseUrl;
         await this.saveSettings();
