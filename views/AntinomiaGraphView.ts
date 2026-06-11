@@ -99,27 +99,33 @@ export class AntinomiaGraphView extends ItemView {
     const { contentEl } = this;
     contentEl.empty();
     renderAntinomiaNav(this.plugin, contentEl, this.leaf);
-    contentEl.style.padding = "0";
-    contentEl.style.display = "flex";
-    contentEl.style.flexDirection = "column";
-    contentEl.style.height = "100%";
-    contentEl.style.overflow = "hidden"; // niente scrollbar lampeggiante quando i nodi fluttuano
+    contentEl.setCssStyles({
+      padding: "0",
+      display: "flex",
+      flexDirection: "column",
+      height: "100%",
+    });
+    contentEl.setCssStyles({ overflow: "hidden" }); // niente scrollbar lampeggiante quando i nodi fluttuano
     // Anche il parent .view-content puo' avere overflow:auto di default
     const viewContent = contentEl.closest(".view-content") as HTMLElement | null;
-    if (viewContent) viewContent.style.overflow = "hidden";
+    if (viewContent) viewContent.setCssStyles({ overflow: "hidden" });
 
     // Toolbar
     const toolbar = contentEl.createDiv();
-    toolbar.style.padding = "8px 12px";
-    toolbar.style.borderBottom = "1px solid var(--background-modifier-border)";
-    toolbar.style.display = "flex";
-    toolbar.style.flexWrap = "wrap";
-    toolbar.style.gap = "8px";
-    toolbar.style.alignItems = "center";
+    toolbar.setCssStyles({
+      padding: "8px 12px",
+      borderBottom: "1px solid var(--background-modifier-border)",
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "8px",
+      alignItems: "center",
+    });
 
     const label = toolbar.createSpan({ text: "Antinomia Graph" });
-    label.style.fontWeight = "bold";
-    label.style.marginRight = "12px";
+    label.setCssStyles({
+      fontWeight: "bold",
+      marginRight: "12px",
+    });
 
     const mkChk = (
       key: keyof GraphFilters,
@@ -127,25 +133,31 @@ export class AntinomiaGraphView extends ItemView {
       colorKey: string
     ): void => {
       const wrap = toolbar.createSpan();
-      wrap.style.display = "inline-flex";
-      wrap.style.alignItems = "center";
-      wrap.style.gap = "4px";
-      wrap.style.padding = "2px 6px";
-      wrap.style.borderRadius = "4px";
-      wrap.style.background = "var(--background-secondary)";
+      wrap.setCssStyles({
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "4px",
+        padding: "2px 6px",
+        borderRadius: "4px",
+        background: "var(--background-secondary)",
+      });
       const cb = wrap.createEl("input", { type: "checkbox" });
       cb.checked = this.filters[key];
       cb.id = `cb-${String(key)}`;
       const dot = wrap.createSpan();
-      dot.style.width = "10px";
-      dot.style.height = "10px";
-      dot.style.borderRadius = "50%";
-      dot.style.background = this.activeLayerColor(colorKey);
-      dot.style.display = "inline-block";
+      dot.setCssStyles({
+        width: "10px",
+        height: "10px",
+        borderRadius: "50%",
+        background: this.activeLayerColor(colorKey),
+        display: "inline-block",
+      });
       const lab = wrap.createEl("label", { text: txt });
       lab.htmlFor = cb.id;
-      lab.style.fontSize = "0.85em";
-      lab.style.cursor = "pointer";
+      lab.setCssStyles({
+        fontSize: "0.85em",
+        cursor: "pointer",
+      });
       cb.onchange = () => {
         this.filters[key] = cb.checked;
         this.rebuildGraph();
@@ -185,11 +197,11 @@ export class AntinomiaGraphView extends ItemView {
 
     // Spacer
     const spacer = toolbar.createDiv();
-    spacer.style.flex = "1";
+    spacer.setCssStyles({ flex: "1" });
 
     // Layout dropdown
     const layoutSel = toolbar.createEl("select");
-    layoutSel.style.padding = "2px 4px";
+    layoutSel.setCssStyles({ padding: "2px 4px" });
     [
       ["clusters", "Clusters by layer"],
       ["fcose", "Force-directed (free)"],
@@ -217,16 +229,18 @@ export class AntinomiaGraphView extends ItemView {
 
     // Graph container
     const container = contentEl.createDiv();
-    container.style.flex = "1";
-    container.style.minHeight = "0"; // permette al flex item di restringersi
+    container.setCssStyles({ flex: "1" });
+    container.setCssStyles({ minHeight: "0" }); // permette al flex item di restringersi
     // backgroundColor is the base shown when the galaxy background is off.
-    container.style.backgroundColor = "var(--background-primary)";
-    container.style.overflow = "hidden";
-    container.style.position = "relative";
+    container.setCssStyles({
+      backgroundColor: "var(--background-primary)",
+      overflow: "hidden",
+      position: "relative",
+    });
     // isolation:isolate makes the container a stacking context so the parallax
     // background layers (negative z-index) stay contained above its base colour
     // and strictly below the graph content (edge SVG, canvases, label SVG).
-    container.style.isolation = "isolate";
+    container.setCssStyles({ isolation: "isolate" });
     this.graphContainer = container;
     this.applyGalaxyClass();
 
@@ -234,14 +248,30 @@ export class AntinomiaGraphView extends ItemView {
     // non viene coperto dai canvas Cytoscape che vivono dentro container.
     // Posizionato assoluto rispetto a contentEl con riferimento al container.
     const sliderWrap = contentEl.createDiv();
-    sliderWrap.style.cssText =
-      "position:absolute; right:18px; top:50%; transform:translateY(-50%); " +
-      "display:flex; flex-direction:column; align-items:center; gap:6px; " +
-      "background:var(--background-secondary); padding:8px 6px; border-radius:6px; " +
-      "z-index:9999; pointer-events:auto; opacity:0.9;";
+    sliderWrap.setCssStyles({
+      position: "absolute",
+      right: "18px",
+      top: "50%",
+      transform: "translateY(-50%)",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: "6px",
+      background: "var(--background-secondary)",
+      padding: "8px 6px",
+      borderRadius: "6px",
+      zIndex: "9999",
+      pointerEvents: "auto",
+      opacity: "0.9",
+    });
     const plusBtn = sliderWrap.createEl("button", { text: "+" });
-    plusBtn.style.cssText =
-      "width:24px; height:24px; padding:0; cursor:pointer; font-weight:bold;";
+    plusBtn.setCssStyles({
+      width: "24px",
+      height: "24px",
+      padding: "0",
+      cursor: "pointer",
+      fontWeight: "bold",
+    });
     const slider = sliderWrap.createEl("input");
     slider.type = "range";
     slider.min = "0";
@@ -251,13 +281,23 @@ export class AntinomiaGraphView extends ItemView {
     // Vertical slider: the legacy `appearance: slider-vertical` keyword is
     // deprecated in Chromium. Use the standard alternative (vertical
     // writing-mode + RTL direction) which works in all current browsers.
-    slider.style.cssText =
-      "writing-mode: vertical-lr; direction: rtl; " +
-      "width: 8px; height: 160px; cursor: pointer; pointer-events: auto;";
+    slider.setCssStyles({
+      writingMode: "vertical-lr",
+      direction: "rtl",
+      width: "8px",
+      height: "160px",
+      cursor: "pointer",
+      pointerEvents: "auto",
+    });
     (slider as any).orient = "vertical";
     const minusBtn = sliderWrap.createEl("button", { text: "−" });
-    minusBtn.style.cssText =
-      "width:24px; height:24px; padding:0; cursor:pointer; font-weight:bold;";
+    minusBtn.setCssStyles({
+      width: "24px",
+      height: "24px",
+      padding: "0",
+      cursor: "pointer",
+      fontWeight: "bold",
+    });
 
     // Conversione: slider 0-100 <-> zoom 0.02-8 (log scale)
     const LN_MIN = Math.log(0.02);
@@ -483,9 +523,9 @@ export class AntinomiaGraphView extends ItemView {
     const STARS_PARALLAX = 0.5;
     const pan = this.cy.pan();
     if (this.galaxyLayer)
-      this.galaxyLayer.style.transform = `translate(${pan.x * GALAXY_PARALLAX}px, ${pan.y * GALAXY_PARALLAX}px)`;
+      this.galaxyLayer.setCssStyles({ transform: `translate(${pan.x * GALAXY_PARALLAX}px, ${pan.y * GALAXY_PARALLAX}px)` });
     if (this.starsLayer)
-      this.starsLayer.style.transform = `translate(${pan.x * STARS_PARALLAX}px, ${pan.y * STARS_PARALLAX}px)`;
+      this.starsLayer.setCssStyles({ transform: `translate(${pan.x * STARS_PARALLAX}px, ${pan.y * STARS_PARALLAX}px)` });
   }
 
   /**
@@ -505,7 +545,7 @@ export class AntinomiaGraphView extends ItemView {
       const stars = this.graphContainer.createDiv({
         cls: "antinomia-graph-stars-layer",
       });
-      stars.style.backgroundImage = this.generateStarsBackground(100);
+      stars.setCssStyles({ backgroundImage: this.generateStarsBackground(100) });
       this.galaxyLayer = galaxy;
       this.starsLayer = stars;
       this.applyParallaxTransform(); // align with current pan immediately
@@ -604,7 +644,7 @@ export class AntinomiaGraphView extends ItemView {
 
     // Make sure the container is a positioning context so absolute SVG fits.
     if (getComputedStyle(this.graphContainer).position === "static") {
-      this.graphContainer.style.position = "relative";
+      this.graphContainer.setCssStyles({ position: "relative" });
     }
 
     // (Re)create both overlays
@@ -616,13 +656,15 @@ export class AntinomiaGraphView extends ItemView {
     }
     const mkOverlaySvg = (zIndex: string): SVGSVGElement => {
       const s = document.createElementNS(SVG_NS, "svg");
-      s.style.position = "absolute";
-      s.style.top = "0";
-      s.style.left = "0";
-      s.style.width = "100%";
-      s.style.height = "100%";
-      s.style.pointerEvents = "none";
-      s.style.zIndex = zIndex;
+      s.setCssStyles({
+        position: "absolute",
+        top: "0",
+        left: "0",
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+        zIndex: zIndex,
+      });
       return s;
     };
     // Paths SVG (BEHIND Cytoscape canvases): zIndex 0, prepended in DOM
@@ -939,9 +981,11 @@ export class AntinomiaGraphView extends ItemView {
     if (nodes.length === 0) {
       this.graphContainer.empty();
       const msg = this.graphContainer.createDiv();
-      msg.style.padding = "20px";
-      msg.style.textAlign = "center";
-      msg.style.opacity = "0.6";
+      msg.setCssStyles({
+        padding: "20px",
+        textAlign: "center",
+        opacity: "0.6",
+      });
       msg.setText(
         "No note matches active filters. Enable more layers above."
       );
@@ -953,8 +997,10 @@ export class AntinomiaGraphView extends ItemView {
     // che il browser ha gia' risolto a rgb(R,G,B).
     const resolveColor = (cssExpr: string, fallback: string): string => {
       const tmp = document.createElement("div");
-      tmp.style.color = cssExpr;
-      tmp.style.display = "none";
+      tmp.setCssStyles({
+        color: cssExpr,
+        display: "none",
+      });
       document.body.appendChild(tmp);
       const computed = getComputedStyle(tmp).color;
       tmp.remove();
@@ -973,7 +1019,7 @@ export class AntinomiaGraphView extends ItemView {
     // Applica background al container se il preset lo definisce, altrimenti usa il tema Obsidian.
     // backgroundColor only, so the galaxy nebula background-image (class) stays on top.
     if (this.graphContainer) {
-      this.graphContainer.style.backgroundColor = C.background || "var(--background-primary)";
+      this.graphContainer.setCssStyles({ backgroundColor: C.background || "var(--background-primary)" });
       this.applyGalaxyClass();
     }
 

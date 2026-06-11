@@ -26,8 +26,10 @@ export class TitleEditModal extends Modal {
     contentEl.createEl("h3", { text: this.headerText });
     if (this.hintText) {
       const hint = contentEl.createEl("p");
-      hint.style.fontSize = "0.85em";
-      hint.style.opacity = "0.7";
+      hint.setCssStyles({
+        fontSize: "0.85em",
+        opacity: "0.7",
+      });
       hint.setText(this.hintText);
     }
     if (this.frictionOpts) {
@@ -38,9 +40,11 @@ export class TitleEditModal extends Modal {
       type: "text",
       value: this.initialValue,
     });
-    input.style.width = "100%";
-    input.style.padding = "6px";
-    input.style.marginBottom = "10px";
+    input.setCssStyles({
+      width: "100%",
+      padding: "6px",
+      marginBottom: "10px",
+    });
     input.addEventListener("input", (e) => {
       currentValue = (e.target as HTMLInputElement).value;
     });
@@ -60,9 +64,11 @@ export class TitleEditModal extends Modal {
       const aiBtn = contentEl.createEl("button", {
         text: "Propose title (AI)",
       });
-      aiBtn.style.marginBottom = "10px";
-      aiBtn.style.padding = "4px 10px";
-      aiBtn.style.cursor = "pointer";
+      aiBtn.setCssStyles({
+        marginBottom: "10px",
+        padding: "4px 10px",
+        cursor: "pointer",
+      });
       aiBtn.title =
         "Ask the configured AI model to propose a title from the note's content.";
       aiBtn.onclick = async () => {

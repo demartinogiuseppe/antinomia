@@ -22,12 +22,12 @@ export class CollapseImpactModal extends Modal {
     contentEl.createEl("h3", { text: "What collapses if this fails?" });
     contentEl.createEl("p", {
       text: humanTitle(this.app, this.presupFile),
-    }).style.fontWeight = "bold";
+    }).setCssStyles({ fontWeight: "bold" });
 
     if (this.principles.length === 0) {
       contentEl.createEl("p", {
         text: "No principles currently rest on this presupposition.",
-      }).style.opacity = "0.7";
+      }).setCssStyles({ opacity: "0.7" });
     } else {
       contentEl.createEl("p", {
         text: `${this.principles.length} principle(s) depend on this assumption:`,
@@ -35,7 +35,7 @@ export class CollapseImpactModal extends Modal {
       const list = contentEl.createEl("ul");
       for (const p of this.principles) {
         const li = list.createEl("li");
-        li.style.marginBottom = "6px";
+        li.setCssStyles({ marginBottom: "6px" });
         li.createEl("strong", { text: humanTitle(this.app, p) });
         let snippet = "";
         try {
@@ -47,7 +47,11 @@ export class CollapseImpactModal extends Modal {
         }
         if (snippet) {
           const s = li.createEl("div");
-          s.style.cssText = "font-size:0.82em; opacity:0.7; margin-top:2px;";
+          s.setCssStyles({
+            fontSize: "0.82em",
+            opacity: "0.7",
+            marginTop: "2px",
+          });
           s.setText(snippet);
         }
       }

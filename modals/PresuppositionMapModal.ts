@@ -32,7 +32,7 @@ export class PresuppositionMapModal extends Modal {
     contentEl.createEl("h3", { text: "Map presuppositions" });
     contentEl.createEl("p", {
       text: `Implicit assumptions behind "${this.principleTitle}". For each, create a new presupposition, link to an existing one, edit the text, or skip.`,
-    }).style.opacity = "0.85";
+    }).setCssStyles({ opacity: "0.85" });
 
     if (this.friction) {
       renderFrictionCard(
@@ -44,19 +44,35 @@ export class PresuppositionMapModal extends Modal {
 
     for (const p of this.proposals) {
       const row = contentEl.createDiv();
-      row.style.cssText =
-        "border:1px solid var(--background-modifier-border); border-radius:6px; padding:8px 10px; margin-bottom:10px;";
+      row.setCssStyles({
+        border: "1px solid var(--background-modifier-border)",
+        borderRadius: "6px",
+        padding: "8px 10px",
+        marginBottom: "10px",
+      });
 
       const conf = row.createEl("span", { text: `confidence: ${p.confidence}` });
-      conf.style.cssText = "font-size:0.72em; opacity:0.65; float:right;";
+      conf.setCssStyles({
+        fontSize: "0.72em",
+        opacity: "0.65",
+        float: "right",
+      });
 
       const textarea = row.createEl("textarea");
       textarea.value = p.text;
-      textarea.style.cssText =
-        "width:100%; min-height:48px; resize:vertical; margin:4px 0; box-sizing:border-box;";
+      textarea.setCssStyles({
+        width: "100%",
+        minHeight: "48px",
+        resize: "vertical",
+        margin: "4px 0",
+        boxSizing: "border-box",
+      });
 
       const select = row.createEl("select");
-      select.style.cssText = "width:100%; padding:3px;";
+      select.setCssStyles({
+        width: "100%",
+        padding: "3px",
+      });
       const optNew = select.createEl("option", { text: "➕ Create new presupposition" });
       optNew.value = "new";
       for (const e of this.existing) {

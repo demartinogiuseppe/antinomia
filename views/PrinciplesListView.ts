@@ -41,8 +41,10 @@ export class PrinciplesListView extends ItemView {
     container.createEl("h4", { text: "Principles (Truth Archive)" });
 
     const desc = container.createEl("p");
-    desc.style.fontSize = "0.85em";
-    desc.style.opacity = "0.7";
+    desc.setCssStyles({
+      fontSize: "0.85em",
+      opacity: "0.7",
+    });
     desc.setText(
       "Operational IF/THEN/GREY rules emerged from resolving tensions."
     );
@@ -68,8 +70,10 @@ export class PrinciplesListView extends ItemView {
           const origin = fm?.origin_tension;
           if (typeof origin === "string" && origin.length > 0) {
             const o = card.createEl("div");
-            o.style.fontSize = "0.78em";
-            o.style.opacity = "0.6";
+            o.setCssStyles({
+              fontSize: "0.78em",
+              opacity: "0.6",
+            });
             o.setText(`Origin: ${origin}`);
           }
         },

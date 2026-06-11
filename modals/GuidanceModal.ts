@@ -18,8 +18,10 @@ export class GuidanceModal extends Modal {
     contentEl.createEl("h3", { text: "What to do next" });
 
     const intro = contentEl.createEl("p");
-    intro.style.fontSize = "0.9em";
-    intro.style.opacity = "0.8";
+    intro.setCssStyles({
+      fontSize: "0.9em",
+      opacity: "0.8",
+    });
     intro.setText(
       "Contextual hint based on the current state of your vault."
     );
@@ -27,41 +29,53 @@ export class GuidanceModal extends Modal {
     const suggestion = this.computeSuggestion();
 
     const box = contentEl.createEl("div");
-    box.style.padding = "14px";
-    box.style.marginTop = "12px";
-    box.style.marginBottom = "16px";
-    box.style.background = "var(--background-secondary)";
-    box.style.borderLeft = "3px solid var(--interactive-accent)";
-    box.style.borderRadius = "4px";
+    box.setCssStyles({
+      padding: "14px",
+      marginTop: "12px",
+      marginBottom: "16px",
+      background: "var(--background-secondary)",
+      borderLeft: "3px solid var(--interactive-accent)",
+      borderRadius: "4px",
+    });
 
     const title = box.createEl("div");
-    title.style.fontWeight = "600";
-    title.style.marginBottom = "6px";
+    title.setCssStyles({
+      fontWeight: "600",
+      marginBottom: "6px",
+    });
     title.setText(suggestion.headline);
 
     const body = box.createEl("div");
-    body.style.fontSize = "0.9em";
-    body.style.lineHeight = "1.5";
+    body.setCssStyles({
+      fontSize: "0.9em",
+      lineHeight: "1.5",
+    });
     body.setText(suggestion.body);
 
     const btnRow = contentEl.createEl("div");
-    btnRow.style.display = "flex";
-    btnRow.style.gap = "8px";
-    btnRow.style.justifyContent = "flex-end";
-    btnRow.style.marginTop = "12px";
+    btnRow.setCssStyles({
+      display: "flex",
+      gap: "8px",
+      justifyContent: "flex-end",
+      marginTop: "12px",
+    });
 
     const closeBtn = btnRow.createEl("button", { text: "Close" });
-    closeBtn.style.padding = "6px 12px";
-    closeBtn.style.cursor = "pointer";
+    closeBtn.setCssStyles({
+      padding: "6px 12px",
+      cursor: "pointer",
+    });
     closeBtn.onclick = () => this.close();
 
     if (suggestion.actionLabel && suggestion.action) {
       const goBtn = btnRow.createEl("button", { text: suggestion.actionLabel });
-      goBtn.style.padding = "6px 14px";
-      goBtn.style.cursor = "pointer";
-      goBtn.style.background = "var(--interactive-accent)";
-      goBtn.style.color = "var(--text-on-accent)";
-      goBtn.style.fontWeight = "600";
+      goBtn.setCssStyles({
+        padding: "6px 14px",
+        cursor: "pointer",
+        background: "var(--interactive-accent)",
+        color: "var(--text-on-accent)",
+        fontWeight: "600",
+      });
       goBtn.onclick = () => {
         this.close();
         suggestion.action!();

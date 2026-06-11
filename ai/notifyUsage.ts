@@ -33,23 +33,25 @@ export function notifyAIUsage(
 
     const badge = document.createElement("span");
     badge.className = "antinomia-ai-usage-badge";
-    badge.style.marginLeft = "8px";
-    badge.style.fontSize = "0.72em";
-    badge.style.opacity = "0.75";
-    badge.style.padding = "2px 7px";
-    badge.style.background = "var(--background-secondary)";
-    badge.style.color = "var(--text-muted)";
-    badge.style.borderRadius = "10px";
-    badge.style.fontFamily = "var(--font-monospace, monospace)";
-    badge.style.userSelect = "text";
-    (badge.style as any).webkitUserSelect = "text";
+    badge.setCssStyles({
+      marginLeft: "8px",
+      fontSize: "0.72em",
+      opacity: "0.75",
+      padding: "2px 7px",
+      background: "var(--background-secondary)",
+      color: "var(--text-muted)",
+      borderRadius: "10px",
+      fontFamily: "var(--font-monospace, monospace)",
+      userSelect: "text",
+    });
+    badge.setCssStyles({ webkitUserSelect: "text" });
 
     const dur =
       typeof durationMs === "number" ? `${(durationMs / 1000).toFixed(1)}s` : "—";
     badge.textContent = `Tokens: ↓${usage.input_tokens ?? "?"} ↑${usage.output_tokens ?? "?"} · ${dur}`;
 
     if (context?.app) {
-      badge.style.cursor = "pointer";
+      badge.setCssStyles({ cursor: "pointer" });
       badge.title = "Click for full AI call details";
       badge.addEventListener("click", () => {
         const inTok = usage.input_tokens ?? null;
@@ -94,7 +96,7 @@ export function notifyAIUsage(
   if (context?.app) {
     const el = (notice as any).noticeEl as HTMLElement | undefined;
     if (el) {
-      el.style.cursor = "pointer";
+      el.setCssStyles({ cursor: "pointer" });
       el.title = "Click for full AI call details";
       el.addEventListener("click", () => {
         const inTok = usage?.input_tokens ?? null;
@@ -152,32 +154,34 @@ export function renderUsageMetaBanner(
       : "Tokens: —";
 
   const wrap = parent.createEl("div");
-  wrap.style.display = "flex";
-  wrap.style.alignItems = "center";
-  wrap.style.gap = "8px";
-  wrap.style.padding = "6px 10px";
-  wrap.style.margin = "4px 0 12px 0";
-  wrap.style.background = "var(--background-secondary)";
-  wrap.style.borderRadius = "6px";
-  wrap.style.fontSize = "0.78em";
-  wrap.style.color = "var(--text-muted)";
-  wrap.style.fontFamily = "var(--font-monospace, monospace)";
-  wrap.style.userSelect = "text";
-  (wrap.style as any).webkitUserSelect = "text";
+  wrap.setCssStyles({
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "6px 10px",
+    margin: "4px 0 12px 0",
+    background: "var(--background-secondary)",
+    borderRadius: "6px",
+    fontSize: "0.78em",
+    color: "var(--text-muted)",
+    fontFamily: "var(--font-monospace, monospace)",
+    userSelect: "text",
+  });
+  wrap.setCssStyles({ webkitUserSelect: "text" });
 
   const label = wrap.createEl("span");
-  label.style.opacity = "0.7";
+  label.setCssStyles({ opacity: "0.7" });
   label.setText(`Pre-filled by ${meta.operation ?? "AI"} ·`);
 
   const tokSpan = wrap.createEl("span");
   tokSpan.setText(tokTxt);
 
   const durSpan = wrap.createEl("span");
-  durSpan.style.opacity = "0.7";
+  durSpan.setCssStyles({ opacity: "0.7" });
   durSpan.setText(`· ${dur}`);
 
   if (app) {
-    wrap.style.cursor = "pointer";
+    wrap.setCssStyles({ cursor: "pointer" });
     wrap.title = "Click for full AI call details";
     wrap.addEventListener("click", () => {
       const inTok = u?.input_tokens ?? null;
@@ -228,49 +232,57 @@ export class ErrorAckModal extends Modal {
     // modal stylesheet sometimes applies `user-select: none` which prevents
     // users from copying the error message — defeats the purpose of an ack
     // modal that exists exactly to let people read & share the error.
-    contentEl.style.userSelect = "text";
-    (contentEl.style as any).webkitUserSelect = "text";
-    contentEl.style.cursor = "text";
+    contentEl.setCssStyles({ userSelect: "text" });
+    contentEl.setCssStyles({ webkitUserSelect: "text" });
+    contentEl.setCssStyles({ cursor: "text" });
 
     const msg = contentEl.createEl("p");
-    msg.style.whiteSpace = "pre-wrap";
-    msg.style.lineHeight = "1.5";
-    msg.style.fontSize = "0.95em";
-    msg.style.userSelect = "text";
-    (msg.style as any).webkitUserSelect = "text";
-    msg.style.cursor = "text";
+    msg.setCssStyles({
+      whiteSpace: "pre-wrap",
+      lineHeight: "1.5",
+      fontSize: "0.95em",
+      userSelect: "text",
+    });
+    msg.setCssStyles({ webkitUserSelect: "text" });
+    msg.setCssStyles({ cursor: "text" });
     msg.setText(this.message);
 
     if (this.details && this.details.trim()) {
       const det = contentEl.createEl("details");
-      det.style.marginTop = "12px";
+      det.setCssStyles({ marginTop: "12px" });
       const sum = det.createEl("summary", { text: "Technical details" });
-      sum.style.cursor = "pointer";
-      sum.style.fontSize = "0.8em";
-      sum.style.opacity = "0.65";
-      sum.style.marginBottom = "6px";
-      sum.style.userSelect = "none"; // summary stays click-only
+      sum.setCssStyles({
+        cursor: "pointer",
+        fontSize: "0.8em",
+        opacity: "0.65",
+        marginBottom: "6px",
+      });
+      sum.setCssStyles({ userSelect: "none" }); // summary stays click-only
       const pre = det.createEl("pre");
-      pre.style.fontSize = "0.75em";
-      pre.style.maxHeight = "240px";
-      pre.style.overflow = "auto";
-      pre.style.padding = "8px";
-      pre.style.background = "var(--background-secondary)";
-      pre.style.borderRadius = "4px";
-      pre.style.whiteSpace = "pre-wrap";
-      pre.style.wordBreak = "break-word";
-      pre.style.userSelect = "text";
-      (pre.style as any).webkitUserSelect = "text";
-      pre.style.cursor = "text";
+      pre.setCssStyles({
+        fontSize: "0.75em",
+        maxHeight: "240px",
+        overflow: "auto",
+        padding: "8px",
+        background: "var(--background-secondary)",
+        borderRadius: "4px",
+        whiteSpace: "pre-wrap",
+        wordBreak: "break-word",
+        userSelect: "text",
+      });
+      pre.setCssStyles({ webkitUserSelect: "text" });
+      pre.setCssStyles({ cursor: "text" });
       pre.setText(this.details);
 
       // "Copy details" button so the user can quickly share the technical
       // info on GitHub/Discord without manually selecting + Ctrl+C.
       const copyBtn = det.createEl("button", { text: "Copy details" });
-      copyBtn.style.marginTop = "6px";
-      copyBtn.style.fontSize = "0.75em";
-      copyBtn.style.padding = "2px 8px";
-      copyBtn.style.cursor = "pointer";
+      copyBtn.setCssStyles({
+        marginTop: "6px",
+        fontSize: "0.75em",
+        padding: "2px 8px",
+        cursor: "pointer",
+      });
       copyBtn.onclick = async () => {
         try {
           await navigator.clipboard.writeText(this.details ?? "");

@@ -44,7 +44,7 @@ export class CloudWarningModal extends Modal {
 
     contentEl.createEl("p", {
       text: "For full privacy and zero cost, use a local backend (LM Studio or Ollama).",
-    }).style.opacity = "0.8";
+    }).setCssStyles({ opacity: "0.8" });
 
     new Setting(contentEl)
       .setName("Don't warn me again")
@@ -54,8 +54,12 @@ export class CloudWarningModal extends Modal {
       );
 
     const btns = contentEl.createDiv();
-    btns.style.cssText =
-      "display:flex; gap:8px; justify-content:flex-end; margin-top:16px;";
+    btns.setCssStyles({
+      display: "flex",
+      gap: "8px",
+      justifyContent: "flex-end",
+      marginTop: "16px",
+    });
 
     const cancel = btns.createEl("button", { text: "Cancel" });
     cancel.onclick = () => {

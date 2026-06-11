@@ -15,20 +15,27 @@ export class WelcomeModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     // Make the modal a bit wider/taller-friendly by setting style on the container
-    contentEl.style.maxHeight = "70vh";
-    contentEl.style.overflowY = "auto";
-    contentEl.style.padding = "0 6px";
+    contentEl.setCssStyles({
+      maxHeight: "70vh",
+      overflowY: "auto",
+      padding: "0 6px",
+    });
 
     contentEl.createEl("h2", { text: "Welcome to Antinomia" });
 
     // Banner SICUREZZA: cosa Antinomia non e' (sempre visibile, in cima)
     const safety = contentEl.createDiv();
-    safety.style.cssText =
-      "background:rgba(220,53,69,0.10); border-left:3px solid #dc3545; " +
-      "padding:10px 12px; margin-bottom:12px; border-radius:4px; font-size:0.88em;";
+    safety.setCssStyles({
+      background: "rgba(220,53,69,0.10)",
+      borderLeft: "3px solid #dc3545",
+      padding: "10px 12px",
+      marginBottom: "12px",
+      borderRadius: "4px",
+      fontSize: "0.88em",
+    });
     safety.createEl("strong", { text: "⚠ What Antinomia is NOT" });
     const safetyP = safety.createEl("p");
-    safetyP.style.margin = "6px 0 0 0";
+    safetyP.setCssStyles({ margin: "6px 0 0 0" });
     safetyP.setText(
       "This tool exists to help you understand the evolution of your own thinking by mapping tensions and contradictions you already carry inside. It is NOT a decision-support system. Do not use it to decide in real situations (work, health, finance, relationships). The pairs the Hunter proposes are prompts for reflection, not truths: the AI model can hallucinate, oversimplify, misinterpret. Any use other than 'personal reflective practice' is improper."
     );
@@ -41,15 +48,20 @@ export class WelcomeModal extends Modal {
     const fmtConfigured = this.plugin.isFrontMatterTitleConfiguredForAntinomia();
     if (!fmtEnabled || !fmtConfigured) {
       const banner = contentEl.createDiv();
-      banner.style.cssText =
-        "background:rgba(255,193,7,0.12); border-left:3px solid #ffc107; " +
-        "padding:10px 12px; margin-bottom:12px; border-radius:4px; font-size:0.9em;";
+      banner.setCssStyles({
+        background: "rgba(255,193,7,0.12)",
+        borderLeft: "3px solid #ffc107",
+        padding: "10px 12px",
+        marginBottom: "12px",
+        borderRadius: "4px",
+        fontSize: "0.9em",
+      });
       const headerText = !fmtEnabled
         ? "Recommended plugin missing: Front Matter Title"
         : "Front Matter Title not yet configured for Antinomia";
       banner.createEl("strong", { text: headerText });
       const p = banner.createEl("p");
-      p.style.margin = "6px 0";
+      p.setCssStyles({ margin: "6px 0" });
       p.setText(
         !fmtEnabled
           ? "Without this plugin, the File Explorer shows technical basenames (T-20260530-091416) instead of the human titles of your notes. Antinomia still works, but seeing them is much more convenient."
@@ -58,7 +70,11 @@ export class WelcomeModal extends Modal {
       const btn = banner.createEl("button", {
         text: !fmtEnabled ? "Install Front Matter Title" : "Configure FMT for Antinomia",
       });
-      btn.style.cssText = "margin-top:4px; padding:4px 10px; cursor:pointer;";
+      btn.setCssStyles({
+        marginTop: "4px",
+        padding: "4px 10px",
+        cursor: "pointer",
+      });
       btn.onclick = async () => {
         if (!fmtEnabled) {
           // Open the FMT plugin page directly in the community browser
@@ -135,30 +151,38 @@ export class WelcomeModal extends Modal {
       },
     ];
     const layerList = contentEl.createEl("div");
-    layerList.style.display = "flex";
-    layerList.style.flexDirection = "column";
-    layerList.style.gap = "8px";
-    layerList.style.marginBottom = "16px";
+    layerList.setCssStyles({
+      display: "flex",
+      flexDirection: "column",
+      gap: "8px",
+      marginBottom: "16px",
+    });
     for (const l of layers) {
       const row = layerList.createEl("div");
-      row.style.padding = "8px 12px";
-      row.style.background = "var(--background-secondary)";
-      row.style.borderRadius = "4px";
-      row.style.borderLeft = "3px solid var(--interactive-accent)";
+      row.setCssStyles({
+        padding: "8px 12px",
+        background: "var(--background-secondary)",
+        borderRadius: "4px",
+        borderLeft: "3px solid var(--interactive-accent)",
+      });
       const head = row.createEl("div");
-      head.style.fontWeight = "bold";
+      head.setCssStyles({ fontWeight: "bold" });
       head.setText(`${l.emoji} ${l.label}`);
       const d = row.createEl("div");
-      d.style.fontSize = "0.88em";
-      d.style.opacity = "0.85";
-      d.style.marginTop = "2px";
+      d.setCssStyles({
+        fontSize: "0.88em",
+        opacity: "0.85",
+        marginTop: "2px",
+      });
       d.setText(l.desc);
     }
 
     contentEl.createEl("h3", { text: "How it works in practice" });
     const flow = contentEl.createEl("ol");
-    flow.style.lineHeight = "1.6";
-    flow.style.marginBottom = "16px";
+    flow.setCssStyles({
+      lineHeight: "1.6",
+      marginBottom: "16px",
+    });
     const steps = [
       "Drop in substrate notes (quotes, observations) when you encounter them — '+ New substrate' button or '✨ Free' (AI classifies for you).",
       "When you see a contradiction, record it as a tension (statement A vs statement B).",
@@ -170,8 +194,10 @@ export class WelcomeModal extends Modal {
 
     contentEl.createEl("h3", { text: "An initial tip" });
     const tip = contentEl.createEl("p");
-    tip.style.fontSize = "0.92em";
-    tip.style.opacity = "0.85";
+    tip.setCssStyles({
+      fontSize: "0.92em",
+      opacity: "0.85",
+    });
     tip.setText(
       "Don't aim for perfection right away. Dump in raw material (substrate) and poorly-formed tensions. The system improves your formulations over time — the Hunter shows you things you hadn't seen, and mapping presuppositions forces you to make explicit what you take for granted. Antinomia is not a tool to fill up; it is a practice."
     );
@@ -183,20 +209,30 @@ export class WelcomeModal extends Modal {
     });
     if (!exampleAlreadyExists) {
       const exBox = contentEl.createEl("div");
-      exBox.style.cssText =
-        "background:rgba(13,110,253,0.10); border-left:3px solid #0d6efd; " +
-        "padding:12px 14px; margin-top:20px; border-radius:4px;";
+      exBox.setCssStyles({
+        background: "rgba(13,110,253,0.10)",
+        borderLeft: "3px solid #0d6efd",
+        padding: "12px 14px",
+        marginTop: "20px",
+        borderRadius: "4px",
+      });
       exBox.createEl("strong", { text: "🚀 Want to explore Antinomia quickly?" });
       const exDesc = exBox.createEl("p");
-      exDesc.style.margin = "6px 0 10px 0";
-      exDesc.style.fontSize = "0.9em";
+      exDesc.setCssStyles({
+        margin: "6px 0 10px 0",
+        fontSize: "0.9em",
+      });
       exDesc.setText(
         "Generate the example vault: 21 demo notes (3 tensions + 15 substrate + 1 Design C principle + 1 defeated) with seeded contradictions ready for the Hunter to discover. The EXAMPLE-KEY.md note explains what's there and how to measure the Hunter. You can delete everything with one click anytime."
       );
       const exBtn = exBox.createEl("button", { text: "Create example vault" });
-      exBtn.style.cssText =
-        "padding:6px 14px; cursor:pointer; background:var(--interactive-accent); " +
-        "color:var(--text-on-accent); font-weight:600;";
+      exBtn.setCssStyles({
+        padding: "6px 14px",
+        cursor: "pointer",
+        background: "var(--interactive-accent)",
+        color: "var(--text-on-accent)",
+        fontWeight: "600",
+      });
       exBtn.title = "Adds 21 demo notes + EXAMPLE-KEY.md. Removable in one click via Settings -> Antinomia -> Delete examples.";
       exBtn.onclick = async () => {
         this.plugin.settings.onboardingCompleted = true;
@@ -208,20 +244,26 @@ export class WelcomeModal extends Modal {
 
     // ---- Action buttons ----
     const btnRow = contentEl.createEl("div");
-    btnRow.style.display = "flex";
-    btnRow.style.gap = "8px";
-    btnRow.style.flexWrap = "wrap";
-    btnRow.style.marginTop = "20px";
-    btnRow.style.justifyContent = "flex-end";
+    btnRow.setCssStyles({
+      display: "flex",
+      gap: "8px",
+      flexWrap: "wrap",
+      marginTop: "20px",
+      justifyContent: "flex-end",
+    });
 
     const mkBtn = (text: string, cta: boolean, tooltip: string) => {
       const b = btnRow.createEl("button", { text });
-      b.style.padding = "6px 14px";
-      b.style.cursor = "pointer";
+      b.setCssStyles({
+        padding: "6px 14px",
+        cursor: "pointer",
+      });
       if (cta) {
-        b.style.background = "var(--interactive-accent)";
-        b.style.color = "var(--text-on-accent)";
-        b.style.fontWeight = "600";
+        b.setCssStyles({
+          background: "var(--interactive-accent)",
+          color: "var(--text-on-accent)",
+          fontWeight: "600",
+        });
       }
       b.title = tooltip;
       return b;

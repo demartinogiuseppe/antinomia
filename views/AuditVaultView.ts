@@ -70,8 +70,10 @@ export class AuditVaultView extends ItemView {
     container.createEl("h4", { text: "Vault audit" });
 
     const desc = container.createEl("p");
-    desc.style.fontSize = "0.85em";
-    desc.style.opacity = "0.7";
+    desc.setCssStyles({
+      fontSize: "0.85em",
+      opacity: "0.7",
+    });
     desc.setText(
       "Health report: incomplete or malformed Antinomia notes. Click an issue to open the note and fix it."
     );
@@ -212,10 +214,12 @@ export class AuditVaultView extends ItemView {
 
     const totalIssues = sections.reduce((sum, s) => sum + s.issues.length, 0);
     const summary = container.createEl("p");
-    summary.style.fontWeight = "600";
-    summary.style.marginBottom = "10px";
+    summary.setCssStyles({
+      fontWeight: "600",
+      marginBottom: "10px",
+    });
     if (totalIssues === 0) {
-      summary.style.color = "var(--text-success, var(--text-accent))";
+      summary.setCssStyles({ color: "var(--text-success, var(--text-accent))" });
       summary.setText("✅ No issues found. Vault is healthy.");
       return;
     }
@@ -224,31 +228,39 @@ export class AuditVaultView extends ItemView {
     for (const sec of sections) {
       if (sec.issues.length === 0) continue;
       const box = container.createEl("div");
-      box.style.marginBottom = "12px";
-      box.style.padding = "8px 10px";
-      box.style.background = "var(--background-secondary)";
-      box.style.borderLeft = "3px solid var(--text-warning, var(--text-accent))";
-      box.style.borderRadius = "4px";
+      box.setCssStyles({
+        marginBottom: "12px",
+        padding: "8px 10px",
+        background: "var(--background-secondary)",
+        borderLeft: "3px solid var(--text-warning, var(--text-accent))",
+        borderRadius: "4px",
+      });
 
       const head = box.createEl("div");
-      head.style.fontWeight = "600";
-      head.style.marginBottom = "4px";
+      head.setCssStyles({
+        fontWeight: "600",
+        marginBottom: "4px",
+      });
       head.setText(`${sec.title} (${sec.issues.length})`);
 
       const tip = box.createEl("div");
-      tip.style.fontSize = "0.78em";
-      tip.style.opacity = "0.7";
-      tip.style.marginBottom = "6px";
+      tip.setCssStyles({
+        fontSize: "0.78em",
+        opacity: "0.7",
+        marginBottom: "6px",
+      });
       tip.setText(sec.suggestion);
 
       const list = box.createEl("ul");
-      list.style.paddingLeft = "20px";
-      list.style.fontSize = "0.85em";
-      list.style.margin = "0";
+      list.setCssStyles({
+        paddingLeft: "20px",
+        fontSize: "0.85em",
+        margin: "0",
+      });
       for (const issue of sec.issues) {
         const li = list.createEl("li");
         const a = li.createEl("a", { text: issue.label, href: "#" });
-        a.style.cursor = "pointer";
+        a.setCssStyles({ cursor: "pointer" });
         a.title = issue.file.basename;
         a.onclick = (e) => {
           e.preventDefault();

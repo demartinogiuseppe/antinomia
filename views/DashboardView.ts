@@ -46,7 +46,11 @@ export class DashboardView extends ItemView {
     const ver = container.createEl("div", {
       text: `Antinomia v${this.plugin.manifest.version}`,
     });
-    ver.style.cssText = "font-size:0.75em; opacity:0.5; margin:-6px 0 10px;";
+    ver.setCssStyles({
+      fontSize: "0.75em",
+      opacity: "0.5",
+      margin: "-6px 0 10px",
+    });
 
     const files = this.app.vault.getMarkdownFiles();
     const byType = (t: string) =>
@@ -74,10 +78,12 @@ export class DashboardView extends ItemView {
 
     // ---- Counters grid ----
     const grid = container.createEl("div");
-    grid.style.display = "grid";
-    grid.style.gridTemplateColumns = "1fr 1fr";
-    grid.style.gap = "6px";
-    grid.style.marginBottom = "14px";
+    grid.setCssStyles({
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: "6px",
+      marginBottom: "14px",
+    });
 
     const counter = (
       label: string,
@@ -86,26 +92,34 @@ export class DashboardView extends ItemView {
       sub?: string
     ) => {
       const card = grid.createEl("div");
-      card.style.padding = "10px";
-      card.style.background = "var(--background-secondary)";
-      card.style.border = "1px solid var(--background-modifier-border)";
-      card.style.borderRadius = "4px";
+      card.setCssStyles({
+        padding: "10px",
+        background: "var(--background-secondary)",
+        border: "1px solid var(--background-modifier-border)",
+        borderRadius: "4px",
+      });
       if (action) {
-        card.style.cursor = "pointer";
+        card.setCssStyles({ cursor: "pointer" });
         card.onclick = action;
       }
       const num = card.createEl("div", { text: String(count) });
-      num.style.fontSize = "1.8em";
-      num.style.fontWeight = "700";
-      num.style.lineHeight = "1.1";
+      num.setCssStyles({
+        fontSize: "1.8em",
+        fontWeight: "700",
+        lineHeight: "1.1",
+      });
       const lab = card.createEl("div", { text: label });
-      lab.style.fontSize = "0.78em";
-      lab.style.opacity = "0.8";
+      lab.setCssStyles({
+        fontSize: "0.78em",
+        opacity: "0.8",
+      });
       if (sub) {
         const s = card.createEl("div", { text: sub });
-        s.style.fontSize = "0.72em";
-        s.style.opacity = "0.6";
-        s.style.marginTop = "2px";
+        s.setCssStyles({
+          fontSize: "0.72em",
+          opacity: "0.6",
+          marginTop: "2px",
+        });
       }
     };
 
@@ -145,17 +159,19 @@ export class DashboardView extends ItemView {
     // ---- Hunter info ----
     container.createEl("h5", { text: "Hunter" });
     const hunterInfo = container.createEl("div");
-    hunterInfo.style.padding = "8px 10px";
-    hunterInfo.style.background = "var(--background-secondary)";
-    hunterInfo.style.borderRadius = "4px";
-    hunterInfo.style.fontSize = "0.85em";
-    hunterInfo.style.marginBottom = "14px";
+    hunterInfo.setCssStyles({
+      padding: "8px 10px",
+      background: "var(--background-secondary)",
+      borderRadius: "4px",
+      fontSize: "0.85em",
+      marginBottom: "14px",
+    });
     const s = this.plugin.settings;
     if (s.lastHunterRunISO) {
       const line = hunterInfo.createEl("div");
       line.setText(`Last run: ${s.lastHunterRunISO}`);
       const count = hunterInfo.createEl("div");
-      count.style.fontWeight = "600";
+      count.setCssStyles({ fontWeight: "600" });
       count.setText(`Pairs found: ${s.lastHunterRunCount}`);
     } else {
       hunterInfo.setText("Hunter not yet run.");
@@ -164,11 +180,13 @@ export class DashboardView extends ItemView {
     // ---- Active profile ----
     container.createEl("h5", { text: "AI Profile" });
     const profInfo = container.createEl("div");
-    profInfo.style.padding = "8px 10px";
-    profInfo.style.background = "var(--background-secondary)";
-    profInfo.style.borderRadius = "4px";
-    profInfo.style.fontSize = "0.85em";
-    profInfo.style.marginBottom = "14px";
+    profInfo.setCssStyles({
+      padding: "8px 10px",
+      background: "var(--background-secondary)",
+      borderRadius: "4px",
+      fontSize: "0.85em",
+      marginBottom: "14px",
+    });
     const activeP = this.plugin.activeProfile();
     profInfo.createEl("div", {
       text: `Active: ${activeP.name} (${activeP.model})`,
@@ -196,12 +214,14 @@ export class DashboardView extends ItemView {
       });
     } else {
       const list = container.createEl("ul");
-      list.style.paddingLeft = "20px";
-      list.style.fontSize = "0.85em";
+      list.setCssStyles({
+        paddingLeft: "20px",
+        fontSize: "0.85em",
+      });
       for (const f of recent) {
         const li = list.createEl("li");
         const a = li.createEl("a", { text: humanTitle(this.app, f), href: "#" });
-        a.style.cursor = "pointer";
+        a.setCssStyles({ cursor: "pointer" });
         a.onclick = (e) => {
           e.preventDefault();
           this.app.workspace.getLeaf(false).openFile(f);
@@ -212,20 +232,26 @@ export class DashboardView extends ItemView {
     // ---- Quick actions ----
     container.createEl("h5", { text: "Quick actions" });
     const actions = container.createEl("div");
-    actions.style.display = "flex";
-    actions.style.flexWrap = "wrap";
-    actions.style.gap = "6px";
-    actions.style.marginTop = "8px";
+    actions.setCssStyles({
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "6px",
+      marginTop: "8px",
+    });
 
     const mkAct = (text: string, onclick: () => void, cta = false) => {
       const b = actions.createEl("button", { text });
-      b.style.padding = "4px 10px";
-      b.style.fontSize = "0.85em";
-      b.style.cursor = "pointer";
+      b.setCssStyles({
+        padding: "4px 10px",
+        fontSize: "0.85em",
+        cursor: "pointer",
+      });
       if (cta) {
-        b.style.background = "var(--interactive-accent)";
-        b.style.color = "var(--text-on-accent)";
-        b.style.fontWeight = "600";
+        b.setCssStyles({
+          background: "var(--interactive-accent)",
+          color: "var(--text-on-accent)",
+          fontWeight: "600",
+        });
       }
       b.onclick = onclick;
     };

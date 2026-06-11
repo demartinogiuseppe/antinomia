@@ -26,8 +26,10 @@ export class FreeInputModal extends Modal {
     const { contentEl } = this;
     contentEl.createEl("h3", { text: "Free-form input" });
     const intro = contentEl.createEl("p");
-    intro.style.fontSize = "0.9em";
-    intro.style.opacity = "0.8";
+    intro.setCssStyles({
+      fontSize: "0.9em",
+      opacity: "0.8",
+    });
     intro.setText(
       "Write what you have in mind, without worrying about the type. The AI figures out if it's a tension or substrate, extracts the fields, and opens the matching modal pre-filled. You can always refine before saving."
     );
@@ -35,22 +37,28 @@ export class FreeInputModal extends Modal {
     let testo = this.prefillText;
 
     const labelEl = contentEl.createEl("label", { text: "Raw text" });
-    labelEl.style.display = "block";
-    labelEl.style.fontWeight = "bold";
-    labelEl.style.marginTop = "10px";
+    labelEl.setCssStyles({
+      display: "block",
+      fontWeight: "bold",
+      marginTop: "10px",
+    });
 
     const hint = contentEl.createEl("div");
-    hint.style.fontSize = "0.8em";
-    hint.style.opacity = "0.6";
+    hint.setCssStyles({
+      fontSize: "0.8em",
+      opacity: "0.6",
+    });
     hint.setText(
       "A quote, an observation, a doubt, a contradiction you see, a single thought. Anything: the AI figures it out."
     );
 
     const textarea = contentEl.createEl("textarea");
-    textarea.style.width = "100%";
-    textarea.style.minHeight = "180px";
-    textarea.style.padding = "8px";
-    textarea.style.marginTop = "4px";
+    textarea.setCssStyles({
+      width: "100%",
+      minHeight: "180px",
+      padding: "8px",
+      marginTop: "4px",
+    });
     textarea.value = testo;
     textarea.addEventListener("input", (e) => {
       testo = (e.target as HTMLTextAreaElement).value;
