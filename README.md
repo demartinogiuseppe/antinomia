@@ -1,13 +1,15 @@
 # Antinomia
 
+> 🎉 **Now available on the [Obsidian Community Store](obsidian://show-plugin?id=antinomia)** — install from Obsidian → Settings → Community plugins → Browse → "Antinomia".
+
 > "Notes preserve. Contradictions interrogate."
 
 **Antinomia** is an Obsidian plugin for **Personal Tension Management (PTM)** — the in-tension counterpart of Personal Knowledge Management. If **PKM** organizes explicit knowledge (*what I know*), **PTM** organizes where things don't fit (*where something jars*): contradictions, tradeoffs, anomalies, persistent doubts, weak signals, conflicts between goals. Clean ideas emerge later — as operational principles derived from resolving a tension, not before.
 
 [![tests](https://github.com/demartinogiuseppe/antinomia/actions/workflows/test.yml/badge.svg)](https://github.com/demartinogiuseppe/antinomia/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.4.5-blue)](CHANGELOG.md)
-[![Obsidian](https://img.shields.io/badge/Obsidian-1.4%2B-7c3aed)](https://obsidian.md)
+[![Version](https://img.shields.io/badge/version-1.6.5-blue)](CHANGELOG.md)
+[![Obsidian](https://img.shields.io/badge/Obsidian-1.7.2%2B-7c3aed)](https://obsidian.md)
 [![Paper DOI](https://img.shields.io/badge/Paper%20DOI-10.5281%2Fzenodo.20369124-blue)](https://doi.org/10.5281/zenodo.20369124)
 [![Software DOI](https://img.shields.io/badge/Software%20DOI-10.5281%2Fzenodo.20506815-blue)](https://doi.org/10.5281/zenodo.20506815)
 [![Substack](https://img.shields.io/badge/Newsletter-The%20Deeper%20Layer-orange?logo=substack)](https://giuseppedemartino.substack.com)
@@ -16,9 +18,9 @@
 
 ---
 
-## ⚠️ Status: research preview (v1.4.5 beta)
+## ✅ Status: v1.6.5 — on the Obsidian Community Store
 
-Antinomia is in **public beta** distributed via BRAT. Features are stable, but a few edge-case flows (e.g., duplicate Elevate modal in certain conditions) are under observation. Please open an issue if you find anything odd.
+Antinomia is **available on the Obsidian Community Store** (and also installable via BRAT). Features are stable, but a few edge-case flows (e.g., duplicate Elevate modal in certain conditions) are under observation. Please open an issue if you find anything odd.
 
 **Antinomia is not a decision-support system.** The pairs the Contradiction Hunter proposes are prompts for thinking, **not truths on which to base real decisions** (work, health, finance, relationships). AI models can hallucinate, oversimplify, misinterpret. Use Antinomia as a reflective practice.
 
@@ -55,9 +57,16 @@ See [plugin/README.md](plugin/README.md) for the full command reference (Italian
 
 ## Installation
 
-### With BRAT (recommended)
+### From the Obsidian Community Store (recommended)
 
-[BRAT](https://github.com/TfTHacker/obsidian42-brat) (Beta Reviewers Auto-update Tool) is the easiest way to install and stay updated with Antinomia beta releases:
+1. In Obsidian: **Settings → Community plugins → Browse**
+2. Search **"Antinomia"** and click **Install**, then **Enable**
+
+Or open it directly: [obsidian://show-plugin?id=antinomia](obsidian://show-plugin?id=antinomia). Updates arrive automatically through Obsidian.
+
+### With BRAT (early/beta builds)
+
+[BRAT](https://github.com/TfTHacker/obsidian42-brat) (Beta Reviewers Auto-update Tool) tracks this repo's latest release directly — useful for pre-store builds:
 
 1. Install **BRAT** from Obsidian Community plugins
 2. Open Settings → BRAT → **Add Beta plugin**
@@ -78,18 +87,17 @@ See [BETA-INSTALL.md](BETA-INSTALL.md) for the extended beta-tester guide (dedic
 ### Build from source
 
 ```bash
-cd plugin
 npm install
 npm run build
 ```
 
-This produces `main.js` + `manifest.json` in `../TestVault/.obsidian/plugins/antinomia/`. For real-world use, copy those files into the target vault.
+This produces a production `main.js` at the repo root (alongside `manifest.json` + `styles.css`). For real-world use, copy those files into `<YOUR_VAULT>/.obsidian/plugins/antinomia/`.
 
 ---
 
 ## Prerequisites
 
-- **Obsidian** 1.4+
+- **Obsidian** 1.7.2+
 - **Front Matter Title** community plugin (recommended) — shows human titles instead of timestamp basenames (`T-20260601-...`) in the File Explorer. Antinomia flags this if missing.
 - **At least one AI backend** for Hunter / Propose / Map presuppositions:
   - **Free local**: [LM Studio](https://lmstudio.ai) with a loaded model (e.g., Qwen3 14B distill)

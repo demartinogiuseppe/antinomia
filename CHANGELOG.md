@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.6.5 (June 11, 2026) — README sync + store availability
+
+Docs-only release. No code changes.
+
+- **docs(readme):** announce availability on the Obsidian Community Store (banner + direct `obsidian://show-plugin?id=antinomia` link), make the store the recommended install path (BRAT demoted to early/beta builds), and refresh all stale version references (status, version badge → 1.6.5, Obsidian requirement → 1.7.2+). Fixed the build-from-source instructions for the root layout (no more `cd plugin`).
+
+No code, schema, or behavior changes.
+
 ## v1.6.4 (June 11, 2026) — Last compliance fix: redundant settings heading
 
 Final micro-patch after the Obsidian Community v1.6.3 review.
