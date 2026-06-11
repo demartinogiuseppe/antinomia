@@ -96,7 +96,10 @@ const buildOptions = {
   logLevel: "info",
   sourcemap: isProd ? false : "inline",
   treeShaking: true,
-  outfile: path.join(TARGET_DIR, "main.js"),
+  // Production build (npm run build) emits main.js at the REPO ROOT — that's
+  // the artifact uploaded as a GitHub Release asset (store / BRAT fetch it by
+  // name). Dev/watch builds emit into the TestVault so Obsidian hot-reloads.
+  outfile: isProd ? path.resolve("main.js") : path.join(TARGET_DIR, "main.js"),
   minify: isProd,
 };
 
@@ -106,11 +109,17 @@ if (process.argv.includes("--watch")) {
   console.log("Watching for changes...");
 } else {
   await esbuild.build(buildOptions);
-  // Copia manifest.json accanto a main.js cosi Obsidian riconosce il plugin
-  await fs.copyFile("manifest.json", path.join(TARGET_DIR, "manifest.json"));
-  // Copia styles.css se presente (Obsidian lo carica automaticamente)
-  if (fsSync.existsSync("styles.css")) {
-    await fs.copyFile("styles.css", path.join(TARGET_DIR, "styles.css"));
+  if (isProd) {
+    // Release artifacts live at the root (main.js built here; manifest.json +
+    // styles.css are source files already at the root).
+    console.log("Build complete. Production main.js at repo root.");
+  } else {
+    // Dev: deploy manifest + styles alongside main.js so Obsidian recognizes
+    // the plugin in the TestVault.
+    await fs.copyFile("manifest.json", path.join(TARGET_DIR, "manifest.json"));
+    if (fsSync.existsSync("styles.css")) {
+      await fs.copyFile("styles.css", path.join(TARGET_DIR, "styles.css"));
+    }
+    console.log("Build complete. Output in:", TARGET_DIR);
   }
-  console.log("Build complete. Output in:", TARGET_DIR);
 }
