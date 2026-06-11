@@ -149,7 +149,6 @@ class AntinomiaSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    new Setting(containerEl).setName("Antinomia").setHeading();
 
     // Disclaimer permanente sull'uso appropriato dello strumento
     const disclaimer = containerEl.createDiv();

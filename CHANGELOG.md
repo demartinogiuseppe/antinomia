@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.6.4 (June 11, 2026) — Last compliance fix: redundant settings heading
+
+Final micro-patch after the Obsidian Community v1.6.3 review.
+
+- **fix(ui):** removed the redundant `"Antinomia"` heading at the top of the Settings tab. The plugin name is already displayed by Obsidian's settings UI, and the Community lint flags any plugin-name in settings headings as duplicate.
+
+No code, schema, or behavior changes. The disclaimer block now follows the (Obsidian-rendered) tab title directly.
+
 ## v1.6.3 (June 11, 2026) — Compliance fixes after Obsidian Community v1.6.2 review
 
 Patch following the second round of Obsidian Community automated review.
