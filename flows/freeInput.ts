@@ -42,10 +42,6 @@ export async function openFreeInputFromClipboard(plugin: AntinomiaPlugin): Promi
       }
     }
 
-    console.log(
-      `[Antinomia] clipboard read via ${source}: ${clip.length} chars`
-    );
-
     if (!clip.trim()) {
       new Notice(
         "Clipboard empty or unreadable. Opening empty free-form modal: you can paste manually (Ctrl+V)."
