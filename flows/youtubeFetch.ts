@@ -166,8 +166,11 @@ async function fetchTranscriptWithFallback(
             .onClick(() => {
               const externalUrl = `https://youtubetotranscript.com/transcript?v=${videoId}`;
               try {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- window.require is injected by Electron at runtime and isn't in the DOM lib typings
-                const electron = (window as any).require?.("electron");
+                // window.require is injected by Electron at runtime; not in the DOM typings.
+                const req = (window as unknown as { require?: (m: string) => unknown }).require;
+                const electron = req?.("electron") as
+                  | { shell?: { openExternal(url: string): void } }
+                  | undefined;
                 if (electron?.shell?.openExternal) {
                   electron.shell.openExternal(externalUrl);
                 } else {
