@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.6.2 (June 11, 2026) — Bulk fixes after Obsidian Community v1.6.1 review
+
+- **fix(style):** all ~780 inline `element.style.X = Y` assignments replaced with `element.setCssStyles({...})` per Obsidian's no-static-styles-assignment rule. Sites span every UI module. No visual change.
+- **fix(lint):** every `eslint-disable-next-line` directive now carries an explanatory comment after `--` as required by the Obsidian Community lint guidelines.
+
+No code, schema, or behavior changes.
+
 ## v1.6.1 (June 11, 2026) — Submission compliance fix
 
 Patch following the Obsidian Community automated review of v1.6.0.
