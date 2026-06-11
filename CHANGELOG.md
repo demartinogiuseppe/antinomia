@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.6.3 (June 11, 2026) — Compliance fixes after Obsidian Community v1.6.2 review
+
+Patch following the second round of Obsidian Community automated review.
+
+- **fix(manifest):** `minAppVersion` bumped from 1.4.0 → 1.7.2 to match the newer Obsidian APIs the plugin actually uses (`Workspace.revealLeaf`, added in 1.7.2, plus `FileManager.processFrontMatter`, 1.4.4). Otherwise the linter flags ~28 sites as `obsidianmd/no-unsupported-api`.
+- **fix(types):** removed three `// eslint-disable-next-line @typescript-eslint/no-explicit-any` directives by replacing the `any` with concrete `unknown`-narrowed types (the Obsidian Community lint forbids disabling that rule entirely).
+- **fix(ui):** section headings in the Settings tab now use `new Setting(containerEl).setName(...).setHeading()` instead of raw `createEl("h2"/"h3")`, per Obsidian's consistent-UI guideline. Six sites converted in `main.ts`.
+- **fix(lifecycle):** removed `detachLeavesOfType(...)` calls from `onunload`. Obsidian manages leaf cleanup on its own, and detaching them in unload resets the user's layout on plugin reload.
+
+No code-feature changes, no schema changes.
+
 ## v1.6.2 (June 11, 2026) — Bulk fixes after Obsidian Community v1.6.1 review
 
 - **fix(style):** all ~780 inline `element.style.X = Y` assignments replaced with `element.setCssStyles({...})` per Obsidian's no-static-styles-assignment rule. Sites span every UI module. No visual change.

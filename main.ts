@@ -149,7 +149,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Antinomia" });
+    new Setting(containerEl).setName("Antinomia").setHeading();
 
     // Disclaimer permanente sull'uso appropriato dello strumento
     const disclaimer = containerEl.createDiv();
@@ -344,7 +344,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
       );
 
     // ------ Stile grafico del Graph View ------
-    containerEl.createEl("h3", { text: "Graph View style" });
+    new Setting(containerEl).setName("Graph View style").setHeading();
 
     new Setting(containerEl)
       .setName("Preset style")
@@ -394,7 +394,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
       });
 
     // ---- AI Friction & Model Transparency (PTM Core) ----
-    containerEl.createEl("h3", { text: "AI Friction" });
+    new Setting(containerEl).setName("AI Friction").setHeading();
     const frictionDesc = containerEl.createEl("p");
     frictionDesc.setCssStyles({
       fontSize: "0.85em",
@@ -463,7 +463,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
         "Reopen the Antinomia Graph tab after changing style/colors to see them applied."
       );
 
-    containerEl.createEl("h3", { text: "AI Profiles" });
+    new Setting(containerEl).setName("AI Profiles").setHeading();
 
     // Info box su API costose vs locali gratuite
     const apiInfo = containerEl.createDiv();
@@ -610,7 +610,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
         });
       });
 
-    containerEl.createEl("h3", { text: "Contradiction Hunter" });
+    new Setting(containerEl).setName("Contradiction Hunter").setHeading();
 
     new Setting(containerEl)
       .setName("Hunter reasoning style")
@@ -660,7 +660,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
       );
 
     // ---- Onboarding ----
-    containerEl.createEl("h3", { text: "Onboarding" });
+    new Setting(containerEl).setName("Onboarding").setHeading();
 
     const statusText = this.plugin.settings.onboardingCompleted
       ? "completed"
@@ -1775,16 +1775,9 @@ export default class AntinomiaPlugin extends Plugin {
       this.hoverDomUnsub = null;
     }
     hoverBus.clear();
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_OPEN_TENSIONS);
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_HUNTER_RESULTS);
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_DISMISSED_PAIRS);
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_SUBSTRATE_LIST);
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_PRINCIPLES_LIST);
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_DEFEATED_LIST);
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_ONBOARDING);
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_DASHBOARD);
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_AUDIT);
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_UNCLASSIFIED);
+    // NOTE: do NOT detach the plugin's leaves here. Obsidian cleans up plugin
+    // views on unload by itself, and detaching them in onunload wipes the
+    // user's layout on the next plugin reload (per the community guidelines).
   }
 
   async loadSettings(): Promise<void> {
@@ -2003,10 +1996,12 @@ export default class AntinomiaPlugin extends Plugin {
     }
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- vault.setConfig is an internal Obsidian API not present in the public typings
-      const vaultAny = this.app.vault as any;
-      if (typeof vaultAny.setConfig === "function") {
-        vaultAny.setConfig("attachmentFolderPath", folder);
+      // vault.setConfig is an internal Obsidian API not present in the public typings.
+      const vaultWithConfig = this.app.vault as unknown as {
+        setConfig?: (key: string, value: unknown) => void;
+      };
+      if (typeof vaultWithConfig.setConfig === "function") {
+        vaultWithConfig.setConfig("attachmentFolderPath", folder);
         new Notice(
           `New attachments will save to '${folder}/'. (Obsidian setting updated.)`
         );
