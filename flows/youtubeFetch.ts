@@ -1,6 +1,6 @@
 // YouTube transcript ingestion flow. Extracted from main.ts (refactor v1.5).
 
-import { Modal, Notice, requestUrl, Setting, TFile } from "obsidian";
+import { Modal, Notice, requestUrl, Setting, TFile, normalizePath } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { substrateTemplate } from "../core/templates";
 import { FOLDER, VIEW_TYPE_SUBSTRATE_LIST } from "../core/constants";
@@ -326,9 +326,6 @@ async function fetchYouTubeTranscript(
   const baseUrlRaw = String(track.baseUrl ?? "");
   const baseUrl = unescUnicode(baseUrlRaw);
   const lang = String(track.languageCode ?? "?");
-  console.log("[Antinomia] track baseUrl (raw):", baseUrlRaw);
-  console.log("[Antinomia] track baseUrl (decoded):", baseUrl);
-  console.log("[Antinomia] track lang:", lang);
   if (!baseUrl) {
     new Notice("Track without baseUrl.");
     return null;
@@ -390,7 +387,6 @@ async function fetchYouTubeTranscript(
   for (const attempt of formatsToTry) {
     let raw = "";
     let status = -1;
-    console.log(`[Antinomia] transcript fetching (${attempt.format}):`, attempt.url);
     try {
       const res = await requestUrl({
         url: attempt.url,
@@ -404,10 +400,6 @@ async function fetchYouTubeTranscript(
       });
       status = res.status;
       raw = res.text ?? "";
-      console.log(
-        `[Antinomia] transcript (${attempt.format}) HTTP ${status}, ${raw.length} bytes, headers:`,
-        res.headers
-      );
       if (status < 200 || status >= 300) {
         console.warn(
           `[Antinomia] transcript (${attempt.format}) HTTP ${status} -> skip`
@@ -429,16 +421,9 @@ async function fetchYouTubeTranscript(
     else if (attempt.format === "srv3") lines = parseSrv3(raw);
     else lines = parseLegacyXML(raw);
 
-    console.log(
-      `[Antinomia] transcript ${attempt.format}: ${lines.length} lines, ${raw.length} bytes`
-    );
     if (lines.length > 0) {
       chosen = attempt.format;
       break;
-    }
-    // If empty AND raw starts unexpectedly, log a sample for debugging
-    if (raw.length > 0 && raw.length < 5000) {
-      console.log(`[Antinomia] transcript raw (${attempt.format}):`, raw.slice(0, 500));
     }
   }
 
@@ -448,7 +433,6 @@ async function fetchYouTubeTranscript(
     );
     return null;
   }
-  console.log(`[Antinomia] transcript parsed via ${chosen}: ${lines.length} lines`);
   return { text: lines.join(" "), lang, videoId, title: videoTitle };
 }
 
@@ -484,7 +468,7 @@ export async function createOrUpdateYouTubeHubNote(
     .slice(0, 60)
     .trim()
     .replace(/\s+/g, "_");
-  const hubPath = `${folder}/H-${safeName || videoId}.md`;
+  const hubPath = normalizePath(`${folder}/H-${safeName || videoId}.md`);
 
   // Concept wikilinks with explicit alias (human title, fallback basename) so
   // Front Matter Title doesn't prompt "Approve changes" for each one.

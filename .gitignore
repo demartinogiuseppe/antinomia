@@ -1,12 +1,13 @@
 # Build output
-plugin/node_modules/
-plugin/main.js.map
+node_modules/
+main.js
+main.js.map
 
 # Vitest coverage output
-plugin/coverage/
+coverage/
 
 # Backup automatico di main.ts (gestito da esbuild.config.mjs)
-plugin/backups/
+backups/
 
 # Test vault di sviluppo (intero, NON pubblico).
 # Il plugin viene buildato qui per testarlo durante lo sviluppo, ma le note

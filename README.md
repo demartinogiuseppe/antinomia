@@ -99,6 +99,18 @@ This produces `main.js` + `manifest.json` in `../TestVault/.obsidian/plugins/ant
 
 ---
 
+## Privacy & network use
+
+Antinomia makes **no autonomous network requests** and contains **no telemetry, analytics, or tracking** of any kind. It never "phones home."
+
+- **The network is used only when you explicitly invoke an AI feature** (Contradiction Hunter, propose title, propose IF/THEN, map presuppositions, classify, free-form input, PDF / YouTube concept extraction). Each such action sends a single request to the **AI backend you configured**, and nowhere else.
+- **Cloud backends** (Anthropic, OpenAI, Groq, OpenRouter): when you run an AI feature, the content of the notes involved in that action (the text the feature needs) is sent to that provider for processing, subject to the provider's own terms and privacy policy. Choose your provider accordingly.
+- **Local backends** (LM Studio, Ollama): requests go only to `localhost` — **nothing leaves your machine**. This is the privacy-preserving option.
+- **YouTube transcript fetch** additionally contacts YouTube's public `timedtext` endpoint to download captions for a video URL you provide; if that fails it offers an opt-in paste fallback. No video data is sent anywhere else.
+- **API keys are stored locally** in your vault's `.obsidian/plugins/antinomia/data.json` (Obsidian's standard plugin-settings file), in plain text. If you sync your vault (Obsidian Sync, iCloud, Git, Dropbox, …), that file — and your keys — travels with it. Keep it out of public repositories and shared folders.
+
+---
+
 ## Philosophy
 
 Antinomia is not a tool to fill up. It is a practice. The vault grows as you encounter contradictions in your own thinking (substrate). Tensions emerge from the material — they are not designed. The Hunter shows you contradictions you hadn't seen — not to resolve them for you, but to **force you to think them through**.
