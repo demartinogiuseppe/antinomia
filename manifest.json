@@ -1,10 +1,10 @@
 {
   "id": "antinomia",
   "name": "Antinomia",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "minAppVersion": "1.4.0",
   "description": "Map and work through the contradictions in your vault: tensions, tradeoffs, and conflicting goals organized in 5 layers via frontmatter, with an AI Contradiction Hunter and PDF concept extraction. Works with cloud APIs or fully local models.",
   "author": "Giuseppe De Martino",
-  "authorUrl": "https://github.com/demartinogiuseppe/antinomia",
+  "authorUrl": "https://github.com/demartinogiuseppe",
   "isDesktopOnly": true
 }

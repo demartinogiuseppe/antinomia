@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.6.1 (June 11, 2026) — Submission compliance fix
+
+Patch following the Obsidian Community automated review of v1.6.0.
+
+- **fix(manifest):** `authorUrl` now points to the author's GitHub profile (`https://github.com/demartinogiuseppe`) instead of the plugin's own repository, per Obsidian Community store guidelines.
+
+No code, schema, or behavior changes.
+
 ## v1.6.0 (June 11, 2026) — Obsidian Community Store readiness
 
 Repository and code prepared for submission to the official Obsidian Community plugin store. No feature changes — this is a packaging, structure, and review-compliance release.
