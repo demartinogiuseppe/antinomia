@@ -1,6 +1,6 @@
 // PDF ingestion + concept extraction flow. Extracted from main.ts (refactor v1.5).
 
-import { Notice, TFile } from "obsidian";
+import { Notice, TFile, normalizePath } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { callAI } from "../ai/callAI";
 import { notifyAIUsage, showErrorModal } from "../ai/notifyUsage";
@@ -197,7 +197,7 @@ export async function createOrUpdatePdfHubNote(plugin: AntinomiaPlugin,
       .slice(0, 60)
       .trim()
       .replace(/\s+/g, "_");
-    const hubPath = `${folder}/H-${safeName}.md`;
+    const hubPath = normalizePath(`${folder}/H-${safeName}.md`);
 
     // Each concept wikilink uses an explicit alias (the human title from the
     // concept's frontmatter, falling back to its basename) so Front Matter
@@ -289,10 +289,10 @@ export async function importPdfFromDisk(plugin: AntinomiaPlugin): Promise<TFile 
           const basename = file.name.replace(/\.pdf$/i, "");
           const folder = "attachments";
           await ensureFolder(plugin.app, folder);
-          let destPath = `${folder}/${basename}.pdf`;
+          let destPath = normalizePath(`${folder}/${basename}.pdf`);
           let i = 1;
           while (plugin.app.vault.getAbstractFileByPath(destPath)) {
-            destPath = `${folder}/${basename} (${i}).pdf`;
+            destPath = normalizePath(`${folder}/${basename} (${i}).pdf`);
             i++;
           }
           const tFile = await plugin.app.vault.createBinary(destPath, buffer);

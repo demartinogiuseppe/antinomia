@@ -2,7 +2,7 @@
 # Crea un .zip pronto per essere caricato su una GitHub Release.
 #
 # Cosa fa:
-#   1. Legge la versione da plugin/manifest.json
+#   1. Legge la versione da manifest.json (root)
 #   2. Verifica che il build sia stato fatto (esistono main.js + manifest.json nel TestVault)
 #   3. Crea cartella temporanea 'release-temp/antinomia/' con i 3 file (main.js, manifest.json, styles.css se esiste)
 #   4. Comprime in 'releases/antinomia-vX.X.X.zip'
@@ -24,9 +24,9 @@ Write-Host "Project root: $projectRoot"
 Write-Host ""
 
 # --- 1) Leggi versione da manifest ---
-$manifestPath = Join-Path $projectRoot "plugin\manifest.json"
+$manifestPath = Join-Path $projectRoot "manifest.json"
 if (-not (Test-Path $manifestPath)) {
-    Write-Host "ERRORE: manifest.json non trovato in plugin/" -ForegroundColor Red
+    Write-Host "ERRORE: manifest.json non trovato nella root" -ForegroundColor Red
     exit 1
 }
 $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
@@ -43,12 +43,12 @@ $builtManifest = Join-Path $buildDir "manifest.json"
 
 if (-not (Test-Path $builtMain)) {
     Write-Host "ERRORE: main.js non trovato in $buildDir" -ForegroundColor Red
-    Write-Host "Esegui prima: cd plugin; npm run build" -ForegroundColor Yellow
+    Write-Host "Esegui prima: npm run build" -ForegroundColor Yellow
     exit 1
 }
 if (-not (Test-Path $builtManifest)) {
     Write-Host "ERRORE: manifest.json non trovato in $buildDir" -ForegroundColor Red
-    Write-Host "Esegui prima: cd plugin; npm run build" -ForegroundColor Yellow
+    Write-Host "Esegui prima: npm run build" -ForegroundColor Yellow
     exit 1
 }
 
@@ -122,8 +122,8 @@ if (Test-Path $betaInstallSrc) {
 
 # Copia anche i 3 file BRAT-compliant per facilitare l'upload alla GitHub Release
 $mainJsSrc = Join-Path $projectRoot "TestVault\.obsidian\plugins\antinomia\main.js"
-$manifestSrc = Join-Path $projectRoot "plugin\manifest.json"
-$versionsSrc = Join-Path $projectRoot "plugin\versions.json"
+$manifestSrc = Join-Path $projectRoot "manifest.json"
+$versionsSrc = Join-Path $projectRoot "versions.json"
 if (Test-Path $mainJsSrc) { Copy-Item $mainJsSrc $versionDir -Force }
 if (Test-Path $manifestSrc) { Copy-Item $manifestSrc $versionDir -Force }
 if (Test-Path $versionsSrc) { Copy-Item $versionsSrc $versionDir -Force }

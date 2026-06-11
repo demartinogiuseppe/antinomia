@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.6.0 (June 11, 2026) — Obsidian Community Store readiness
+
+Repository and code prepared for submission to the official Obsidian Community plugin store. No feature changes — this is a packaging, structure, and review-compliance release.
+
+- **Repo restructure:** the plugin source now lives at the repository root (the store reads `manifest.json` from the default branch root). Developer and meta docs moved to `docs/`.
+- **manifest:** `description` rewritten to a 241-character, action-first English sentence (store limit is 250). `isDesktopOnly` stays `true` — the local-backend AI path uses Node `http`/`https` (via `window.require`) to abort in-flight requests, which is desktop-only.
+- **Review compliance:** removed `innerHTML` usage in the settings UI (now built with `createEl` + `appendText`), wrapped all hand-built vault paths in `normalizePath()`, and stripped 18 debug `console.log` statements (genuine `console.warn`/`error` kept).
+- **README:** new **Privacy & network use** section — no autonomous requests or telemetry; the network is used only when you invoke an AI feature, toward the backend you configured (cloud sends involved note content to the provider; local backends keep everything on-device); API keys live in the local plugin `data.json`.
+
+No schema changes, no new settings, no behaviour change.
+
 ## v1.5.9 (June 10, 2026) — Cytoscape hover-tracking race fix + YouTube concept-extraction nav button
 
 Patch. Uncaught `TypeError: Cannot read properties of null (reading 'isHeadless')` was appearing in the DevTools console when the mouse moved over the Antinomia Graph during a `rebuildGraph()` (node add/remove). The error originated inside Cytoscape's internal `findNearestElements` → `boundingBox` → `headless()` chain, when a node was removed while still in the mouse's hover-tracking state — its `_private.cy` became null and the deref blew up. Harmless (the graph kept working, state recovered on the next mouse event) but it polluted the console.

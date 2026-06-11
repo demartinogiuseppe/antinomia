@@ -59,7 +59,6 @@ export async function proposePresuppostiFromContent(plugin: AntinomiaPlugin,
     signal?: AbortSignal
   ): Promise<PresuppostiFields | null> {
     const profile = plugin.profileFor("default");
-    console.log("[Antinomia] presupposti START profile:", profile.name, profile.format, profile.model);
     if (!profile.apiKey) {
       showErrorModal(
         plugin.app,
@@ -86,10 +85,7 @@ export async function proposePresuppostiFromContent(plugin: AntinomiaPlugin,
         model: profile.model,
         url: profile.baseUrl,
       });
-      console.log("[Antinomia] presupposti response len:", result.text.length);
-      console.log("[Antinomia] presupposti response full:", result.text);
       const parsed = extractJson<PresuppostiFields>(result.text);
-      console.log("[Antinomia] presupposti parsed:", parsed);
       if (!parsed) {
         console.error("[Antinomia] presupposti UNPARSEABLE:", result.text);
         showErrorModal(

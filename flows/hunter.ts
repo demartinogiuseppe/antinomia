@@ -140,7 +140,6 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
         plugin.hunterAbortController = null;
         if ((e as Error).message === "hunter_aborted") {
           new Notice("Hunter stopped by user.");
-          console.log("[Antinomia] hunter aborted by user");
         } else {
           showErrorModal(
             plugin.app,
@@ -206,9 +205,6 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
       }
       return true;
     });
-    if (halluFiltered > 0) {
-      console.log(`[Antinomia] hunter: filtered ${halluFiltered} hallucinated/invalid pairs`);
-    }
 
     // Filter out already-dismissed false positives
     const dismissedSet = new Set<string>();
@@ -272,7 +268,6 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
       },
       attachToButton
     );
-    console.log("[Antinomia] hunter run", meta);
 }
 
 export async function undismissContradiction(plugin: AntinomiaPlugin, 
