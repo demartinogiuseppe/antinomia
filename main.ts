@@ -2003,7 +2003,7 @@ export default class AntinomiaPlugin extends Plugin {
     }
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- vault.setConfig is an internal Obsidian API not present in the public typings
       const vaultAny = this.app.vault as any;
       if (typeof vaultAny.setConfig === "function") {
         vaultAny.setConfig("attachmentFolderPath", folder);

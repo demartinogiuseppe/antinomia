@@ -201,7 +201,7 @@ export async function callAI(opts: {
       const isHttps = u.protocol === "https:";
       let nodeMod: any = null;
       try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        // eslint-disable-next-line @typescript-eslint/no-var-requires -- Electron's bundled Node http/https is only reachable via window.require; needed to abort in-flight requests to local AI backends (requestUrl can't cancel)
         nodeMod = (window as any).require
           ? (window as any).require(isHttps ? "https" : "http")
           : null;
