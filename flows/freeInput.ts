@@ -21,7 +21,7 @@ export async function openFreeInputFromClipboard(plugin: AntinomiaPlugin): Promi
 
     // Try Electron clipboard first (Obsidian Desktop). Available via require.
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- window.require is injected by Electron at runtime and isn't in the DOM lib typings
       const electron = (window as any).require?.("electron");
       if (electron?.clipboard?.readText) {
         clip = electron.clipboard.readText() ?? "";
