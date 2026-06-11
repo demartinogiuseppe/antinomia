@@ -5,13 +5,13 @@ import path from "path";
 import builtins from "builtin-modules";
 
 // Output va direttamente nel TestVault cosi al rebuild Obsidian vede subito il file aggiornato.
-// Path relativo da plugin/ : ../TestVault/.obsidian/plugins/antinomia/
-const TARGET_DIR = path.resolve("../TestVault/.obsidian/plugins/antinomia");
+// Path relativo dalla root del repo: TestVault/.obsidian/plugins/antinomia/
+const TARGET_DIR = path.resolve("TestVault/.obsidian/plugins/antinomia");
 
 await fs.mkdir(TARGET_DIR, { recursive: true });
 
 // ---------- Backup automatico di main.ts ----------
-// Prima di ogni build (o watch start), copia main.ts in plugin/backups/ con
+// Prima di ogni build (o watch start), copia main.ts in backups/ con
 // timestamp. Tiene gli ultimi 30 backup, cancella i piu' vecchi (rotation).
 // Difende dalla corruzione del file in caso di edit multipli/race conditions.
 function backupMainTs() {
@@ -44,7 +44,7 @@ function backupMainTs() {
   if (!looksOk) {
     console.warn(
       "[backup] main.ts sembra troncato (non termina con '}'). Backup SALTATO. " +
-        "Ripristina manualmente da plugin/backups/ se il build fallisce."
+        "Ripristina manualmente da backups/ se il build fallisce."
     );
     return;
   }
