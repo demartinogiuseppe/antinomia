@@ -3,7 +3,7 @@ import cytoscape from "cytoscape";
 import fcose from "cytoscape-fcose";
 cytoscape.use(fcose as any);
 
-import { App, Notice, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf } from "obsidian";
+import { App, Notice, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf, normalizePath } from "obsidian";
 
 import type { Profile, GraphColors, BackendPreset, TutorialStep, PdfExtractResult, ClassifyResult, TitleProposal, PresuppostiFields, PdfConcept, PdfConceptsResult, AIUsageMeta, FreeInputAnalysis, HunterConfidence, HunterContradiction, HunterResult, HunterRunMetadata, HunterRun, DefeatedSubmit, TensionFields, SubstrateFields, PrincipleFields, GraphFilters, ClaudeResponse } from "./core/types";
 
@@ -460,11 +460,15 @@ class AntinomiaSettingTab extends PluginSettingTab {
     const ul = apiInfo.createEl("ul");
     ul.style.cssText = "margin:6px 0 0 0; padding-left:22px;";
     const li1 = ul.createEl("li");
-    li1.innerHTML =
-      "<strong>Paid cloud APIs</strong> (Anthropic Claude, OpenAI GPT, Groq, OpenRouter): top quality, per-token cost. Account + API key required.";
+    li1.createEl("strong", { text: "Paid cloud APIs" });
+    li1.appendText(
+      " (Anthropic Claude, OpenAI GPT, Groq, OpenRouter): top quality, per-token cost. Account + API key required."
+    );
     const li2 = ul.createEl("li");
-    li2.innerHTML =
-      "<strong>Free local models</strong> (LM Studio, Ollama): full privacy, zero cost, variable quality. Requires ~10GB of RAM/VRAM and an initial model download.";
+    li2.createEl("strong", { text: "Free local models" });
+    li2.appendText(
+      " (LM Studio, Ollama): full privacy, zero cost, variable quality. Requires ~10GB of RAM/VRAM and an initial model download."
+    );
     const aiP2 = apiInfo.createEl("p");
     aiP2.style.margin = "6px 0 0 0";
     aiP2.style.opacity = "0.85";
@@ -1109,7 +1113,6 @@ export default class AntinomiaPlugin extends Plugin {
   }
 
   async onload(): Promise<void> {
-    console.log("[Antinomia] onload — step 6 (multi-profile + welcome)");
     await this.loadSettings();
     this.addSettingTab(new AntinomiaSettingTab(this.app, this));
 
@@ -1734,7 +1737,6 @@ export default class AntinomiaPlugin extends Plugin {
   }
 
   onunload(): void {
-    console.log("[Antinomia] onunload");
     if (this.hoverDomUnsub) {
       this.hoverDomUnsub();
       this.hoverDomUnsub = null;
@@ -2166,11 +2168,11 @@ export default class AntinomiaPlugin extends Plugin {
       // path. Cap at 9999 to avoid an infinite loop on a clock anomaly.
       const baseId = `${prefix}-${timestampId()}`;
       let id = baseId;
-      let path = `${folder}/${id}.md`;
+      let path = normalizePath(`${folder}/${id}.md`);
       let suffix = 1;
       while (this.app.vault.getAbstractFileByPath(path)) {
         id = `${baseId}-${String(suffix).padStart(3, "0")}`;
-        path = `${folder}/${id}.md`;
+        path = normalizePath(`${folder}/${id}.md`);
         suffix++;
         if (suffix > 9999) {
           throw new Error(
