@@ -94,7 +94,7 @@ export function notifyAIUsage(
   }
 
   if (context?.app) {
-    const el = (notice as any).noticeEl as HTMLElement | undefined;
+    const el = (notice as unknown as { noticeEl?: HTMLElement }).noticeEl;
     if (el) {
       el.setCssStyles({ cursor: "pointer" });
       el.title = "Click for full AI call details";
@@ -307,14 +307,14 @@ export class ErrorAckModal extends Modal {
               : "");
           try {
             await navigator.clipboard.writeText(payload);
-            const btnEl = (b as any).buttonEl as HTMLButtonElement;
+            const btnEl = b.buttonEl;
             const orig = btnEl.textContent ?? "Copy message";
             btnEl.textContent = "Copied ✓";
             setTimeout(() => {
               btnEl.textContent = orig;
             }, 1500);
           } catch {
-            const btnEl = (b as any).buttonEl as HTMLButtonElement;
+            const btnEl = b.buttonEl;
             btnEl.textContent = "Copy failed";
             setTimeout(() => {
               btnEl.textContent = "Copy message";
