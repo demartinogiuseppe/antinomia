@@ -99,7 +99,7 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
     const REINFORCE =
       '\n\nCRITICAL: your previous reply was prose, not JSON. Output ONLY the JSON {"pairs": [{"note_a": "...", "note_b": "...", "description": "...", "confidence": "high|medium|low"}]} or {"pairs": []} if none. NO commentary, NO instructions, NO meta-text. Start with { end with }.';
     let result!: { text: string; usage?: ClaudeResponse["usage"] };
-    let rawPairs: any[] | null = null;
+    let rawPairs: unknown[] | null = null;
     let durationMs = 0;
 
     // Attempt 0: normal prompt. Attempt 1: reinforced retry (once). A network
@@ -152,7 +152,7 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
         return;
       }
       durationMs = Date.now() - t0;
-      const parsedRaw = extractJson<any>(result.text);
+      const parsedRaw = extractJson<{ pairs?: unknown; contraddizioni?: unknown }>(result.text);
       if (parsedRaw && Array.isArray(parsedRaw.pairs)) rawPairs = parsedRaw.pairs;
       else if (parsedRaw && Array.isArray(parsedRaw.contraddizioni)) rawPairs = parsedRaw.contraddizioni;
       if (rawPairs) break; // got a structure — stop retrying
@@ -287,7 +287,7 @@ export async function undismissContradiction(plugin: AntinomiaPlugin,
       await plugin.app.fileManager.processFrontMatter(file, (fm) => {
         const arr = fm.hunter_false_positives;
         if (!Array.isArray(arr)) return;
-        const filtered = arr.filter((x: any) => String(x) !== peer);
+        const filtered = arr.filter((x: unknown) => String(x) !== peer);
         if (filtered.length !== arr.length) {
           modified = true;
           if (filtered.length === 0) delete fm.hunter_false_positives;
