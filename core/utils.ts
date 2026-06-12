@@ -22,14 +22,34 @@ export async function ensureFolder(app: App, path: string): Promise<void> {
  * false — used to decide whether the user's notes leave the machine and which
  * runtime-specific request fields are safe to send.
  */
+/**
+ * "Local" here means a private/sovereign endpoint the user controls — not just
+ * literal localhost. Bridge-networking addresses (Tailscale, LAN, internal
+ * TLDs) are privacy-equivalent to localhost: the user manages them, traffic
+ * stays on their own devices/network. Cloud providers fall through to false.
+ */
 export function isLocalBaseUrl(baseUrl: string): boolean {
   try {
     const u = new URL(baseUrl);
+    const h = u.hostname.toLowerCase();
     return (
-      u.hostname === "localhost" ||
-      u.hostname === "127.0.0.1" ||
-      u.hostname === "0.0.0.0" ||
-      u.hostname.endsWith(".local")
+      // Direct localhost
+      h === "localhost" ||
+      h === "127.0.0.1" ||
+      h === "0.0.0.0" ||
+      // mDNS / Bonjour
+      h.endsWith(".local") ||
+      // Tailscale Magic DNS
+      h.endsWith(".ts.net") ||
+      h.endsWith(".tailscale.net") ||
+      // Common internal TLDs
+      h.endsWith(".lan") ||
+      h.endsWith(".home") ||
+      h.endsWith(".internal") ||
+      // RFC 1918 private IPv4 ranges (LAN)
+      /^10\./.test(h) ||
+      /^192\.168\./.test(h) ||
+      /^172\.(1[6-9]|2[0-9]|3[01])\./.test(h)
     );
   } catch {
     return false;
