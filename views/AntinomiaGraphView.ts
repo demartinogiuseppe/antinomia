@@ -13,7 +13,7 @@ export class AntinomiaGraphView extends ItemView {
   plugin: AntinomiaPlugin;
   filters: GraphFilters = { ...DEFAULT_GRAPH_FILTERS };
   layoutName = "clusters";
-  cy: any = null; // cytoscape Core, kept any for build size
+  cy: cytoscape.Core | null = null;
   graphContainer: HTMLElement | null = null;
   // Parallax background layers (3D galaxy effect). Null when the galaxy
   // background setting is off.
@@ -166,19 +166,19 @@ export class AntinomiaGraphView extends ItemView {
         // integrates them naturally. No full fcose re-layout — that was
         // causing the "pallini swarm to center then expand" effect because
         // fcose internally repositions all nodes when run with animation.
-        (this as any).startContinuousPhysics?.();
+        this.startContinuousPhysics();
         // Run edge-node repulsion immediately to push nodes off the new
         // edges. Then a second pass after the physics has briefly settled
         // to clean up any residual overlaps the physics may have re-created.
         // Physics keeps running so movement stays smooth (no freeze).
         try {
-          (this as any).applyEdgeNodeRepulsion?.();
+          this.applyEdgeNodeRepulsion();
         } catch {
           /* ignore */
         }
         window.setTimeout(() => {
           try {
-            (this as any).applyEdgeNodeRepulsion?.();
+            this.applyEdgeNodeRepulsion();
           } catch {
             /* ignore */
           }
@@ -289,7 +289,7 @@ export class AntinomiaGraphView extends ItemView {
       cursor: "pointer",
       pointerEvents: "auto",
     });
-    (slider as any).orient = "vertical";
+    (slider as unknown as { orient?: string }).orient = "vertical";
     const minusBtn = sliderWrap.createEl("button", { text: "−" });
     minusBtn.setCssStyles({
       width: "24px",
@@ -354,9 +354,9 @@ export class AntinomiaGraphView extends ItemView {
     window.setTimeout(() => this.rebuildGraph(), 50);
   }
 
-  private collectGraphData(): { nodes: any[]; edges: any[] } {
-    const nodes: any[] = [];
-    const edges: any[] = [];
+  private collectGraphData(): { nodes: cytoscape.ElementDefinition[]; edges: cytoscape.ElementDefinition[] } {
+    const nodes: cytoscape.ElementDefinition[] = [];
+    const edges: cytoscape.ElementDefinition[] = [];
     const seenEdges = new Set<string>();
     const includedBasenames = new Set<string>();
 
@@ -414,7 +414,7 @@ export class AntinomiaGraphView extends ItemView {
       });
     };
 
-    const extractBasenameFromWikilink = (raw: any): string | null => {
+    const extractBasenameFromWikilink = (raw: unknown): string | null => {
       if (typeof raw !== "string") return null;
       const m = raw.match(/\[\[([^\]|#]+)/);
       if (!m) return null;
@@ -473,7 +473,7 @@ export class AntinomiaGraphView extends ItemView {
     }
     for (const n of nodes) {
       if (n.data.layer === "presupposition") {
-        const deg = supportCount.get(n.data.id) ?? 0;
+        const deg = supportCount.get(n.data.id ?? "") ?? 0;
         n.data.degree = deg;
         if (deg > 1) {
           n.data.loadBearing = true;
@@ -521,7 +521,7 @@ export class AntinomiaGraphView extends ItemView {
     if (!this.cy) return;
     const GALAXY_PARALLAX = 0.15;
     const STARS_PARALLAX = 0.5;
-    const pan = this.cy.pan();
+    const pan = this.cy!.pan();
     if (this.galaxyLayer)
       this.galaxyLayer.setCssStyles({ transform: `translate(${pan.x * GALAXY_PARALLAX}px, ${pan.y * GALAXY_PARALLAX}px)` });
     if (this.starsLayer)
@@ -572,7 +572,7 @@ export class AntinomiaGraphView extends ItemView {
       styleName === "custom"
         ? this.plugin.settings.graphCustomColors
         : (GRAPH_STYLE_PRESETS[styleName] || GRAPH_STYLE_PRESETS.default);
-    return (palette as any)[colorKey] || LAYER_COLORS[colorKey] || "#888";
+    return (palette as unknown as Record<string, string>)[colorKey] || LAYER_COLORS[colorKey] || "#888";
   }
 
   /**
@@ -729,7 +729,7 @@ export class AntinomiaGraphView extends ItemView {
       // based on its current state. The inner disc in our glow SVG is
       // r=14 normally and r=16 in the bright variant (hover-focus only).
       const cyZoom = this.cy.zoom();
-      const discRadiusOf = (n: any): number => {
+      const discRadiusOf = (n: cytoscape.NodeSingular): number => {
         const innerR = n.hasClass("hover-focus") ? 16 : 14;
         const nodeWidth = n.width() || 44;
         return (innerR / 100) * nodeWidth * cyZoom;
@@ -737,7 +737,7 @@ export class AntinomiaGraphView extends ItemView {
 
       // Re-draw every edge with src->tgt linear gradient
       let i = 0;
-      this.cy.edges().forEach((edge: any) => {
+      this.cy.edges().forEach((edge: cytoscape.EdgeSingular) => {
         const src = edge.source();
         const tgt = edge.target();
         const sp = src.renderedPosition();
@@ -825,7 +825,7 @@ export class AntinomiaGraphView extends ItemView {
       // min-zoomed-font-size: 8 we used on the cy style).
       const minReadable = zoom * 10 >= 8;
       if (!minReadable) return;
-      this.cy.nodes().forEach((node: any) => {
+      this.cy.nodes().forEach((node: cytoscape.NodeSingular) => {
         const label = node.data("label");
         if (!label) return;
         const pos = node.renderedPosition();
@@ -902,17 +902,17 @@ export class AntinomiaGraphView extends ItemView {
     // CASO A: grafo gia' esistente -> differential add/remove con animazione,
     // viewport preservato, niente destroy/rebuild
     if (this.cy) {
-      const newIds = new Set(newElements.map((e: any) => e.data.id));
+      const newIds = new Set(newElements.map((e: cytoscape.ElementDefinition) => e.data.id));
       const currentIds = new Set<string>();
-      this.cy.elements().forEach((el: any) => currentIds.add(el.id()));
+      this.cy.elements().forEach((el) => { currentIds.add(el.id()); });
 
       // UPDATE: per gli elementi che esistono in entrambi (stesso id),
       // aggiorna i data attributi (color, layer, label) cosi' i nodi
       // che cambiano tipo (es. tensione -> principio) vedono il nuovo colore.
       for (const el of newElements) {
-        if (!currentIds.has(el.data.id)) continue;
+        if (!currentIds.has(el.data.id ?? "")) continue;
         if ("source" in el.data) continue; // edge: non aggiornare
-        const cyNode = this.cy.getElementById(el.data.id);
+        const cyNode = this.cy.getElementById(el.data.id ?? "");
         if (cyNode && cyNode.length > 0) {
           cyNode.data({
             color: el.data.color,
@@ -933,7 +933,7 @@ export class AntinomiaGraphView extends ItemView {
       this.cy.elements().removeClass("hover-focus hover-neighbor");
 
       const toRemove = this.cy.elements().filter(
-        (el: any) => !newIds.has(el.id())
+        (el: cytoscape.SingularElementArgument) => !newIds.has(el.id())
       );
       if (toRemove.length > 0) {
         toRemove.animate(
@@ -953,10 +953,10 @@ export class AntinomiaGraphView extends ItemView {
       }
 
       const toAdd = newElements.filter(
-        (e: any) => !currentIds.has(e.data.id)
+        (e: cytoscape.ElementDefinition) => !currentIds.has(e.data.id ?? "")
       );
       if (toAdd.length > 0) {
-        const positioned = toAdd.map((e: any) => {
+        const positioned = toAdd.map((e: cytoscape.ElementDefinition) => {
           if ("source" in e.data) return e;
           const layer = e.data.layer || "unknown";
           const ang = this.layerAngleFor(layer);
@@ -1217,7 +1217,7 @@ export class AntinomiaGraphView extends ItemView {
     this.applyLayoutToCy();
 
     // Click → open note
-    this.cy.on("tap", "node", (evt: any) => {
+    this.cy.on("tap", "node", (evt: cytoscape.EventObject) => {
       const basename = evt.target.id();
       this.app.workspace.openLinkText(basename, "", false);
     });
@@ -1238,21 +1238,21 @@ export class AntinomiaGraphView extends ItemView {
       }
     };
 
-    this.cy.on("tapstart", (evt: any) => {
+    this.cy.on("tapstart", (evt: cytoscape.EventObject) => {
       if (evt.target !== this.cy) return; // solo drag del background, non dei nodi
       cancelInertia();
       panVx = 0;
       panVy = 0;
       lastPanTime = performance.now();
-      const pan = this.cy.pan();
+      const pan = this.cy!.pan();
       lastPanPos = { x: pan.x, y: pan.y };
     });
 
-    this.cy.on("tapdrag", (evt: any) => {
+    this.cy.on("tapdrag", (evt: cytoscape.EventObject) => {
       if (evt.target !== this.cy) return;
       const now = performance.now();
       const dt = Math.max(now - lastPanTime, 1);
-      const pan = this.cy.pan();
+      const pan = this.cy!.pan();
       // Velocita' in px per frame (16ms a 60fps)
       panVx = ((pan.x - lastPanPos.x) / dt) * 16;
       panVy = ((pan.y - lastPanPos.y) / dt) * 16;
@@ -1260,7 +1260,7 @@ export class AntinomiaGraphView extends ItemView {
       lastPanTime = now;
     });
 
-    this.cy.on("tapend", (evt: any) => {
+    this.cy.on("tapend", (evt: cytoscape.EventObject) => {
       if (evt.target !== this.cy) return;
       if (Math.abs(panVx) < 0.8 && Math.abs(panVy) < 0.8) return;
       const decay = (): void => {
@@ -1278,7 +1278,7 @@ export class AntinomiaGraphView extends ItemView {
     });
 
     // Hover: tooltip + fade non-neighbors (Obsidian-like)
-    this.cy.on("mouseover", "node", (evt: any) => {
+    this.cy.on("mouseover", "node", (evt: cytoscape.EventObject) => {
       const node = evt.target;
       const fullTitle = node.data("fullTitle");
       const layer = node.data("layer");
@@ -1297,7 +1297,7 @@ export class AntinomiaGraphView extends ItemView {
         source: "graph",
       });
     });
-    this.cy.on("mouseout", "node", (evt: any) => {
+    this.cy.on("mouseout", "node", (evt: cytoscape.EventObject) => {
       if (this.graphContainer) this.graphContainer.title = "";
       if (!this.cy) return;
       this.cy.elements().removeClass("hover-focus hover-neighbor");
@@ -1330,8 +1330,8 @@ export class AntinomiaGraphView extends ItemView {
     };
 
     // Conta i nodi per layer per calibrare il raggio del singolo cluster
-    const byLayer: Record<string, any[]> = {};
-    this.cy.nodes().forEach((n: any) => {
+    const byLayer: Record<string, cytoscape.NodeSingular[]> = {};
+    this.cy.nodes().forEach((n: cytoscape.NodeSingular) => {
       const layer = n.data("layer") || "unknown";
       (byLayer[layer] ??= []).push(n);
     });
@@ -1346,7 +1346,7 @@ export class AntinomiaGraphView extends ItemView {
       const cx = Math.cos(ang) * GLOBAL_R;
       const cy = Math.sin(ang) * GLOBAL_R;
       const r = CLUSTER_R + Math.sqrt(nodes.length) * 12; // scale by count
-      nodes.forEach((n: any, i: number) => {
+      nodes.forEach((n: cytoscape.NodeSingular, i: number) => {
         const inner = (i / Math.max(nodes.length, 1)) * Math.PI * 2;
         positions[n.id()] = {
           x: cx + Math.cos(inner) * r + (Math.random() - 0.5) * 30,
@@ -1360,11 +1360,11 @@ export class AntinomiaGraphView extends ItemView {
     this.cy
       .layout({
         name: "preset",
-        positions: (n: any) => positions[n.id()] || { x: 0, y: 0 },
+        positions: (n: cytoscape.NodeSingular) => positions[n.id()] || { x: 0, y: 0 },
         animate: true,
         animationDuration: 400,
         fit: false, // niente auto-fit: vogliamo zoom medio, non panoramico
-      })
+      } as cytoscape.LayoutOptions)
       .run();
 
     // Fit-to-content con padding generoso → centra la nuvola nel viewport,
@@ -1388,7 +1388,7 @@ export class AntinomiaGraphView extends ItemView {
 
     // Init velocities
     this.velocities.clear();
-    this.cy.nodes().forEach((n: any) => {
+    this.cy.nodes().forEach((n: cytoscape.NodeSingular) => {
       this.velocities.set(n.id(), { vx: 0, vy: 0 });
     });
 
@@ -1407,7 +1407,7 @@ export class AntinomiaGraphView extends ItemView {
 
       // Forces accumulator
       const forces = new Map<string, { fx: number; fy: number }>();
-      arr.forEach((n: any) => forces.set(n.id(), { fx: 0, fy: 0 }));
+      arr.forEach((n: cytoscape.NodeSingular) => forces.set(n.id(), { fx: 0, fy: 0 }));
 
       // Pairwise repulsion (O(n^2) — fine fino a ~150 nodi)
       for (let i = 0; i < arr.length; i++) {
@@ -1433,7 +1433,7 @@ export class AntinomiaGraphView extends ItemView {
       }
 
       // Spring force on edges
-      edges.forEach((e: any) => {
+      edges.forEach((e: cytoscape.EdgeSingular) => {
         const s = e.source();
         const t = e.target();
         const sp = s.position();
@@ -1454,7 +1454,7 @@ export class AntinomiaGraphView extends ItemView {
       });
 
       // Light center gravity
-      arr.forEach((n: any) => {
+      arr.forEach((n: cytoscape.NodeSingular) => {
         const p = n.position();
         const f = forces.get(n.id())!;
         f.fx -= p.x * GRAVITY;
@@ -1467,7 +1467,7 @@ export class AntinomiaGraphView extends ItemView {
       // while the graph view was already open). Without this, the next
       // physics tick crashes on `velocities.get(n.id()).vx` because the
       // new node was never registered.
-      arr.forEach((n: any) => {
+      arr.forEach((n: cytoscape.NodeSingular) => {
         const nid = n.id();
         let v = this.velocities.get(nid);
         if (!v) {
@@ -1494,7 +1494,7 @@ export class AntinomiaGraphView extends ItemView {
       // Garbage-collect velocities for nodes that have been removed from
       // the graph so the Map doesn't grow unbounded across rebuilds.
       if (this.velocities.size > arr.length + 50) {
-        const alive = new Set(arr.map((n: any) => n.id()));
+        const alive = new Set(arr.map((n: cytoscape.NodeSingular) => n.id()));
         for (const k of Array.from(this.velocities.keys())) {
           if (!alive.has(k)) this.velocities.delete(k);
         }
@@ -1513,7 +1513,7 @@ export class AntinomiaGraphView extends ItemView {
     }
   }
 
-  private layoutOptions(): any {
+  private layoutOptions(): cytoscape.LayoutOptions {
     if (this.layoutName === "fcose") {
       // Spacious mode: much stronger repulsion + longer edges → nodes
       // spread far apart so edges are less likely to cross unrelated
@@ -1528,8 +1528,8 @@ export class AntinomiaGraphView extends ItemView {
         this.cy.nodes().length > 0 &&
         this.cy
           .nodes()
-          .some((n: any) => {
-            const p = n.position();
+          .some((n) => {
+            const p = (n as cytoscape.NodeSingular).position();
             return p && (p.x !== 0 || p.y !== 0);
           });
       if (hasExistingPositions) {
@@ -1557,7 +1557,7 @@ export class AntinomiaGraphView extends ItemView {
           fit: false,
           padding: 60,
           quality: "default",
-        };
+        } as cytoscape.LayoutOptions;
       }
       // FIRST layout: full fcose run, picks positions from scratch.
       return {
@@ -1578,12 +1578,12 @@ export class AntinomiaGraphView extends ItemView {
         fit: true,
         padding: 60,
         quality: "proof",
-      };
+      } as cytoscape.LayoutOptions;
     }
     if (this.layoutName === "concentric") {
       return {
         name: "concentric",
-        concentric: (n: any) => {
+        concentric: (n: cytoscape.NodeSingular) => {
           const order: Record<string, number> = {
             principio: 4,
             tensione_elevata: 3,
@@ -1608,7 +1608,7 @@ export class AntinomiaGraphView extends ItemView {
         animate: true,
       };
     }
-    return { name: this.layoutName, animate: true, padding: 40 };
+    return { name: this.layoutName, animate: true, padding: 40 } as cytoscape.LayoutOptions;
   }
 
   applyLayoutToCy(): void {
@@ -1625,7 +1625,7 @@ export class AntinomiaGraphView extends ItemView {
     // fcose converges and nudges nodes away from edges that don't touch
     // them — the only way to get true edge-node repulsion in fcose.
     if (this.plugin.settings.graphSpaciousLayout) {
-      (layout as any).on?.("layoutstop", () => {
+      layout.on("layoutstop", () => {
         try {
           this.applyEdgeNodeRepulsion();
         } catch (e) {
