@@ -126,6 +126,52 @@ Antinomia makes **no autonomous network requests** and contains **no telemetry, 
 
 ---
 
+## Using local LLMs from mobile
+
+Antinomia works on Obsidian mobile. By default, the mobile app can reach cloud backends (Anthropic, OpenAI, Groq, OpenRouter) directly. **Local backends** (LM Studio, Ollama) are by default reachable only at `localhost`, which mobile devices cannot access.
+
+To use your home LM Studio or Ollama from mobile, you need to expose them via a network-reachable address. Three setup paths, in increasing complexity:
+
+### Option 1 — Tailscale (recommended)
+
+[Tailscale](https://tailscale.com) creates a private mesh VPN between your devices. Your phone is "virtually" on the same network as your desktop, even from cellular. End-to-end encrypted, zero firewall configuration, free for personal use.
+
+1. Install Tailscale on your **desktop** (where LM Studio / Ollama runs) and on your **phone**.
+2. Sign in to both with the same account.
+3. On the desktop, find your Tailscale Magic DNS name (e.g., `mydesktop.tail1234.ts.net`).
+4. In LM Studio (or Ollama), bind the server to `0.0.0.0` (all interfaces) instead of `127.0.0.1`.
+5. In Antinomia mobile, set the profile baseUrl to: `http://mydesktop.tail1234.ts.net:1234/v1` (LM Studio) or `http://mydesktop.tail1234.ts.net:11434/v1` (Ollama).
+
+Your notes never leave your devices — Tailscale is end-to-end encrypted.
+
+### Option 2 — Same-WiFi LAN
+
+If both devices are on the same home WiFi:
+
+1. Find your desktop's local IP (e.g., `192.168.1.50`). On Windows: `ipconfig`. On macOS: System Settings → Network.
+2. In LM Studio / Ollama, bind to `0.0.0.0`.
+3. Configure your desktop firewall to allow inbound connections on port 1234 (LM Studio) or 11434 (Ollama) from the local network only.
+4. In Antinomia mobile, set baseUrl to: `http://192.168.1.50:1234/v1`.
+
+Works only when the phone is on the same WiFi.
+
+### Option 3 — Cloudflare Tunnel
+
+For access from anywhere via the public internet, with HTTPS:
+
+1. Install [cloudflared](https://github.com/cloudflare/cloudflared) on your desktop.
+2. Run `cloudflared tunnel --url http://localhost:1234` (or your local port).
+3. Cloudflare gives you a public HTTPS URL (e.g., `https://random-name.trycloudflare.com`).
+4. In Antinomia mobile, set baseUrl to that URL + `/v1`.
+
+Cloudflare proxies the traffic. For long-term use, configure an Argo Tunnel with a custom domain.
+
+### Why this matters
+
+These setups let you run **fully private AI** from your phone — your notes go to your desktop's local model, never to a cloud provider. Antinomia treats Tailscale / LAN / Cloudflare addresses as `Local backend` in the UI (Privacy notices reflect this).
+
+---
+
 ## Philosophy
 
 Antinomia is not a tool to fill up. It is a practice. The vault grows as you encounter contradictions in your own thinking (substrate). Tensions emerge from the material — they are not designed. The Hunter shows you contradictions you hadn't seen — not to resolve them for you, but to **force you to think them through**.
