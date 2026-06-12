@@ -454,10 +454,22 @@ const PDF_TEXT_HARD_CAP_CHARS = 30_000;
  * (helpful for debugging). Truncated to PDF_TEXT_HARD_CAP_CHARS to keep
  * the AI call cost predictable on very long documents.
  */
+// Minimal shape of Obsidian's bundled pdf.js (only the bits we use).
+interface PdfJsLib {
+  getDocument(src: { data: ArrayBuffer }): { promise: Promise<PdfDocProxy> };
+}
+interface PdfDocProxy {
+  numPages: number;
+  getPage(n: number): Promise<PdfPageProxy>;
+}
+interface PdfPageProxy {
+  getTextContent(): Promise<{ items: Array<{ str?: unknown }> }>;
+}
+
 async function extractPdfText(
   binary: ArrayBuffer
 ): Promise<PdfExtractResult> {
-  const pdfjsLib = (window as any).pdfjsLib;
+  const pdfjsLib = (window as unknown as { pdfjsLib?: PdfJsLib }).pdfjsLib;
   if (!pdfjsLib || typeof pdfjsLib.getDocument !== "function") {
     throw new Error(
       "pdfjs_not_loaded:Obsidian's PDF library is not loaded yet. Open any PDF in Obsidian once (just opening it is enough), then retry."
@@ -476,7 +488,7 @@ async function extractPdfText(
     const page = await doc.getPage(p);
     const content = await page.getTextContent();
     const pageText = content.items
-      .map((it: any) => (typeof it.str === "string" ? it.str : ""))
+      .map((it) => (typeof it.str === "string" ? it.str : ""))
       .join(" ")
       .replace(/\s+/g, " ")
       .trim();
