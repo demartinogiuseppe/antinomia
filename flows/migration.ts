@@ -92,12 +92,14 @@ const BACKUP_PREFIX = "notes/.antinomia-pre-migration-backup-";
  * Unknown keys are preserved. `changedKeys` counts every individual rename
  * applied (each key rename and each enum-value rewrite counts as one).
  */
-export function migrateFrontmatter(fm: any): { migrated: any; changedKeys: number } {
+export function migrateFrontmatter(
+  fm: unknown
+): { migrated: Record<string, unknown>; changedKeys: number } {
   const out: Record<string, unknown> = {};
   let changed = 0;
-  if (!fm || typeof fm !== "object") return { migrated: fm, changedKeys: 0 };
+  if (!fm || typeof fm !== "object") return { migrated: {}, changedKeys: 0 };
 
-  for (const [key, value] of Object.entries(fm)) {
+  for (const [key, value] of Object.entries(fm as Record<string, unknown>)) {
     const newKey = KEY_MAP[key] ?? key;
     if (newKey !== key) changed++;
 
@@ -224,7 +226,7 @@ export async function migrateNote(
       const { migrated, changedKeys } = migrateFrontmatter({ ...fm });
       fmKeys = changedKeys;
       if (changedKeys > 0) {
-        for (const k of Object.keys(fm)) delete (fm as any)[k];
+        for (const k of Object.keys(fm)) delete (fm as Record<string, unknown>)[k];
         Object.assign(fm, migrated);
       }
     });
