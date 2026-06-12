@@ -235,7 +235,9 @@ export function renderAntinomiaNav(
   spacer.setCssStyles({ flex: "1" });
 
   const settingsBtn = mkBtn("⚙", () => {
-    const setting = (plugin.app as any).setting;
+    const setting = (plugin.app as unknown as {
+      setting?: { open?: () => void; openTabById?: (id: string) => void };
+    }).setting;
     if (setting && typeof setting.open === "function") {
       setting.open();
       if (typeof setting.openTabById === "function") {
