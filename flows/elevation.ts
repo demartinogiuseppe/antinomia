@@ -108,7 +108,7 @@ export async function elevateSplit(plugin: AntinomiaPlugin, file: TFile, fields?
     const today = todayISO();
     const tensionTitle = typeof oldFm.title === "string" ? oldFm.title : tensionBasename;
     const existingLinks: string[] = Array.isArray(oldFm.links)
-      ? oldFm.links.map((s: any) => String(s))
+      ? oldFm.links.map((s: unknown) => String(s))
       : [];
     const collegamentiYaml = existingLinks.length > 0
       ? `links:\n${existingLinks.map((l) => "  - " + JSON.stringify(l)).join("\n")}\n`
