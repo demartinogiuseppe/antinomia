@@ -16,10 +16,15 @@ import type { GraphFilters } from "./types";
  *
  * Extracted from AntinomiaGraphView so it can be unit-tested.
  */
-export function layerKey(fm: any): keyof GraphFilters | null {
-  const t = fm?.antinomia_type;
+export function layerKey(fm: unknown): keyof GraphFilters | null {
+  const f = (fm ?? {}) as {
+    antinomia_type?: unknown;
+    status?: unknown;
+    motive?: unknown;
+  };
+  const t = f.antinomia_type;
   if (t === TYPE.tension) {
-    const stato = fm?.status;
+    const stato = f.status;
     if (stato === "elevated") return "tensione_elevata";
     if (stato === "resolved") return "tensione_risolta";
     return "tensione_aperta";
@@ -27,7 +32,7 @@ export function layerKey(fm: any): keyof GraphFilters | null {
   if (t === TYPE.substrate) return "substrate";
   if (t === TYPE.principle) return "principle";
   if (t === TYPE.defeated) {
-    const motive = fm?.motive;
+    const motive = f.motive;
     if (motive === "elevated") return "tensione_elevata";
     return "defeated";
   }
