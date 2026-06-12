@@ -3,7 +3,7 @@ import cytoscape from "cytoscape";
 import fcose from "cytoscape-fcose";
 cytoscape.use(fcose as unknown as Parameters<typeof cytoscape.use>[0]);
 
-import { App, Notice, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf, normalizePath } from "obsidian";
+import { App, Notice, Platform, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf, normalizePath } from "obsidian";
 
 import type { Profile, GraphColors, BackendPreset, TutorialStep, PdfExtractResult, ClassifyResult, TitleProposal, PresuppostiFields, PdfConcept, PdfConceptsResult, AIUsageMeta, FreeInputAnalysis, HunterConfidence, HunterContradiction, HunterResult, HunterRunMetadata, HunterRun, DefeatedSubmit, TensionFields, SubstrateFields, PrincipleFields, GraphFilters, ClaudeResponse } from "./core/types";
 
@@ -571,6 +571,43 @@ class AntinomiaSettingTab extends PluginSettingTab {
           this.display();
         });
       });
+
+      // Mobile + localhost: localhost is unreachable from a phone. Point the
+      // user at bridge-networking options (Tailscale / LAN / Cloudflare).
+      if (
+        Platform.isMobile &&
+        /localhost|127\.0\.0\.1|0\.0\.0\.0/.test(profile.baseUrl)
+      ) {
+        const helpEl = containerEl.createDiv({
+          cls: "antinomia-mobile-bridge-help",
+        });
+        helpEl.setCssStyles({
+          fontSize: "0.85em",
+          color: "var(--text-warning)",
+          marginTop: "0.5em",
+          padding: "0.6em 0.8em",
+          border: "1px solid var(--text-warning)",
+          borderRadius: "4px",
+        });
+        helpEl.createEl("strong", { text: "⚠ Mobile + local backend " });
+        helpEl.createSpan({
+          text: "— localhost is not reachable from this device. To use your home LM Studio / Ollama from mobile, replace localhost with a network-reachable address:",
+        });
+        const list = helpEl.createEl("ul");
+        list.setCssStyles({ margin: "0.5em 0 0.3em 1em", paddingLeft: "0.5em" });
+        list.createEl("li", {
+          text: "Tailscale (recommended): http://your-pc.tail1234.ts.net:1234/v1",
+        });
+        list.createEl("li", { text: "LAN (same WiFi): http://192.168.1.X:1234/v1" });
+        list.createEl("li", {
+          text: "Cloudflare Tunnel: https://your-ai.example.com/v1",
+        });
+        const docLink = helpEl.createEl("a", {
+          text: "Setup guide →",
+          href: "https://github.com/demartinogiuseppe/antinomia#using-local-llms-from-mobile",
+        });
+        docLink.setCssStyles({ display: "inline-block", marginTop: "0.4em" });
+      }
     }
 
     new Setting(containerEl).addButton((b) =>
