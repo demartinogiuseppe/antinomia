@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.7.0 (June 12, 2026) — Mobile support + bridge-to-local LLMs
+
+Antinomia now runs on Obsidian mobile (`isDesktopOnly: false`), and local LLMs stay usable from a phone via bridge networking. No prompt, schema, graph, or Hunter logic changed — this is mobile enablement plus a broadened definition of "local".
+
+- **Mobile support:** the plugin works on Obsidian mobile. Cloud backends (Anthropic, OpenAI, Groq, OpenRouter) work natively. The existing graceful fallbacks (`requestUrl` when Node `http` is absent, `window.open` when Electron shell is absent, `navigator.clipboard`) already cover the mobile runtime.
+- **Local LLMs from mobile:** `localhost` is unreachable from a phone, so point the profile `baseUrl` at a network-reachable address — Tailscale Magic DNS (`*.ts.net`), a LAN IP, or a Cloudflare Tunnel. The model still runs on your own machine; nothing goes to a cloud provider.
+- **`isLocalBaseUrl()` broadened:** now recognizes Tailscale (`*.ts.net`, `*.tailscale.net`), RFC 1918 LAN ranges (`10.*`, `192.168.*`, `172.16–31.*`), and `.lan` / `.home` / `.internal` TLDs as local — privacy-equivalent to localhost. `ai/callAI.ts` now imports this helper instead of duplicating the check inline.
+- **`backendLabel()`** shows "Local backend (Tailscale)" / "Local backend (LAN)" for bridge addresses, so the friction card and privacy notices reflect the sovereign endpoint.
+- **Settings notice:** on mobile, when a profile's `baseUrl` is `localhost`, the AI Profiles section shows an inline bridge-setup hint (Tailscale / LAN / Cloudflare) linking to the README.
+- **README:** new "Using local LLMs from mobile" section with Tailscale, LAN, and Cloudflare Tunnel walkthroughs.
+
 ## v1.6.6 (June 12, 2026) — Type tightening: replaced ~80 `any` with concrete types
 
 Pure tech-debt cleanup after the Obsidian Community store scan of v1.6.5 surfaced ~80 `Unexpected any` warnings. No code-feature change, no schema change, no behavior change. The plugin runs identically; the type surface is just tighter.
