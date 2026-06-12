@@ -1,11 +1,33 @@
 import cytoscape from "cytoscape";
 // @ts-ignore — cytoscape-fcose has no types
 import fcose from "cytoscape-fcose";
-cytoscape.use(fcose as any);
+cytoscape.use(fcose as unknown as Parameters<typeof cytoscape.use>[0]);
 
 import { App, Notice, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf, normalizePath } from "obsidian";
 
 import type { Profile, GraphColors, BackendPreset, TutorialStep, PdfExtractResult, ClassifyResult, TitleProposal, PresuppostiFields, PdfConcept, PdfConceptsResult, AIUsageMeta, FreeInputAnalysis, HunterConfidence, HunterContradiction, HunterResult, HunterRunMetadata, HunterRun, DefeatedSubmit, TensionFields, SubstrateFields, PrincipleFields, GraphFilters, ClaudeResponse } from "./core/types";
+
+// Loose shapes for Obsidian internals that aren't in the public typings, used
+// only to avoid `any` casts. None of these are guaranteed by the public API.
+interface FmtSettings {
+  rules?: { items?: Record<string, { path?: string; enabled?: boolean }> };
+  features?: Record<string, { enabled?: boolean }>;
+  [key: string]: unknown;
+}
+interface FmtPluginInstance {
+  settings?: FmtSettings;
+  saveSettings?: () => void | Promise<void>;
+}
+interface AppPluginsApi {
+  enabledPlugins?: Set<string>;
+  plugins?: Record<string, FmtPluginInstance | undefined>;
+  disablePlugin?: (id: string) => Promise<void>;
+  enablePlugin?: (id: string) => Promise<void>;
+}
+interface AppSettingApi {
+  open?: () => void;
+  openTabById?: (id: string) => void;
+}
 
 import { FOLDER, TYPE, VIEW_TYPE_OPEN_TENSIONS, VIEW_TYPE_HUNTER_RESULTS, VIEW_TYPE_DISMISSED_PAIRS, VIEW_TYPE_SUBSTRATE_LIST, VIEW_TYPE_PRINCIPLES_LIST, VIEW_TYPE_DEFEATED_LIST, VIEW_TYPE_ONBOARDING, VIEW_TYPE_DASHBOARD, VIEW_TYPE_AUDIT, VIEW_TYPE_GRAPH, VIEW_TYPE_UNCLASSIFIED, VIEW_TYPE_PRESUPPOSITIONS_MAP, GRAPH_STYLE_PRESETS, BACKEND_PRESETS } from "./core/constants";
 
@@ -217,11 +239,12 @@ class AntinomiaSettingTab extends PluginSettingTab {
     fmtBtn.onclick = async () => {
       if (!fmtEnabledNow) {
         try {
-          (window as any).open(
+          window.open(
             "obsidian://show-plugin?id=obsidian-front-matter-title-plugin"
           );
         } catch {
-          const setting = (this.app as any).setting;
+          const setting = (this.app as unknown as { setting?: AppSettingApi })
+            .setting;
           if (setting?.open) {
             setting.open();
             if (setting.openTabById) setting.openTabById("community-plugins");
@@ -231,7 +254,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
       }
       if (fmtConfiguredNow) return;
       // Smart configure (see WelcomeModal for the same logic)
-      const fmt = (this.plugin as any).getFrontMatterTitlePlugin?.();
+      const fmt = this.plugin.getFrontMatterTitlePlugin();
       const hasCustomSettings =
         fmt?.settings &&
         Object.keys(fmt.settings).length > 0 &&
@@ -438,7 +461,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
           .setName(label)
           .addColorPicker((cp) =>
             cp.setValue(cust[key] || "#888888").onChange(async (v) => {
-              (cust as any)[key] = v;
+              cust[key] = v;
               await this.plugin.saveSettings();
               this.plugin.refreshOpenGraphViews();
             })
@@ -1005,7 +1028,8 @@ export default class AntinomiaPlugin extends Plugin {
    */
   isFrontMatterTitleEnabled(): boolean {
     try {
-      const ep = (this.app as any).plugins?.enabledPlugins;
+      const ep = (this.app as unknown as { plugins?: AppPluginsApi }).plugins
+        ?.enabledPlugins;
       if (!ep) return false;
       return ep.has("obsidian-front-matter-title-plugin");
     } catch {
@@ -1016,9 +1040,10 @@ export default class AntinomiaPlugin extends Plugin {
   /**
    * Return the FMT plugin instance if installed+enabled, else null.
    */
-  private getFrontMatterTitlePlugin(): any | null {
+  getFrontMatterTitlePlugin(): FmtPluginInstance | null {
     try {
-      const plugins = (this.app as any).plugins?.plugins;
+      const plugins = (this.app as unknown as { plugins?: AppPluginsApi })
+        .plugins?.plugins;
       return plugins?.["obsidian-front-matter-title-plugin"] ?? null;
     } catch {
       return null;
@@ -1091,13 +1116,14 @@ export default class AntinomiaPlugin extends Plugin {
         // Fallback: write data.json directly via the vault adapter
         const dataPath =
           ".obsidian/plugins/obsidian-front-matter-title-plugin/data.json";
-        const adapter = (this.app.vault as any).adapter;
+        const adapter = this.app.vault.adapter;
         if (adapter?.write) {
           await adapter.write(dataPath, JSON.stringify(s, null, 2));
         }
       }
       // Disable + reenable to apply the new settings (FMT reads them on boot)
-      const pluginsApi = (this.app as any).plugins;
+      const pluginsApi = (this.app as unknown as { plugins?: AppPluginsApi })
+        .plugins;
       if (
         pluginsApi?.disablePlugin &&
         pluginsApi?.enablePlugin
@@ -2164,8 +2190,8 @@ export default class AntinomiaPlugin extends Plugin {
   refreshOpenGraphViews(): void {
     const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_GRAPH);
     for (const leaf of leaves) {
-      const view = leaf.view as any;
-      if (view && typeof view.applyStyleChange === "function") {
+      const view = leaf.view as unknown as { applyStyleChange?: () => void };
+      if (typeof view.applyStyleChange === "function") {
         view.applyStyleChange();
       }
     }
@@ -2719,13 +2745,13 @@ export default class AntinomiaPlugin extends Plugin {
     }
     const { workspace } = this.app;
     const existing = workspace.getLeavesOfType(viewType);
-    const rootSplit = (workspace as any).rootSplit;
+    const rootSplit = (workspace as unknown as { rootSplit?: unknown }).rootSplit;
 
     if (leafType === "tab") {
       // Cerca una leaf esistente che sia gia' nel main editor area
       const inMain = existing.find((l) => {
         try {
-          return (l as any).getRoot?.() === rootSplit;
+          return (l as unknown as { getRoot?: () => unknown }).getRoot?.() === rootSplit;
         } catch {
           return false;
         }
