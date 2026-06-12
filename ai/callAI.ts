@@ -3,6 +3,7 @@
 
 import { requestUrl } from "obsidian";
 import type { ClaudeMessage, ClaudeResponse } from "../core/types";
+import { isLocalBaseUrl } from "../core/utils";
 import { detectModelCapabilities } from "./detectModel";
 import { parseAIResponse } from "./parseResponse";
 import { pingLocalBackend } from "./pingBackend";
@@ -102,17 +103,9 @@ export async function callAI(opts: {
   // OpenAI, OpenRouter) reject `chat_template_kwargs` / `extra_body` with
   // 400 — those are runtime-specific (LM Studio / vLLM / Ollama) and must
   // not leak to cloud.
-  let isLocal = false;
-  try {
-    const u = new URL(url);
-    isLocal =
-      u.hostname === "localhost" ||
-      u.hostname === "127.0.0.1" ||
-      u.hostname === "0.0.0.0" ||
-      u.hostname.endsWith(".local");
-  } catch {
-    /* malformed URL — fall back to requestUrl */
-  }
+  // Single source of truth (recognizes localhost + bridge addresses:
+  // Tailscale, LAN, internal TLDs). See core/utils.ts.
+  const isLocal = isLocalBaseUrl(url);
 
   // Build the request body in the right shape for each API style. Index type
   // because we conditionally add backend-specific fields (reasoning_effort,
