@@ -79,11 +79,13 @@ export class WelcomeModal extends Modal {
         if (!fmtEnabled) {
           // Open the FMT plugin page directly in the community browser
           try {
-            (window as any).open(
+            window.open(
               "obsidian://show-plugin?id=obsidian-front-matter-title-plugin"
             );
           } catch {
-            const setting = (this.app as any).setting;
+            const setting = (this.app as unknown as {
+              setting?: { open?: () => void; openTabById?: (id: string) => void };
+            }).setting;
             if (setting?.open) {
               setting.open();
               if (setting.openTabById)
@@ -94,7 +96,7 @@ export class WelcomeModal extends Modal {
         }
         // Smart configure: if FMT was never set up for Antinomia, apply
         // directly. If it has any other configuration, ask for confirmation.
-        const fmt = (this.plugin as any).getFrontMatterTitlePlugin?.();
+        const fmt = this.plugin.getFrontMatterTitlePlugin();
         const hasCustomSettings =
           fmt?.settings &&
           Object.keys(fmt.settings).length > 0 &&
