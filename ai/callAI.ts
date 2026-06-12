@@ -11,6 +11,27 @@ import { pingLocalBackend } from "./pingBackend";
 // a short task) so the Notice fires once per session, not per call.
 const _reasoningWarningShown = new Set<string>();
 
+// Minimal shape of Node's http/https module (only the bits we use), loaded via
+// Electron's window.require to get a cancellable request for local backends.
+interface NodeIncomingMessage {
+  statusCode?: number;
+  on(event: "data", cb: (chunk: Buffer) => void): void;
+  on(event: "end", cb: () => void): void;
+  on(event: "error", cb: (err: Error) => void): void;
+}
+interface NodeClientRequest {
+  on(event: "error", cb: (err: Error) => void): void;
+  write(chunk: string): void;
+  end(): void;
+  destroy(): void;
+}
+interface NodeHttpModule {
+  request(
+    options: unknown,
+    callback: (res: NodeIncomingMessage) => void
+  ): NodeClientRequest;
+}
+
 export function detectApiFormat(baseUrl: string): "anthropic" | "openai" {
   const u = baseUrl.toLowerCase();
   if (u.includes("anthropic.com")) return "anthropic";
@@ -93,8 +114,10 @@ export async function callAI(opts: {
     /* malformed URL — fall back to requestUrl */
   }
 
-  // Build the request body in the right shape for each API style.
-  const body: any =
+  // Build the request body in the right shape for each API style. Index type
+  // because we conditionally add backend-specific fields (reasoning_effort,
+  // chat_template_kwargs, extra_body) below.
+  const body: Record<string, unknown> =
     apiFormat === "anthropic"
       ? {
           model: opts.model,
@@ -140,14 +163,10 @@ export async function callAI(opts: {
     // OpenAI reasoning model) or nothing at all (cloud non-reasoning models
     // don't have a thinking mode to disable in the first place).
     if (isLocal) {
-      body.chat_template_kwargs = {
-        ...(body.chat_template_kwargs ?? {}),
-        enable_thinking: false,
-      };
-      body.extra_body = {
-        ...(body.extra_body ?? {}),
-        enable_thinking: false,
-      };
+      // These keys are not set anywhere earlier on `body`, so a plain
+      // assignment is equivalent to the previous spread-merge.
+      body.chat_template_kwargs = { enable_thinking: false };
+      body.extra_body = { enable_thinking: false };
     }
   }
 
@@ -199,12 +218,12 @@ export async function callAI(opts: {
     try {
       const u = new URL(url);
       const isHttps = u.protocol === "https:";
-      let nodeMod: any = null;
+      let nodeMod: NodeHttpModule | null = null;
       try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires -- Electron's bundled Node http/https is only reachable via window.require; needed to abort in-flight requests to local AI backends (requestUrl can't cancel)
-        nodeMod = (window as any).require
-          ? (window as any).require(isHttps ? "https" : "http")
-          : null;
+        // window.require is injected by Electron at runtime; not in DOM typings.
+        const req = (window as unknown as { require?: (m: string) => unknown })
+          .require;
+        nodeMod = req ? (req(isHttps ? "https" : "http") as NodeHttpModule) : null;
       } catch {
         nodeMod = null;
       }
@@ -224,9 +243,9 @@ export async function callAI(opts: {
                 "Content-Length": Buffer.byteLength(bodyStr).toString(),
               },
             },
-            (res: any) => {
-              const chunks: any[] = [];
-              res.on("data", (c: any) => chunks.push(c));
+            (res: NodeIncomingMessage) => {
+              const chunks: Buffer[] = [];
+              res.on("data", (c: Buffer) => chunks.push(c));
               res.on("end", () => {
                 const text = Buffer.concat(chunks).toString("utf8");
                 resolve({ status: res.statusCode || 0, text });
