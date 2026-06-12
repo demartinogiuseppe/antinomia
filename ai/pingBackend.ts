@@ -7,6 +7,20 @@ interface PingResult {
   ok: boolean;
   error?: string;
 }
+// Minimal shape of Node's http/https module (only what the ping uses), loaded
+// via Electron's window.require.
+interface PingHttpRes {
+  on(event: "data" | "end", cb: () => void): void;
+}
+interface PingHttpReq {
+  on(event: "error", cb: (e: Error) => void): void;
+  on(event: "timeout", cb: () => void): void;
+  destroy(): void;
+  end(): void;
+}
+interface PingHttpModule {
+  request(options: unknown, cb: (res: PingHttpRes) => void): PingHttpReq;
+}
 const _pingCache = new Map<string, PingResult & { expiresAt: number }>();
 const PING_TIMEOUT_MS = 2000;
 const PING_TTL_OK_MS = 30_000;
@@ -28,10 +42,12 @@ export async function pingLocalBackend(baseUrl: string): Promise<PingResult> {
 
   try {
     const u = new URL(url);
-    let nodeMod: any = null;
+    let nodeMod: PingHttpModule | null = null;
     try {
-      nodeMod = (window as any).require
-        ? (window as any).require(u.protocol === "https:" ? "https" : "http")
+      const req = (window as unknown as { require?: (m: string) => unknown })
+        .require;
+      nodeMod = req
+        ? (req(u.protocol === "https:" ? "https" : "http") as PingHttpModule)
         : null;
     } catch {
       nodeMod = null;
@@ -53,7 +69,7 @@ export async function pingLocalBackend(baseUrl: string): Promise<PingResult> {
             method: "GET",
             timeout: PING_TIMEOUT_MS,
           },
-          (res: any) => {
+          (res: PingHttpRes) => {
             res.on("data", () => undefined);
             res.on("end", () => undefined);
             // Any HTTP response = server alive (even 401/404)
