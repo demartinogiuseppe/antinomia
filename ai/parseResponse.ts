@@ -19,18 +19,28 @@ export function parsePresuppositionsFromAIResponse(
   rawText: string
 ): PresuppositionProposal[] | null {
   if (!rawText || !rawText.trim()) return null;
-  const parsed = extractJson<any>(rawText);
+  const parsed = extractJson<unknown>(rawText);
   if (!parsed) return null;
-  const arr: unknown = Array.isArray(parsed) ? parsed : parsed.presuppositions;
-  if (!Array.isArray(arr)) return null;
+  const wrapped = parsed as { presuppositions?: unknown };
+  const arr: unknown[] = Array.isArray(parsed)
+    ? parsed
+    : Array.isArray(wrapped.presuppositions)
+      ? wrapped.presuppositions
+      : [];
+  if (arr.length === 0) return null;
   const out: PresuppositionProposal[] = [];
-  for (const item of arr) {
-    const text = String(item?.text ?? "").trim();
+  for (const raw of arr) {
+    const item = raw as {
+      text?: unknown;
+      confidence?: unknown;
+      similar_existing?: unknown;
+    };
+    const text = String(item.text ?? "").trim();
     if (!text) continue;
-    const rawConf = String(item?.confidence ?? "").toLowerCase().trim();
+    const rawConf = String(item.confidence ?? "").toLowerCase().trim();
     const confidence: "high" | "medium" | "low" =
       rawConf === "high" || rawConf === "low" ? rawConf : "medium";
-    const sim = item?.similar_existing;
+    const sim = item.similar_existing;
     const similar_existing =
       typeof sim === "string" && sim.trim() && sim.toLowerCase() !== "null"
         ? sim.trim()
@@ -47,13 +57,19 @@ export function parsePresuppositionsFromAIResponse(
  * for backward-compat. Missing fields become empty strings / undefined
  * confidence. Extracted from runHunter so it can be unit-tested.
  */
-export function normalizeHunterPair(c: any): HunterContradiction {
+export function normalizeHunterPair(c: unknown): HunterContradiction {
+  const o = (c ?? {}) as {
+    note_a?: unknown; nota_a?: unknown;
+    note_b?: unknown; nota_b?: unknown;
+    description?: unknown; descrizione?: unknown;
+    confidence?: unknown;
+  };
   return {
-    note_a: c?.note_a ?? c?.nota_a ?? "",
-    note_b: c?.note_b ?? c?.nota_b ?? "",
-    description: c?.description ?? c?.descrizione ?? "",
+    note_a: String(o.note_a ?? o.nota_a ?? ""),
+    note_b: String(o.note_b ?? o.nota_b ?? ""),
+    description: String(o.description ?? o.descrizione ?? ""),
     confidence: ((): HunterConfidence | undefined => {
-      const raw = String(c?.confidence ?? "").toLowerCase().trim();
+      const raw = String(o.confidence ?? "").toLowerCase().trim();
       if (raw === "high" || raw === "medium" || raw === "low")
         return raw as HunterConfidence;
       if (raw === "alta") return "high";
@@ -231,19 +247,34 @@ export function extractJson<T>(raw: string): T | null {
 }
 
 export function parseAIResponse(
-  data: any,
+  data: unknown,
   apiFormat: "anthropic" | "openai"
 ): { text: string; usage?: ClaudeResponse["usage"] } {
+  const d = (data ?? {}) as {
+    content?: Array<{ type?: string; text?: string }>;
+    choices?: Array<{
+      message?: { content?: string; reasoning_content?: string; reasoning?: string };
+      text?: string;
+      reasoning_content?: string;
+      finish_reason?: string;
+    }>;
+    usage?: {
+      input_tokens?: number;
+      output_tokens?: number;
+      prompt_tokens?: number;
+      completion_tokens?: number;
+    };
+  };
   if (apiFormat === "anthropic") {
-    const text = (data?.content || [])
-      .filter((b: any) => b.type === "text" && typeof b.text === "string")
-      .map((b: any) => b.text!)
+    const text = (d.content ?? [])
+      .filter((b) => b.type === "text" && typeof b.text === "string")
+      .map((b) => b.text!)
       .join("\n");
-    return { text, usage: data?.usage };
+    return { text, usage: d.usage as ClaudeResponse["usage"] };
   }
   // OpenAI-compatible
-  const msg = data?.choices?.[0]?.message ?? {};
-  const primary = msg.content ?? data?.choices?.[0]?.text ?? "";
+  const msg = d.choices?.[0]?.message ?? {};
+  const primary = msg.content ?? d.choices?.[0]?.text ?? "";
 
   // FALLBACK for reasoning models that put their output in `reasoning_content`
   // (Qwen3 distills via LM Studio, DeepSeek-R1, some Ollama models). If they
@@ -254,7 +285,7 @@ export function parseAIResponse(
   const reasoning =
     msg.reasoning_content ??
     msg.reasoning ??
-    data?.choices?.[0]?.reasoning_content ??
+    d.choices?.[0]?.reasoning_content ??
     "";
 
   let text: string = primary;
@@ -267,17 +298,17 @@ export function parseAIResponse(
     );
   }
 
-  const finishReason = data?.choices?.[0]?.finish_reason;
+  const finishReason = d.choices?.[0]?.finish_reason;
   if (finishReason === "length") {
     console.warn(
       "[Antinomia] AI finish_reason=length — response was truncated. Raise max_tokens."
     );
   }
 
-  const usage = data?.usage
+  const usage = d.usage
     ? {
-        input_tokens: data.usage.prompt_tokens ?? 0,
-        output_tokens: data.usage.completion_tokens ?? 0,
+        input_tokens: d.usage.prompt_tokens ?? 0,
+        output_tokens: d.usage.completion_tokens ?? 0,
       }
     : undefined;
   return { text, usage };
