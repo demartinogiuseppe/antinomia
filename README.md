@@ -1,11 +1,18 @@
 # Antinomia
 
-> 🎉 **Now available on the [Obsidian Community Store](obsidian://show-plugin?id=antinomia)** — install from Obsidian → Settings → Community plugins → Browse → "Antinomia".
+<p align="center">
+  <a href="obsidian://show-plugin?id=antinomia">
+    <img src="https://img.shields.io/badge/Install%20in%20Obsidian-7c3aed?style=for-the-badge&logo=obsidian&logoColor=white" alt="Install in Obsidian" height="44" />
+  </a>
+</p>
+
+> 🎉 **Now available on the [Obsidian Community Store](obsidian://show-plugin?id=antinomia)** — or install from Obsidian → Settings → Community plugins → Browse → "Antinomia".
 
 > "Notes preserve. Contradictions interrogate."
 
 **Antinomia** is an Obsidian plugin for **Personal Tension Management (PTM)** — the in-tension counterpart of Personal Knowledge Management. If **PKM** organizes explicit knowledge (*what I know*), **PTM** organizes where things don't fit (*where something jars*): contradictions, tradeoffs, anomalies, persistent doubts, weak signals, conflicts between goals. Clean ideas emerge later — as operational principles derived from resolving a tension, not before.
 
+[![Obsidian Store](https://img.shields.io/badge/Obsidian-Community%20Store-7c3aed?logo=obsidian&logoColor=white)](obsidian://show-plugin?id=antinomia)
 [![tests](https://github.com/demartinogiuseppe/antinomia/actions/workflows/test.yml/badge.svg)](https://github.com/demartinogiuseppe/antinomia/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.6.5-blue)](CHANGELOG.md)
