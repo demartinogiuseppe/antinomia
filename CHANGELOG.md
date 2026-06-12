@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.6.6 (June 12, 2026) — Type tightening: replaced ~80 `any` with concrete types
+
+Pure tech-debt cleanup after the Obsidian Community store scan of v1.6.5 surfaced ~80 `Unexpected any` warnings. No code-feature change, no schema change, no behavior change. The plugin runs identically; the type surface is just tighter.
+
+- **refactor(types):** all 82 sites of explicit `any` flagged by the Obsidian Community lint replaced with concrete types — `unknown` + narrowing where the runtime shape is dynamic (AI response JSON, frontmatter), dedicated interfaces where the shape is known (Node http/https module, pdf.js, Front Matter Title plugin internals, Obsidian internal APIs), and proper Cytoscape types (`Core`, `NodeSingular`, `EdgeSingular`, `EventObject`, `ElementDefinition`, `LayoutOptions`) in the graph view.
+- **tech-debt:** ~82 sites across 13 files (`views/`, `ai/`, `flows/`, `modals/`, `helpers/`, `core/`, `main.ts`), committed file-by-file.
+
+Side effect: TypeScript baseline error count down from 30 → 29.
+
 ## v1.6.5 (June 11, 2026) — README sync + store availability
 
 Docs-only release. No code changes.
