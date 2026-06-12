@@ -13,6 +13,7 @@
 //     type — these never depend on the model cooperating.
 
 import { extractJson } from "../ai/parseResponse";
+import { isLocalBaseUrl } from "./utils";
 import type { ClaudeResponse } from "./types";
 
 export type FrictionLevel = "off" | "low" | "medium" | "high";
@@ -115,10 +116,14 @@ export function backendLabel(baseUrl: string): string {
   if (u.includes("openai.com")) return "OpenAI";
   if (u.includes("groq.com")) return "Groq";
   if (u.includes("openrouter.ai")) return "OpenRouter";
-  if (u.includes("localhost") || u.includes("127.0.0.1") || u.includes("0.0.0.0")) {
+  if (isLocalBaseUrl(baseUrl)) {
     // LM Studio defaults to :1234, Ollama to :11434.
     if (u.includes("11434")) return "Ollama (local)";
     if (u.includes("1234")) return "LM Studio (local)";
+    if (u.includes(".ts.net") || u.includes(".tailscale.net"))
+      return "Local backend (Tailscale)";
+    if (/^https?:\/\/(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(u))
+      return "Local backend (LAN)";
     return "Local backend";
   }
   return "Custom backend";
