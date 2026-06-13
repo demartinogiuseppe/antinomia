@@ -64,7 +64,7 @@ export class FreeInputModal extends Modal {
       testo = (e.target as HTMLTextAreaElement).value;
     });
 
-    setTimeout(() => textarea.focus(), 0);
+    window.setTimeout(() => textarea.focus(), 0);
 
     new Setting(contentEl)
       .addButton((b) =>

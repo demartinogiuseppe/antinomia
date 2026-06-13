@@ -54,7 +54,7 @@ export class TitleEditModal extends Modal {
         this.close();
       }
     });
-    setTimeout(() => {
+    window.setTimeout(() => {
       input.focus();
       input.select();
     }, 0);

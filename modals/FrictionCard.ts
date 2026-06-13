@@ -190,7 +190,7 @@ export function gateAcceptButton(
   buttonEl.setText("Accept anyway (acknowledge limitations)");
   buttonEl.disabled = true;
 
-  const wrap = document.createElement("label");
+  const wrap = activeDocument.createElement("label");
   wrap.setCssStyles({
     display: "flex",
     alignItems: "center",

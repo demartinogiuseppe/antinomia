@@ -1325,8 +1325,8 @@ export default class AntinomiaPlugin extends Plugin {
       if (this.settings.migrationCheckEnabled !== false) {
         void scanVaultForLegacyNotes(this.app).then((legacy) => {
           if (legacy.length === 0) return;
-          const frag = document.createDocumentFragment();
-          const span = document.createElement("span");
+          const frag = activeDocument.createDocumentFragment();
+          const span = activeDocument.createElement("span");
           span.setText(
             `Antinomia: ${legacy.length} notes use the legacy v1.1 schema. Click to migrate to v1.4.`
           );
@@ -1767,7 +1767,7 @@ export default class AntinomiaPlugin extends Plugin {
   /**
    * Cross-pane hover highlight. Two halves, joined by the central hoverBus:
    *
-   *  Publisher — delegated mouseover/mouseout on document. When the pointer is
+   *  Publisher — delegated mouseover/mouseout on activeDocument. When the pointer is
    *  over a file entry in the file explorer (.nav-file-title), the
    *  backlinks/outgoing panes (.tree-item-self), or an Antinomia note card
    *  ([data-antinomia-path]), we resolve its path + basename and emit on the
@@ -1824,7 +1824,7 @@ export default class AntinomiaPlugin extends Plugin {
         `.tree-item-self[data-path="${CSS.escape(p.path)}"]`,
         `[data-antinomia-path="${CSS.escape(p.path)}"]`,
       ].join(", ");
-      document.querySelectorAll<HTMLElement>(sel).forEach((el) => {
+      activeDocument.querySelectorAll<HTMLElement>(sel).forEach((el) => {
         el.addClass("antinomia-hover-highlight");
         highlighted.add(el);
       });
@@ -1934,13 +1934,13 @@ export default class AntinomiaPlugin extends Plugin {
       const want = hostOf(preset.baseUrl);
       const got = hostOf(profile.baseUrl);
       if (!want || !got || want === got) continue;
-      const frag = document.createDocumentFragment();
-      const span = document.createElement("span");
+      const frag = activeDocument.createDocumentFragment();
+      const span = activeDocument.createElement("span");
       span.setText(
         `Antinomia: profile "${profile.name}" has baseUrl ${got}, but the ${preset.label} preset uses ${want}. `
       );
       frag.appendChild(span);
-      const btn = document.createElement("button");
+      const btn = activeDocument.createElement("button");
       btn.textContent = "Fix";
       btn.setCssStyles({ marginLeft: "8px" });
       btn.onclick = async () => {

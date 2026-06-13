@@ -408,7 +408,7 @@ That is the point of the presupposition layer: surfacing the invariants your pri
     // Force a relayout of any open Graph view: a batch of 20+ new nodes added
     // at (0,0) collapses into a single cluster otherwise. Small delay gives
     // Obsidian's metadataCache time to process the newly created notes.
-    setTimeout(() => plugin.refreshOpenGraphViews(), 300);
+    window.setTimeout(() => plugin.refreshOpenGraphViews(), 300);
 }
 
 export async function deleteExampleNotes(plugin: AntinomiaPlugin): Promise<void> {

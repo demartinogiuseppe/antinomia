@@ -26,7 +26,7 @@ export async function withLoadingButton<T>(
 
   // Bottone Stop inserito accanto al bottone di loading
   const controller = new AbortController();
-  const stopBtn = document.createElement("button");
+  const stopBtn = activeDocument.createElement("button");
   stopBtn.textContent = "⛔ Stop";
   stopBtn.setCssStyles({
     marginLeft: "6px",

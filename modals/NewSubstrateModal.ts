@@ -142,7 +142,7 @@ export class NewSubstrateModal extends Modal {
           })
       );
 
-    setTimeout(() => titleInput.focus(), 0);
+    window.setTimeout(() => titleInput.focus(), 0);
   }
   onClose(): void {
     this.contentEl.empty();

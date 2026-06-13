@@ -56,7 +56,7 @@ export function throttle<A extends unknown[]>(
 ): (...args: A) => void {
   let last = 0;
   let pending: A | null = null;
-  let timer: ReturnType<typeof setTimeout> | null = null;
+  let timer: number | null = null; // window.setTimeout handle (number)
   // performance.now() avoids the Date.now() forbidden in some sandboxes and is
   // monotonic — fine here since this runs only in the live plugin, not tests.
   const now = () =>
@@ -69,14 +69,14 @@ export function throttle<A extends unknown[]>(
     const elapsed = now() - last;
     if (elapsed >= ms) {
       if (timer) {
-        clearTimeout(timer);
+        window.clearTimeout(timer);
         timer = null;
       }
       run(args);
     } else {
       pending = args;
       if (!timer) {
-        timer = setTimeout(() => {
+        timer = window.setTimeout(() => {
           timer = null;
           if (pending) {
             const a = pending;
