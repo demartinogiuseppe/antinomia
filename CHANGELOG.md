@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.7.1 (June 13, 2026) — Popout compatibility + store-warning cleanup
+
+Patch targeting the Obsidian Community store linter (Batch 1). No prompt, schema, graph, or Hunter logic changed.
+
+- **Popout window compatibility:** replaced `document` with `activeDocument`, `setTimeout`/`clearTimeout` with `window.*`, and `requestAnimationFrame`/`cancelAnimationFrame` with `window.*` across all DOM-touching code (49 sites). Antinomia UI (modals, badges, graph) now renders in the correct DOM when a note is opened in a popout window.
+- **File deletion** now uses `FileManager.trashFile()` instead of `Vault.trash()`, respecting the user's "system trash vs `.trash` folder" preference set in Obsidian.
+- **CSS:** removed the `!important` declarations from the cross-pane hover-highlight in favor of higher selector specificity.
+- **UX:** replaced the two bare `confirm()` dialogs (Front Matter Title configure prompt) with the Obsidian-native `ConfirmModal`.
+- **Onboarding (#189):** the example-notes seeding loop now yields to the main thread every few files, preventing the UI freeze that some users hit on first run.
+
+### Cleanup
+
+- Annotated empty `catch` blocks flagged by the community store linter.
+
 ## v1.7.0 (June 12, 2026) — Mobile support + bridge-to-local LLMs
 
 Antinomia now runs on Obsidian mobile (`isDesktopOnly: false`), and local LLMs stay usable from a phone via bridge networking. No prompt, schema, graph, or Hunter logic changed — this is mobile enablement plus a broadened definition of "local".
