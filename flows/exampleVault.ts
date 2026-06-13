@@ -303,6 +303,11 @@ ${text}
       } catch (e) {
         console.error("[Antinomia] example create failed for", it.id, e);
       }
+      // Yield to the main thread every few files so bulk-creating the ~21
+      // example notes doesn't freeze the UI during first-run onboarding (#189).
+      if (created % 4 === 0) {
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+      }
     }
 
     // ====== EXAMPLE-KEY.md in the ROOT of the vault (NOT in notes/) ======
