@@ -2439,7 +2439,7 @@ export default class AntinomiaPlugin extends Plugin {
       keepFile,
       rawKeep + `\n\n_(unito con ${removeFile.basename} il ${today})_\n`
     );
-    await this.app.vault.trash(removeFile, false);
+    await this.app.fileManager.trashFile(removeFile);
     new Notice(`Uniti: ${removeFile.basename} -> ${keepFile.basename} (${updated} principi ridirettori).`);
   }
 

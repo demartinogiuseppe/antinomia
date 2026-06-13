@@ -423,7 +423,7 @@ export async function deleteExampleNotes(plugin: AntinomiaPlugin): Promise<void>
     let deleted = 0;
     for (const f of toDelete) {
       try {
-        await plugin.app.vault.trash(f, true);
+        await plugin.app.fileManager.trashFile(f);
         deleted++;
       } catch (e) {
         console.error("[Antinomia] example delete failed", e);
