@@ -48,10 +48,12 @@
  * the Antinomia note cards, and the backlinks/outgoing-links panes when the
  * matching graph node is hovered (toggled from main.ts via the hover bus).
  */
-.antinomia-hover-highlight {
-  outline: 2px solid var(--interactive-accent) !important;
+/* Class doubled to raise specificity (0,2,0) so it overrides Obsidian's own
+ * file-explorer / backlink item styles by specificity alone. */
+.antinomia-hover-highlight.antinomia-hover-highlight {
+  outline: 2px solid var(--interactive-accent);
   outline-offset: -1px;
-  background: var(--background-modifier-hover) !important;
+  background: var(--background-modifier-hover);
   border-radius: 4px;
   transition: outline-color 80ms ease-out, background-color 80ms ease-out;
 }
