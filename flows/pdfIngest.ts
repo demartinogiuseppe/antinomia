@@ -259,11 +259,11 @@ _This is an Antinomia meta_note acting as a graph hub for substrates extracted f
 
 export async function importPdfFromDisk(plugin: AntinomiaPlugin): Promise<TFile | null> {
     return new Promise((resolve) => {
-      const input = document.createElement("input");
+      const input = activeDocument.createElement("input");
       input.type = "file";
       input.accept = "application/pdf,.pdf";
       input.setCssStyles({ display: "none" });
-      document.body.appendChild(input);
+      activeDocument.body.appendChild(input);
 
       let resolved = false;
       const cleanup = () => {
@@ -319,7 +319,7 @@ export async function importPdfFromDisk(plugin: AntinomiaPlugin): Promise<TFile 
       // closes, focus returns to the window. We wait a beat then check.
       const onFocus = () => {
         window.removeEventListener("focus", onFocus);
-        setTimeout(() => {
+        window.setTimeout(() => {
           if (!resolved && !input.files?.length) {
             resolved = true;
             cleanup();
@@ -427,7 +427,7 @@ export async function runPdfIngest(plugin: AntinomiaPlugin, pdf: TFile): Promise
         // Substrate and Graph views ONLY if the user already had them open —
         // don't force-open a leaf the user didn't ask for. Open views refresh
         // themselves on the vault/metadata events they register.
-        setTimeout(() => {
+        window.setTimeout(() => {
           const subLeaves = plugin.app.workspace.getLeavesOfType(
             VIEW_TYPE_SUBSTRATE_LIST
           );

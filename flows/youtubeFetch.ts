@@ -58,7 +58,7 @@ function askYouTubeUrl(
           resolve(url.trim() || null);
         }
       });
-      setTimeout(() => {
+      window.setTimeout(() => {
         input.focus();
         input.select();
       }, 0);
@@ -724,7 +724,7 @@ export async function runYouTubeConceptIngest(
         lang
       );
       // Refresh open Substrate + Graph views once the cache catches up.
-      setTimeout(() => {
+      window.setTimeout(() => {
         const subLeaves = plugin.app.workspace.getLeavesOfType(
           VIEW_TYPE_SUBSTRATE_LIST
         );

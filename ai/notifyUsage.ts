@@ -31,7 +31,7 @@ export function notifyAIUsage(
     );
     if (prev) prev.remove();
 
-    const badge = document.createElement("span");
+    const badge = activeDocument.createElement("span");
     badge.className = "antinomia-ai-usage-badge";
     badge.setCssStyles({
       marginLeft: "8px",
@@ -287,10 +287,10 @@ export class ErrorAckModal extends Modal {
         try {
           await navigator.clipboard.writeText(this.details ?? "");
           copyBtn.setText("Copied ✓");
-          setTimeout(() => copyBtn.setText("Copy details"), 1500);
+          window.setTimeout(() => copyBtn.setText("Copy details"), 1500);
         } catch {
           copyBtn.setText("Copy failed");
-          setTimeout(() => copyBtn.setText("Copy details"), 1500);
+          window.setTimeout(() => copyBtn.setText("Copy details"), 1500);
         }
       };
     }
@@ -310,13 +310,13 @@ export class ErrorAckModal extends Modal {
             const btnEl = b.buttonEl;
             const orig = btnEl.textContent ?? "Copy message";
             btnEl.textContent = "Copied ✓";
-            setTimeout(() => {
+            window.setTimeout(() => {
               btnEl.textContent = orig;
             }, 1500);
           } catch {
             const btnEl = b.buttonEl;
             btnEl.textContent = "Copy failed";
-            setTimeout(() => {
+            window.setTimeout(() => {
               btnEl.textContent = "Copy message";
             }, 1500);
           }

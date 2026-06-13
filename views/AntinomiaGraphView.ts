@@ -655,7 +655,7 @@ export class AntinomiaGraphView extends ItemView {
       this.edgeLabelsSvg.parentNode.removeChild(this.edgeLabelsSvg);
     }
     const mkOverlaySvg = (zIndex: string): SVGSVGElement => {
-      const s = document.createElementNS(SVG_NS, "svg");
+      const s = activeDocument.createElementNS(SVG_NS, "svg");
       s.setCssStyles({
         position: "absolute",
         top: "0",
@@ -674,16 +674,16 @@ export class AntinomiaGraphView extends ItemView {
     const svg = pathsSvg;
     // Two shared gaussian-blur filters (strong + mild). Per-edge color
     // comes from the linearGradient we generate dynamically below.
-    const defs = document.createElementNS(SVG_NS, "defs");
+    const defs = activeDocument.createElementNS(SVG_NS, "defs");
     defs.setAttribute("id", "ant-edge-defs");
     const mkBlur = (id: string, stdDev: string): SVGFilterElement => {
-      const f = document.createElementNS(SVG_NS, "filter");
+      const f = activeDocument.createElementNS(SVG_NS, "filter");
       f.setAttribute("id", id);
       f.setAttribute("x", "-100%");
       f.setAttribute("y", "-100%");
       f.setAttribute("width", "300%");
       f.setAttribute("height", "300%");
-      const b = document.createElementNS(SVG_NS, "feGaussianBlur");
+      const b = activeDocument.createElementNS(SVG_NS, "feGaussianBlur");
       b.setAttribute("stdDeviation", stdDev);
       f.appendChild(b);
       return f;
@@ -695,11 +695,11 @@ export class AntinomiaGraphView extends ItemView {
     defs.appendChild(mkBlur("ant-edge-blur-mild", "1"));
     svg.appendChild(defs);
     // <g> for edge paths inside pathsSvg
-    const g = document.createElementNS(SVG_NS, "g");
+    const g = activeDocument.createElementNS(SVG_NS, "g");
     g.setAttribute("id", "ant-edge-paths");
     pathsSvg.appendChild(g);
     // <g> for node labels inside labelsSvg
-    const gLabels = document.createElementNS(SVG_NS, "g");
+    const gLabels = activeDocument.createElementNS(SVG_NS, "g");
     gLabels.setAttribute("id", "ant-node-labels");
     labelsSvg.appendChild(gLabels);
 
@@ -763,17 +763,17 @@ export class AntinomiaGraphView extends ItemView {
         const fadeFactor = 1;
         const gradId = `ant-grad-${i++}`;
         // Linear gradient running along the edge line
-        const grad = document.createElementNS(SVG_NS, "linearGradient");
+        const grad = activeDocument.createElementNS(SVG_NS, "linearGradient");
         grad.setAttribute("id", gradId);
         grad.setAttribute("gradientUnits", "userSpaceOnUse");
         grad.setAttribute("x1", String(sx));
         grad.setAttribute("y1", String(sy));
         grad.setAttribute("x2", String(tx));
         grad.setAttribute("y2", String(ty));
-        const stop1 = document.createElementNS(SVG_NS, "stop");
+        const stop1 = activeDocument.createElementNS(SVG_NS, "stop");
         stop1.setAttribute("offset", "0%");
         stop1.setAttribute("stop-color", srcColor);
-        const stop2 = document.createElementNS(SVG_NS, "stop");
+        const stop2 = activeDocument.createElementNS(SVG_NS, "stop");
         stop2.setAttribute("offset", "100%");
         stop2.setAttribute("stop-color", tgtColor);
         grad.appendChild(stop1);
@@ -782,7 +782,7 @@ export class AntinomiaGraphView extends ItemView {
 
         const d = `M ${sx} ${sy} L ${tx} ${ty}`;
         // Strong outer halo — thinner: stroke 4→3.
-        const haloOuter = document.createElementNS(SVG_NS, "path");
+        const haloOuter = activeDocument.createElementNS(SVG_NS, "path");
         haloOuter.setAttribute("d", d);
         haloOuter.setAttribute("stroke", `url(#${gradId})`);
         haloOuter.setAttribute("stroke-width", "3");
@@ -792,7 +792,7 @@ export class AntinomiaGraphView extends ItemView {
         haloOuter.setAttribute("filter", "url(#ant-edge-blur-strong)");
         group.appendChild(haloOuter);
         // Inner halo — thinner: stroke 2.5→1.8.
-        const haloInner = document.createElementNS(SVG_NS, "path");
+        const haloInner = activeDocument.createElementNS(SVG_NS, "path");
         haloInner.setAttribute("d", d);
         haloInner.setAttribute("stroke", `url(#${gradId})`);
         haloInner.setAttribute("stroke-width", "1.8");
@@ -803,7 +803,7 @@ export class AntinomiaGraphView extends ItemView {
         group.appendChild(haloInner);
         // Core (sharp, opaque) — thinner: stroke 1.4→0.9 for a subtler
         // overall line weight. Opacity kept high so the line stays crisp.
-        const core = document.createElementNS(SVG_NS, "path");
+        const core = activeDocument.createElementNS(SVG_NS, "path");
         core.setAttribute("d", d);
         core.setAttribute("stroke", `url(#${gradId})`);
         core.setAttribute("stroke-width", "0.9");
@@ -837,7 +837,7 @@ export class AntinomiaGraphView extends ItemView {
           node.hasClass("hover-focus") || node.hasClass("hover-neighbor");
         // No more fade on hover — all labels stay at full opacity.
         const opacity = 1;
-        const text = document.createElementNS(SVG_NS, "text");
+        const text = activeDocument.createElementNS(SVG_NS, "text");
         text.setAttribute("x", String(pos.x));
         text.setAttribute("y", String(textY));
         text.setAttribute("text-anchor", "middle");
@@ -867,7 +867,7 @@ export class AntinomiaGraphView extends ItemView {
     const scheduledUpdate = (): void => {
       if (rafPending) return;
       rafPending = true;
-      requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
         rafPending = false;
         try {
           update();
@@ -996,12 +996,12 @@ export class AntinomiaGraphView extends ItemView {
     // Trick: applica il valore a un div temporaneo e leggi il computed style,
     // che il browser ha gia' risolto a rgb(R,G,B).
     const resolveColor = (cssExpr: string, fallback: string): string => {
-      const tmp = document.createElement("div");
+      const tmp = activeDocument.createElement("div");
       tmp.setCssStyles({
         color: cssExpr,
         display: "none",
       });
-      document.body.appendChild(tmp);
+      activeDocument.body.appendChild(tmp);
       const computed = getComputedStyle(tmp).color;
       tmp.remove();
       return computed && computed !== "rgba(0, 0, 0, 0)" ? computed : fallback;
@@ -1233,7 +1233,7 @@ export class AntinomiaGraphView extends ItemView {
 
     const cancelInertia = (): void => {
       if (inertiaRAF !== null) {
-        cancelAnimationFrame(inertiaRAF);
+        window.cancelAnimationFrame(inertiaRAF);
         inertiaRAF = null;
       }
     };
@@ -1269,12 +1269,12 @@ export class AntinomiaGraphView extends ItemView {
         panVx *= 0.92;
         panVy *= 0.92;
         if (Math.abs(panVx) > 0.15 || Math.abs(panVy) > 0.15) {
-          inertiaRAF = requestAnimationFrame(decay);
+          inertiaRAF = window.requestAnimationFrame(decay);
         } else {
           inertiaRAF = null;
         }
       };
-      inertiaRAF = requestAnimationFrame(decay);
+      inertiaRAF = window.requestAnimationFrame(decay);
     });
 
     // Hover: tooltip + fade non-neighbors (Obsidian-like)
@@ -1500,15 +1500,15 @@ export class AntinomiaGraphView extends ItemView {
         }
       }
 
-      this.physicsRAF = requestAnimationFrame(step);
+      this.physicsRAF = window.requestAnimationFrame(step);
     };
 
-    this.physicsRAF = requestAnimationFrame(step);
+    this.physicsRAF = window.requestAnimationFrame(step);
   }
 
   private stopContinuousPhysics(): void {
     if (this.physicsRAF !== null) {
-      cancelAnimationFrame(this.physicsRAF);
+      window.cancelAnimationFrame(this.physicsRAF);
       this.physicsRAF = null;
     }
   }
