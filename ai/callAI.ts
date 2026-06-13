@@ -298,7 +298,7 @@ export async function callAI(opts: {
     let detail = "";
     try {
       detail = res.text.slice(0, 500);
-    } catch {}
+    } catch { /* intentionally ignored */ }
     throw new Error(`AI error ${res.status} (${url}): ${detail}`);
   }
   const data = res.json;

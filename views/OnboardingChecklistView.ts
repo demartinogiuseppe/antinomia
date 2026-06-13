@@ -94,7 +94,7 @@ export class OnboardingChecklistView extends ItemView {
                 this.render();
               }
             }
-          } catch {}
+          } catch { /* intentionally ignored */ }
         })
       );
     }
