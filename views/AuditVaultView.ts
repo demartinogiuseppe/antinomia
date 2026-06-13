@@ -57,7 +57,7 @@ export class AuditVaultView extends ItemView {
         try {
           const raw = await this.app.vault.cachedRead(f);
           this.bodyCache.set(f.path, raw);
-        } catch {}
+        } catch { /* intentionally ignored */ }
       })
     );
   }

@@ -259,18 +259,21 @@ class AntinomiaSettingTab extends PluginSettingTab {
         fmt?.settings &&
         Object.keys(fmt.settings).length > 0 &&
         JSON.stringify(fmt.settings).length > 50;
+      const doConfigure = async (): Promise<void> => {
+        await this.plugin.configureFrontMatterTitleForAntinomia();
+        this.display(); // refresh the settings tab
+      };
       if (hasCustomSettings) {
-        const ok = confirm(
-          "Configure Front Matter Title for Antinomia?\n\n" +
-            "This will set:\n" +
-            "• Resolver path → `title`\n" +
-            "• Features Explorer / Graph / Tab → enabled\n\n" +
-            "Any existing FMT settings for these fields will be overwritten. Continue?"
-        );
-        if (!ok) return;
+        new ConfirmModal(
+          this.app,
+          "Configure Front Matter Title for Antinomia?",
+          "This sets the resolver path to \"title\" and enables the Explorer / Graph / Tab features. Any existing FMT settings for these fields will be overwritten. Continue?",
+          "Configure",
+          () => void doConfigure()
+        ).open();
+        return;
       }
-      await this.plugin.configureFrontMatterTitleForAntinomia();
-      this.display(); // refresh the settings tab
+      await doConfigure();
     };
 
     new Setting(containerEl)
