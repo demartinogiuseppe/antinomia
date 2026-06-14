@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.7.2 (June 14, 2026) — Type tightening: frontmatter + AI response shapes
+
+Internal type-safety pass for the Obsidian Community store linter (Batch 2). No user-visible changes — prompts, schema, graph, and Hunter logic are untouched, and no `any` shortcuts were introduced.
+
+- **Typed frontmatter:** new `AntinomiaFrontmatter` interface centralizes every frontmatter field Antinomia reads or writes (including the `presupposition` type, which the original spec omitted). New `readFrontmatter(app, file)` helper returns the typed shape; all 68 `metadataCache.getFileCache(file)?.frontmatter` reads and 21 `processFrontMatter` callbacks now use it.
+- **Typed AI responses:** new `AICompletionResponse` / `AIAnthropicResponse` / `HunterResponse` interfaces; `parseAIResponse` and the Hunter parser use them, and `JSON.parse` results are typed at the boundary instead of leaking `any`.
+- **Settings:** `Settings.profiles` was already `Profile[]`; removed a dead, untyped `format: profile.format` field (Profile has no `format` and `callAI` ignored it) — also drops 4 pre-existing TypeScript errors (baseline 29 → 25).
+
+### No user-visible changes.
+
 ## v1.7.1 (June 13, 2026) — Popout compatibility + store-warning cleanup
 
 Patch targeting the Obsidian Community store linter (Batch 1). No prompt, schema, graph, or Hunter logic changed.
