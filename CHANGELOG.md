@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.7.3 (June 14, 2026) — Linter tooling + async hygiene
+
+Internal tooling + async-safety pass for the Obsidian Community store linter (Batch 3). No user-visible changes, no `any` shortcuts, no `eslint-disable`.
+
+- **Linter as repo tooling:** added ESLint 9 + typescript-eslint 8 + `eslint-plugin-obsidianmd` (the official Obsidian guidelines plugin) as devDependencies, wired through a flat `eslint.config.js`. New `npm run lint` / `npm run lint:fix` scripts. Dev-only — esbuild externalizes them, so `main.js` is unchanged.
+- **Measured baseline:** documented in `docs/lint-baseline.md`. The local `obsidianmd/recommended` run is stricter than the store scorecard (355 total locally, dominated by `ui/sentence-case`), so the totals don't match 1:1 — but the async subset (28 sites) lines up with the store's reported async warnings.
+- **Async hygiene → 0:** fixed all 28 `no-floating-promises` (15, fire-and-forget UI navigation now `void`-ed) and `no-misused-promises` (13, async callbacks given proper `void | Promise<void>` callback types or void-wrapped). `await-thenable`: none.
+- **Regression guard:** new `npm run lint:async` (scoped to the three async rules) runs in CI, so future PRs can't reintroduce floating promises.
+
+### No user-visible changes.
+
 ## v1.7.2 (June 14, 2026) — Type tightening: frontmatter + AI response shapes
 
 Internal type-safety pass for the Obsidian Community store linter (Batch 2). No user-visible changes — prompts, schema, graph, and Hunter logic are untouched, and no `any` shortcuts were introduced.
