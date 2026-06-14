@@ -11,7 +11,7 @@ export class TitleEditModal extends Modal {
     private initialValue: string,
     private headerText: string,
     private hintText: string,
-    private onConfirm: (value: string | null) => void,
+    private onConfirm: (value: string | null) => void | Promise<void>,
     // Optional AI-suggest hook. When provided, an extra "Propose title (AI)"
     // button is rendered above the input. It must return the proposed title
     // (string) or null on failure.
@@ -50,7 +50,7 @@ export class TitleEditModal extends Modal {
     });
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
-        this.onConfirm(currentValue.trim() || null);
+        void this.onConfirm(currentValue.trim() || null);
         this.close();
       }
     });
@@ -89,7 +89,7 @@ export class TitleEditModal extends Modal {
     new Setting(contentEl)
       .addButton((b) =>
         b.setButtonText("Cancel").onClick(() => {
-          this.onConfirm(null);
+          void this.onConfirm(null);
           this.close();
         })
       )
@@ -98,7 +98,7 @@ export class TitleEditModal extends Modal {
           .setButtonText("Save")
           .setCta()
           .onClick(() => {
-            this.onConfirm(currentValue.trim() || null);
+            void this.onConfirm(currentValue.trim() || null);
             this.close();
           })
       );

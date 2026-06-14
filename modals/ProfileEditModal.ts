@@ -9,7 +9,7 @@ export class ProfileEditModal extends Modal {
   constructor(
     app: App,
     initialProfile: Profile,
-    private onSubmit: (saved: Profile | null) => void
+    private onSubmit: (saved: Profile | null) => void | Promise<void>
   ) {
     super(app);
     // shallow clone so we don't mutate the original until saved
@@ -91,7 +91,7 @@ export class ProfileEditModal extends Modal {
     new Setting(contentEl)
       .addButton((b) =>
         b.setButtonText("Cancel").onClick(() => {
-          this.onSubmit(null);
+          void this.onSubmit(null);
           this.close();
         })
       )
@@ -100,7 +100,7 @@ export class ProfileEditModal extends Modal {
           .setButtonText("Save")
           .setCta()
           .onClick(() => {
-            this.onSubmit(this.current);
+            void this.onSubmit(this.current);
             this.close();
           })
       );

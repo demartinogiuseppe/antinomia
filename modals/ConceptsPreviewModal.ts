@@ -20,7 +20,7 @@ export class ConceptsPreviewModal extends Modal {
     private folderName: string,
     private concepts: PdfConcept[],
     private extractionMeta: AIUsageMeta,
-    private onConfirm: (selectedConcepts: PdfConcept[]) => void,
+    private onConfirm: (selectedConcepts: PdfConcept[]) => void | Promise<void>,
     /** Friction payload for the extraction run (one card for the whole run). */
     private friction?: FrictionPayload
   ) {
@@ -199,7 +199,7 @@ export class ConceptsPreviewModal extends Modal {
             const picks: PdfConcept[] = [];
             this.selected.forEach((i) => picks.push(this.concepts[i]));
             this.close();
-            this.onConfirm(picks);
+            void this.onConfirm(picks);
           });
         // High friction: gate "Create selected" behind an acknowledge checkbox.
         if (this.friction) {

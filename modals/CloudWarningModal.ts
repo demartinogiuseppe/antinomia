@@ -6,15 +6,15 @@ import type AntinomiaPlugin from "../main";
 
 export class CloudWarningModal extends Modal {
   private plugin: AntinomiaPlugin;
-  private onConfirm: (dontWarnAgain: boolean) => void;
-  private onCancel: () => void;
+  private onConfirm: (dontWarnAgain: boolean) => void | Promise<void>;
+  private onCancel: () => void | Promise<void>;
   private dontWarnAgain = false;
 
   constructor(
     app: App,
     plugin: AntinomiaPlugin,
-    onConfirm: (dontWarnAgain: boolean) => void,
-    onCancel: () => void
+    onConfirm: (dontWarnAgain: boolean) => void | Promise<void>,
+    onCancel: () => void | Promise<void>
   ) {
     super(app);
     this.plugin = plugin;
@@ -64,14 +64,14 @@ export class CloudWarningModal extends Modal {
     const cancel = btns.createEl("button", { text: "Cancel" });
     cancel.onclick = () => {
       this.close();
-      this.onCancel();
+      void this.onCancel();
     };
 
     const ok = btns.createEl("button", { text: "I understand, continue" });
     ok.classList.add("mod-cta");
     ok.onclick = () => {
       this.close();
-      this.onConfirm(this.dontWarnAgain);
+      void this.onConfirm(this.dontWarnAgain);
     };
   }
 

@@ -1956,7 +1956,9 @@ export default class AntinomiaPlugin extends Plugin {
     }
   }
 
-  maybeWarnCloudProfile(onCancel: () => void = () => {}): void {
+  maybeWarnCloudProfile(
+    onCancel: () => void | Promise<void> = () => {}
+  ): void {
     if (this.settings.cloudWarningDismissed) return;
     const p = this.activeProfile();
     if (!p || isLocalBaseUrl(p.baseUrl)) return;

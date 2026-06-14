@@ -48,9 +48,9 @@ export async function openMapPresupposti(plugin: AntinomiaPlugin, file: TFile): 
       file,
       existingA,
       existingB,
-      async (fields) => {
+      (fields) => {
         if (!fields) return;
-        await plugin.applyPresupposti(file, fields);
+        void plugin.applyPresupposti(file, fields);
       }
     ).open();
 }

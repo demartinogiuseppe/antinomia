@@ -8,7 +8,7 @@ export class ClassifyConfirmModal extends Modal {
     private current: string,
     private proposed: string,
     private motivazione: string,
-    private onConfirm: (apply: boolean) => void
+    private onConfirm: (apply: boolean) => void | Promise<void>
   ) {
     super(app);
   }
@@ -23,7 +23,7 @@ export class ClassifyConfirmModal extends Modal {
     new Setting(contentEl)
       .addButton((b) =>
         b.setButtonText("Reject").onClick(() => {
-          this.onConfirm(false);
+          void this.onConfirm(false);
           this.close();
         })
       )
@@ -32,7 +32,7 @@ export class ClassifyConfirmModal extends Modal {
           .setButtonText("Apply")
           .setCta()
           .onClick(() => {
-            this.onConfirm(true);
+            void this.onConfirm(true);
             this.close();
           })
       );

@@ -275,7 +275,8 @@ export async function importPdfFromDisk(plugin: AntinomiaPlugin): Promise<TFile 
         }
       };
 
-      input.addEventListener("change", async () => {
+      input.addEventListener("change", () => {
+        void (async () => {
         const file = input.files?.[0];
         if (!file) {
           if (!resolved) {
@@ -313,6 +314,7 @@ export async function importPdfFromDisk(plugin: AntinomiaPlugin): Promise<TFile 
           cleanup();
           resolve(null);
         }
+        })();
       });
 
       // Cancel detection: HTML5 file input doesn't fire any event on cancel.
@@ -335,8 +337,8 @@ export async function importPdfFromDisk(plugin: AntinomiaPlugin): Promise<TFile 
 }
 
 export async function openSubstrateFromPDF(plugin: AntinomiaPlugin): Promise<void> {
-    new PdfSourcePickerModal(plugin.app, plugin, async (pdf) => {
-      await plugin.runPdfIngest(pdf);
+    new PdfSourcePickerModal(plugin.app, plugin, (pdf) => {
+      void plugin.runPdfIngest(pdf);
     }).open();
 }
 

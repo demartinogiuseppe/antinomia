@@ -12,7 +12,7 @@ export class DefeatedReasonModal extends Modal {
   constructor(
     app: App,
     contextFile: TFile,
-    private onSubmit: (data: DefeatedSubmit | null) => void
+    private onSubmit: (data: DefeatedSubmit | null) => void | Promise<void>
   ) {
     super(app);
     this.contextFile = contextFile;
@@ -109,6 +109,6 @@ export class DefeatedReasonModal extends Modal {
   }
   onClose(): void {
     this.contentEl.empty();
-    this.onSubmit(this.result);
+    void this.onSubmit(this.result);
   }
 }

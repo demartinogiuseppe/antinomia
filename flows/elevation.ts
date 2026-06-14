@@ -42,9 +42,9 @@ export async function openElevateModal(plugin: AntinomiaPlugin, file: TFile): Pr
       plugin,
       file,
       rawElev,
-      async (fields, skipped) => {
+      (fields, skipped) => {
         if (fields === null && !skipped) return;
-        await plugin.elevateToPrinciple(file, fields ?? undefined);
+        void plugin.elevateToPrinciple(file, fields ?? undefined);
       }
     );
     // Sblocca il guard quando il modal si chiude (qualsiasi via)
