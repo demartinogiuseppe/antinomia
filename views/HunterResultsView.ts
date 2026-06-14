@@ -3,7 +3,7 @@
 import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { CONFIDENCE_COLOR, CONFIDENCE_ORDER, TYPE, VIEW_TYPE_HUNTER_RESULTS } from "../core/constants";
-import { humanTitle } from "../core/frontmatter";
+import { humanTitle, readFrontmatter } from "../core/frontmatter";
 import type { HunterRun } from "../core/types";
 import { renderVaultLabel } from "../core/utils";
 import { renderAntinomiaNav } from "../helpers/renderAntinomiaNav";
@@ -308,7 +308,7 @@ export class HunterResultsView extends ItemView {
   private appendActionRow(parent: HTMLElement, basename: string): void {
     const file = this.findFileByBasename(basename);
     if (!file) return;
-    const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+    const fm = readFrontmatter(this.app, file);
     const t = fm?.antinomia_type;
     if (
       t !== TYPE.tension &&

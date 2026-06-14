@@ -1,6 +1,7 @@
 // principles list sidebar view. Extracted from main.ts (refactor v1.5).
 
 import { ItemView, WorkspaceLeaf } from "obsidian";
+import { readFrontmatter } from "../core/frontmatter";
 import type AntinomiaPlugin from "../main";
 import { TYPE, VIEW_TYPE_PRINCIPLES_LIST } from "../core/constants";
 import { renderVaultLabel } from "../core/utils";
@@ -50,7 +51,7 @@ export class PrinciplesListView extends ItemView {
     );
 
     const items = this.app.vault.getMarkdownFiles().filter((f) => {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       return fm?.antinomia_type === TYPE.principle;
     });
     items.sort((a, b) => b.stat.mtime - a.stat.mtime);

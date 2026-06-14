@@ -1,18 +1,19 @@
 // presuppositions mapping flow. Extracted from main.ts (refactor v1.5).
 
 import { Notice, TFile } from "obsidian";
+import { readFrontmatter } from "../core/frontmatter";
 import type AntinomiaPlugin from "../main";
 import { callAI } from "../ai/callAI";
 import { notifyAIUsage, showErrorModal } from "../ai/notifyUsage";
 import { extractJson } from "../ai/parseResponse";
 import { PRESUPPOSTI_SYSTEM } from "../ai/prompts";
 import { TYPE } from "../core/constants";
-import type { PresuppostiFields, Profile } from "../core/types";
+import type { AntinomiaFrontmatter, PresuppostiFields, Profile } from "../core/types";
 import { todayISO } from "../core/utils";
 import { MapPresuppostiModal } from "../modals/MapPresuppostiModal";
 
 export async function openMapPresupposti(plugin: AntinomiaPlugin, file: TFile): Promise<void> {
-    const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+    const fm = readFrontmatter(plugin.app, file);
     if (fm?.antinomia_type !== TYPE.tension) {
       new Notice("Map presuppositions: the active note is not a tension.");
       return;
@@ -148,7 +149,7 @@ export async function applyPresupposti(plugin: AntinomiaPlugin, file: TFile, fie
         else body += `\n**Presuppositions B:** ${b}`;
       }
 
-      await plugin.app.fileManager.processFrontMatter(file, (fm) => {
+      await plugin.app.fileManager.processFrontMatter(file, (fm: AntinomiaFrontmatter) => {
         if (a) fm.presupposizioniA = a;
         if (b) fm.presupposizioniB = b;
         fm.modified_date = todayISO();

@@ -1,6 +1,7 @@
 // contextual guidance modal. Extracted from main.ts (refactor v1.5).
 
 import { App, Modal } from "obsidian";
+import { readFrontmatter } from "../core/frontmatter";
 import { NewSubstrateModal } from "./NewSubstrateModal";
 import { NewTensionModal } from "./NewTensionModal";
 import type AntinomiaPlugin from "../main";
@@ -95,13 +96,13 @@ export class GuidanceModal extends Modal {
     const files = this.app.vault.getMarkdownFiles();
     const countByType = (t: string) =>
       files.filter((f) => {
-        const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+        const fm = readFrontmatter(this.app, f);
         return fm?.antinomia_type === t;
       }).length;
 
     const tensions = countByType(TYPE.tension);
     const openTensions = files.filter((f) => {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       return fm?.antinomia_type === TYPE.tension && fm?.status === "open";
     }).length;
     const substrates = countByType(TYPE.substrate);

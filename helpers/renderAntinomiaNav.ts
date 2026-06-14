@@ -1,6 +1,7 @@
 // sidebar navigation bar renderer. Extracted from main.ts (refactor v1.5).
 
 import { Menu, Notice, TFile, WorkspaceLeaf, setIcon } from "obsidian";
+import { readFrontmatter } from "../core/frontmatter";
 import type AntinomiaPlugin from "../main";
 import { TYPE, VIEW_TYPE_AUDIT, VIEW_TYPE_DASHBOARD, VIEW_TYPE_DEFEATED_LIST, VIEW_TYPE_DISMISSED_PAIRS, VIEW_TYPE_GRAPH, VIEW_TYPE_HUNTER_RESULTS, VIEW_TYPE_ONBOARDING, VIEW_TYPE_OPEN_TENSIONS, VIEW_TYPE_PRESUPPOSITIONS_MAP, VIEW_TYPE_PRINCIPLES_LIST, VIEW_TYPE_SUBSTRATE_LIST, VIEW_TYPE_UNCLASSIFIED } from "../core/constants";
 import { substrateTemplate, tensionTemplate } from "../core/templates";
@@ -122,7 +123,7 @@ export function renderAntinomiaNav(
         .onClick(() => {
           const isCandidate = (f: TFile): boolean => {
             if (f.extension !== "md") return false;
-            const fm = plugin.app.metadataCache.getFileCache(f)?.frontmatter;
+            const fm = readFrontmatter(plugin.app, f);
             const t = fm?.antinomia_type;
             const isOpenTension = t === TYPE.tension && fm?.status === "open";
             return isOpenTension || t === TYPE.substrate;

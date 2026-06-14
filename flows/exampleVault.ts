@@ -3,7 +3,7 @@
 import { Notice, moment } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { FOLDER, TYPE, VIEW_TYPE_OPEN_TENSIONS } from "../core/constants";
-import { yamlQuote } from "../core/frontmatter";
+import { yamlQuote, readFrontmatter } from "../core/frontmatter";
 import { ensureFolder, todayISO } from "../core/utils";
 
 export async function createExampleNotes(plugin: AntinomiaPlugin): Promise<void> {
@@ -418,7 +418,7 @@ That is the point of the presupposition layer: surfacing the invariants your pri
 
 export async function deleteExampleNotes(plugin: AntinomiaPlugin): Promise<void> {
     const toDelete = plugin.app.vault.getMarkdownFiles().filter((f) => {
-      const fm = plugin.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(plugin.app, f);
       return fm?.antinomia_example === true;
     });
     if (toDelete.length === 0) {

@@ -1,6 +1,7 @@
 // PDF ingestion + concept extraction flow. Extracted from main.ts (refactor v1.5).
 
 import { Notice, TFile, normalizePath } from "obsidian";
+import { readFrontmatter } from "../core/frontmatter";
 import type AntinomiaPlugin from "../main";
 import { callAI } from "../ai/callAI";
 import { notifyAIUsage, showErrorModal } from "../ai/notifyUsage";
@@ -206,7 +207,7 @@ export async function createOrUpdatePdfHubNote(plugin: AntinomiaPlugin,
       conceptFiles.length > 0
         ? conceptFiles
             .map((f) => {
-              const fm = plugin.app.metadataCache.getFileCache(f)?.frontmatter;
+              const fm = readFrontmatter(plugin.app, f);
               const title =
                 typeof fm?.title === "string" && fm.title.trim()
                   ? String(fm.title).trim()

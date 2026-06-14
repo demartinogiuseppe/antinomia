@@ -5,6 +5,66 @@
 // transport types (ClaudeMessage/ClaudeResponse) live in ai/callAI.ts; model
 // capability types live in ai/detectModel.ts.
 
+/**
+ * Every frontmatter field Antinomia reads or writes. All optional — not every
+ * note has every field. Used as the cast target for
+ * `metadataCache.getFileCache(file)?.frontmatter` (see readFrontmatter in
+ * core/frontmatter.ts), which Obsidian types as `any`.
+ */
+export interface AntinomiaFrontmatter {
+  // Layer
+  antinomia_type?:
+    | "tension"
+    | "substrate"
+    | "principle"
+    | "defeated"
+    | "meta_note"
+    | "presupposition";
+  confidence?: string;
+  presupposizioniA?: string;
+  presupposizioniB?: string;
+  antinomia_example?: boolean;
+
+  // Title / lifecycle
+  title?: string;
+  creation_date?: string;
+  modified_date?: string;
+  base_language?: string;
+  status?: string;
+  id?: string;
+  origin?: string;
+  source?: string;
+
+  // Links (wikilink array). Old vaults may store a single string; the runtime
+  // readers (basenamesFromFrontmatter etc.) already normalize via Array.isArray.
+  links?: string[];
+
+  // Tension-specific
+  position_a?: string;
+  position_b?: string;
+
+  // Principle-specific
+  origin_tension?: string;
+  if_clause?: string;
+  then_clause?: string;
+  grey_zone?: string;
+  presupposes?: string[];
+  presuppositions?: string[];
+  presupposes_of?: string[];
+  loadBearing?: boolean;
+  motive?: string;
+  motivo?: string;
+
+  // Defeated-specific
+  replaced_by?: string;
+
+  // Internal
+  hunter_false_positives?: string[];
+
+  // Unknown / user-added fields
+  [key: string]: unknown;
+}
+
 export interface Profile {
   id: string;
   name: string;

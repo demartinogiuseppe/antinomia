@@ -4,6 +4,8 @@
 // mandatory pre-migration backup.
 
 import { App, Notice, TFile } from "obsidian";
+import type { AntinomiaFrontmatter } from "../core/types";
+import { readFrontmatter } from "../core/frontmatter";
 import { ensureFolder } from "../core/utils";
 
 // --- mappings -------------------------------------------------------------
@@ -174,7 +176,7 @@ export async function scanVaultForLegacyNotes(app: App): Promise<TFile[]> {
   const out: TFile[] = [];
   for (const file of app.vault.getMarkdownFiles()) {
     if (isBackupPath(file.path)) continue;
-    const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+    const fm = readFrontmatter(app, file);
     if (fm && LEGACY_KEYS.some((k) => k in fm)) out.push(file);
   }
   return out;
@@ -222,7 +224,7 @@ export async function migrateNote(
     });
 
     let fmKeys = 0;
-    await app.fileManager.processFrontMatter(file, (fm) => {
+    await app.fileManager.processFrontMatter(file, (fm: AntinomiaFrontmatter) => {
       const { migrated, changedKeys } = migrateFrontmatter({ ...fm });
       fmKeys = changedKeys;
       if (changedKeys > 0) {

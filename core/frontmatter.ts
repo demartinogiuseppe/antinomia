@@ -3,7 +3,20 @@
 
 import { App, TFile } from "obsidian";
 import { TYPE } from "./constants";
-import type { GraphFilters } from "./types";
+import type { AntinomiaFrontmatter, GraphFilters } from "./types";
+
+/**
+ * Read a file's frontmatter as a typed AntinomiaFrontmatter (Obsidian types it
+ * as `any`). Returns undefined when the file has no cached frontmatter.
+ */
+export function readFrontmatter(
+  app: App,
+  file: TFile
+): AntinomiaFrontmatter | undefined {
+  return app.metadataCache.getFileCache(file)?.frontmatter as
+    | AntinomiaFrontmatter
+    | undefined;
+}
 
 /**
  * Map a note's frontmatter to its graph layer key (the GraphFilters key used

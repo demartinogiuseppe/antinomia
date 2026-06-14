@@ -8,9 +8,9 @@ import { extractJson, normalizeHunterPair } from "../ai/parseResponse";
 import { buildHunterSystem } from "../ai/prompts";
 import { buildFrictionPayload, parseFrictionFields, withFrictionSuffix } from "../core/aiFriction";
 import { TYPE, VIEW_TYPE_HUNTER_RESULTS } from "../core/constants";
-import { stripFrontmatter } from "../core/frontmatter";
+import { stripFrontmatter, readFrontmatter } from "../core/frontmatter";
 import { HunterResultsView } from "../views/HunterResultsView";
-import type { ClaudeResponse, HunterConfidence, HunterContradiction, HunterResult, HunterRun, HunterRunMetadata, Profile } from "../core/types";
+import type { AntinomiaFrontmatter, ClaudeResponse, HunterConfidence, HunterContradiction, HunterResult, HunterRun, HunterRunMetadata, Profile } from "../core/types";
 
 export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, attachToButton?: HTMLButtonElement): Promise<void> {
     const profile = plugin.profileFor("hunter");
@@ -25,7 +25,7 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
     const all = plugin.app.vault.getMarkdownFiles();
     const candidates: TFile[] = [];
     for (const f of all) {
-      const fm = plugin.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(plugin.app, f);
       const t = fm?.antinomia_type;
       const isOpenTension = t === TYPE.tension && fm?.status === "open";
       const isSubstrate = t === TYPE.substrate;
@@ -52,7 +52,7 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
     // Conta tipi per il prompt (cosi' il modello sa quante substrate ci sono)
     let nTensions = 0, nSubstrates = 0;
     for (const f of selected) {
-      const fm = plugin.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(plugin.app, f);
       if (fm?.antinomia_type === TYPE.tension) nTensions++;
       else if (fm?.antinomia_type === TYPE.substrate) nSubstrates++;
     }
@@ -61,7 +61,7 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
     const noteBlocks: string[] = [];
     for (const f of selected) {
       const raw = await plugin.app.vault.read(f);
-      const fm = plugin.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(plugin.app, f);
       const body = stripFrontmatter(raw).trim();
       const truncBody = body.length > bodyLimit ? body.slice(0, bodyLimit) + "..." : body;
       const tipo = fm?.antinomia_type || "?";
@@ -209,7 +209,7 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
     // Filter out already-dismissed false positives
     const dismissedSet = new Set<string>();
     for (const f of selected) {
-      const fm = plugin.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(plugin.app, f);
       const fp = fm?.hunter_false_positives;
       if (Array.isArray(fp)) {
         for (const peer of fp) {
@@ -284,7 +284,7 @@ export async function undismissContradiction(plugin: AntinomiaPlugin,
     ): Promise<boolean> => {
       if (!file) return false;
       let modified = false;
-      await plugin.app.fileManager.processFrontMatter(file, (fm) => {
+      await plugin.app.fileManager.processFrontMatter(file, (fm: AntinomiaFrontmatter) => {
         const arr = fm.hunter_false_positives;
         if (!Array.isArray(arr)) return;
         const filtered = arr.filter((x: unknown) => String(x) !== peer);

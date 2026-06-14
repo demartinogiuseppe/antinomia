@@ -6,7 +6,7 @@
 import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { TYPE, VIEW_TYPE_PRESUPPOSITIONS_MAP, LAYER_COLORS } from "../core/constants";
-import { humanTitle } from "../core/frontmatter";
+import { humanTitle, readFrontmatter } from "../core/frontmatter";
 import { renderVaultLabel } from "../core/utils";
 import { renderAntinomiaNav } from "../helpers/renderAntinomiaNav";
 import { principlesDependingOn, showCollapseImpact } from "../flows/presuppositionMap";
@@ -50,7 +50,7 @@ export class PresuppositionsMapView extends ItemView {
   private rows(): Row[] {
     const out: Row[] = [];
     for (const f of this.app.vault.getMarkdownFiles()) {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       if (fm?.antinomia_type !== TYPE.presupposition) continue;
       const supporters = principlesDependingOn(this.app, f);
       out.push({

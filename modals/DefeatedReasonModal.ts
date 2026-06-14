@@ -1,6 +1,7 @@
 // defeated-reason modal. Extracted from main.ts (refactor v1.5).
 
 import { App, Modal, Setting, TFile } from "obsidian";
+import { readFrontmatter } from "../core/frontmatter";
 import { NotePickerModal } from "./NotePickerModal";
 import { TYPE } from "../core/constants";
 import type { DefeatedSubmit } from "../core/types";
@@ -71,7 +72,7 @@ export class DefeatedReasonModal extends Modal {
                 renderSostituitaSection();
               },
               (f) => {
-                const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+                const fm = readFrontmatter(this.app, f);
                 return fm?.antinomia_type === TYPE.principle;
               },
               "Search for a principle..."

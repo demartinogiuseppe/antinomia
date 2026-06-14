@@ -3,7 +3,7 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { TYPE, VIEW_TYPE_OPEN_TENSIONS } from "../core/constants";
-import { humanTitle } from "../core/frontmatter";
+import { humanTitle, readFrontmatter } from "../core/frontmatter";
 import { substrateTemplate, tensionTemplate } from "../core/templates";
 import { renderVaultLabel } from "../core/utils";
 import { renderAntinomiaNav } from "../helpers/renderAntinomiaNav";
@@ -171,7 +171,7 @@ export class OpenTensionsView extends ItemView {
     };
 
     const open = this.app.vault.getMarkdownFiles().filter((f) => {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       return fm?.antinomia_type === TYPE.tension && fm?.status === "open";
     });
     if (open.length === 0) {

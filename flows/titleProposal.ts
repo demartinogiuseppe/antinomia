@@ -7,7 +7,7 @@ import { notifyAIUsage, showErrorModal } from "../ai/notifyUsage";
 import { parseTitleFromAIResponse } from "../ai/parseResponse";
 import { TITLE_SYSTEM } from "../ai/prompts";
 import { buildFrictionPayload, parseFrictionFields, withFrictionSuffix } from "../core/aiFriction";
-import type { ClaudeResponse, Profile } from "../core/types";
+import type { AntinomiaFrontmatter, ClaudeResponse, Profile } from "../core/types";
 import { todayISO } from "../core/utils";
 import { TitleEditModal } from "../modals/TitleEditModal";
 
@@ -92,7 +92,7 @@ export async function proposeTitleAI(plugin: AntinomiaPlugin, file: TFile): Prom
       async (value) => {
         if (value === null || value === "") return;
         try {
-          await plugin.app.fileManager.processFrontMatter(file, (frontm) => {
+          await plugin.app.fileManager.processFrontMatter(file, (frontm: AntinomiaFrontmatter) => {
             frontm.title = value;
             frontm.modified_date = todayISO();
           });

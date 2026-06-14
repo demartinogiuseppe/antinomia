@@ -3,7 +3,7 @@
 import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { TYPE, VIEW_TYPE_AUDIT } from "../core/constants";
-import { humanTitle } from "../core/frontmatter";
+import { humanTitle, readFrontmatter } from "../core/frontmatter";
 import { renderVaultLabel } from "../core/utils";
 import { renderAntinomiaNav } from "../helpers/renderAntinomiaNav";
 
@@ -45,7 +45,7 @@ export class AuditVaultView extends ItemView {
 
   private async refreshBodyCache(): Promise<void> {
     const files = this.app.vault.getMarkdownFiles().filter((f) => {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       return fm?.antinomia_type;
     });
     const key = files.map((f) => f.path + ":" + f.stat.mtime).join("|");
@@ -80,7 +80,7 @@ export class AuditVaultView extends ItemView {
 
     const files = this.app.vault.getMarkdownFiles();
     const fmOf = (f: TFile) =>
-      this.app.metadataCache.getFileCache(f)?.frontmatter as
+      readFrontmatter(this.app, f) as
         | Record<string, unknown>
         | undefined;
 

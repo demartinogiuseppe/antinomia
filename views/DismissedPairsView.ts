@@ -3,7 +3,7 @@
 import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { VIEW_TYPE_DISMISSED_PAIRS } from "../core/constants";
-import { humanTitle } from "../core/frontmatter";
+import { humanTitle, readFrontmatter } from "../core/frontmatter";
 import { renderVaultLabel } from "../core/utils";
 import { renderAntinomiaNav } from "../helpers/renderAntinomiaNav";
 
@@ -58,7 +58,7 @@ export class DismissedPairsView extends ItemView {
     }
     const pairs: Pair[] = [];
     for (const f of this.app.vault.getMarkdownFiles()) {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       const list = fm?.hunter_false_positives;
       if (Array.isArray(list)) {
         for (const other of list) {

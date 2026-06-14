@@ -5,7 +5,7 @@ cytoscape.use(fcose as unknown as Parameters<typeof cytoscape.use>[0]);
 
 import { App, Notice, Platform, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf, normalizePath } from "obsidian";
 
-import type { Profile, GraphColors, BackendPreset, TutorialStep, PdfExtractResult, ClassifyResult, TitleProposal, PresuppostiFields, PdfConcept, PdfConceptsResult, AIUsageMeta, FreeInputAnalysis, HunterConfidence, HunterContradiction, HunterResult, HunterRunMetadata, HunterRun, DefeatedSubmit, TensionFields, SubstrateFields, PrincipleFields, GraphFilters, ClaudeResponse } from "./core/types";
+import type { AntinomiaFrontmatter, Profile, GraphColors, BackendPreset, TutorialStep, PdfExtractResult, ClassifyResult, TitleProposal, PresuppostiFields, PdfConcept, PdfConceptsResult, AIUsageMeta, FreeInputAnalysis, HunterConfidence, HunterContradiction, HunterResult, HunterRunMetadata, HunterRun, DefeatedSubmit, TensionFields, SubstrateFields, PrincipleFields, GraphFilters, ClaudeResponse } from "./core/types";
 
 // Loose shapes for Obsidian internals that aren't in the public typings, used
 // only to avoid `any` casts. None of these are guaranteed by the public API.
@@ -33,7 +33,7 @@ import { FOLDER, TYPE, VIEW_TYPE_OPEN_TENSIONS, VIEW_TYPE_HUNTER_RESULTS, VIEW_T
 
 import { todayISO, timestampId, ensureFolder, isLocalBaseUrl } from "./core/utils";
 
-import { yamlQuote } from "./core/frontmatter";
+import { yamlQuote, readFrontmatter } from "./core/frontmatter";
 
 import { hoverBus, throttle, type HoverPayload } from "./core/hoverBus";
 
@@ -818,7 +818,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
           .setWarning()
           .onClick(() => {
             const count = this.app.vault.getMarkdownFiles().filter((f) => {
-              const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+              const fm = readFrontmatter(this.app, f);
               return fm?.antinomia_example === true;
             }).length;
             if (count === 0) {
@@ -1364,7 +1364,7 @@ export default class AntinomiaPlugin extends Plugin {
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file) return false;
-        const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+        const fm = readFrontmatter(this.app, file);
         const ok = fm?.antinomia_type === TYPE.principle;
         if (ok && !checking) void mapPresuppositionsOfPrinciple(this, file);
         return ok;
@@ -1376,7 +1376,7 @@ export default class AntinomiaPlugin extends Plugin {
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file) return false;
-        const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+        const fm = readFrontmatter(this.app, file);
         const ok = fm?.antinomia_type === TYPE.presupposition;
         if (ok && !checking) void showCollapseImpact(this, file);
         return ok;
@@ -1464,7 +1464,7 @@ export default class AntinomiaPlugin extends Plugin {
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file) return false;
-        const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+        const fm = readFrontmatter(this.app, file);
         if (fm?.antinomia_type !== TYPE.tension) return false;
         if (!checking) void this.openElevateModal(file);
         return true;
@@ -1476,7 +1476,7 @@ export default class AntinomiaPlugin extends Plugin {
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file) return false;
-        const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+        const fm = readFrontmatter(this.app, file);
         if (fm?.antinomia_type !== TYPE.tension || fm?.status !== "open")
           return false;
         if (!checking) void this.markResolved(file);
@@ -1489,7 +1489,7 @@ export default class AntinomiaPlugin extends Plugin {
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file) return false;
-        const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+        const fm = readFrontmatter(this.app, file);
         const t = fm?.antinomia_type;
         if (
           t !== TYPE.tension &&
@@ -1524,7 +1524,7 @@ export default class AntinomiaPlugin extends Plugin {
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file || file.extension !== "md") return false;
-        const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+        const fm = readFrontmatter(this.app, file);
         const t = fm?.antinomia_type;
         const isOpenTension = t === TYPE.tension && fm?.status === "open";
         const isSubstrate = t === TYPE.substrate;
@@ -1549,7 +1549,7 @@ export default class AntinomiaPlugin extends Plugin {
       callback: () => {
         const all = this.app.vault.getMarkdownFiles();
         const orphans = all.filter((f) => {
-          const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+          const fm = readFrontmatter(this.app, f);
           if (fm?.antinomia_type !== TYPE.principle) return false;
           const ot = fm?.origin_tension;
           if (typeof ot !== "string") return true;
@@ -1558,7 +1558,7 @@ export default class AntinomiaPlugin extends Plugin {
           const refBase = m[1].split("/").pop() || m[1];
           const refFile = all.find((f2) => f2.basename === refBase);
           if (!refFile) return true;
-          const refFm = this.app.metadataCache.getFileCache(refFile)?.frontmatter;
+          const refFm = readFrontmatter(this.app, refFile);
           return refFm?.antinomia_type !== TYPE.defeated;
         });
         if (orphans.length === 0) {
@@ -1566,7 +1566,7 @@ export default class AntinomiaPlugin extends Plugin {
           return;
         }
         const dummy = all.find((f) => {
-          const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+          const fm = readFrontmatter(this.app, f);
           return fm?.antinomia_type !== TYPE.principle;
         }) ?? orphans[0];
         new NotePickerModal(
@@ -1583,7 +1583,7 @@ export default class AntinomiaPlugin extends Plugin {
       callback: () => {
         const all = this.app.vault.getMarkdownFiles();
         const defs = all.filter((f) => {
-          const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+          const fm = readFrontmatter(this.app, f);
           return fm?.antinomia_type === TYPE.defeated;
         });
         if (defs.length < 2) {
@@ -1591,11 +1591,11 @@ export default class AntinomiaPlugin extends Plugin {
           return;
         }
         const dummy = all.find((f) => {
-          const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+          const fm = readFrontmatter(this.app, f);
           return fm?.antinomia_type !== TYPE.defeated;
         }) ?? defs[0];
         const isDefeated = (f: TFile): boolean => {
-          const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+          const fm = readFrontmatter(this.app, f);
           return fm?.antinomia_type === TYPE.defeated;
         };
         new NotePickerModal(
@@ -1720,7 +1720,7 @@ export default class AntinomiaPlugin extends Plugin {
       name: "delete examples (notes marked antinomia_example)",
       callback: () => {
         const count = this.app.vault.getMarkdownFiles().filter((f) => {
-          const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+          const fm = readFrontmatter(this.app, f);
           return fm?.antinomia_example === true;
         }).length;
         if (count === 0) {
@@ -1753,7 +1753,7 @@ export default class AntinomiaPlugin extends Plugin {
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file) return false;
-        const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+        const fm = readFrontmatter(this.app, file);
         if (fm?.antinomia_type !== TYPE.tension) return false;
         if (!checking) void this.openMapPresupposti(file);
         return true;
@@ -2308,7 +2308,7 @@ export default class AntinomiaPlugin extends Plugin {
   async migrateExistingPrinciples(): Promise<void> {
     const all = this.app.vault.getMarkdownFiles();
     const principles = all.filter((f) => {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       return fm?.antinomia_type === TYPE.principle;
     });
     if (principles.length === 0) {
@@ -2317,14 +2317,14 @@ export default class AntinomiaPlugin extends Plugin {
     }
     const alreadyLinked = new Set<string>();
     for (const p of principles) {
-      const fm = this.app.metadataCache.getFileCache(p)?.frontmatter;
+      const fm = readFrontmatter(this.app, p);
       const ot = fm?.origin_tension;
       if (typeof ot === "string") {
         const m = ot.match(/\[\[([^\]|]+)/);
         if (m) {
           const refBase = m[1].split("/").pop() || m[1];
           const refFile = all.find((f) => f.basename === refBase);
-          const refFm = refFile ? this.app.metadataCache.getFileCache(refFile)?.frontmatter : null;
+          const refFm = refFile ? readFrontmatter(this.app, refFile) : null;
           if (refFm?.antinomia_type === TYPE.defeated) {
             alreadyLinked.add(p.basename);
           }
@@ -2340,7 +2340,7 @@ export default class AntinomiaPlugin extends Plugin {
       const originMatch = raw.match(/## Origine \(tensione\)\s*([\s\S]*?)(?=\n## |\n---|$)/);
       const originContent = originMatch ? originMatch[1].trim() : "";
       if (!originContent) { skipped++; continue; }
-      const pFm = this.app.metadataCache.getFileCache(p)?.frontmatter ?? {};
+      const pFm = readFrontmatter(this.app, p) ?? {};
       const title = typeof pFm.title === "string"
         ? `Original tension of ${pFm.title}`
         : `Original tension of ${p.basename}`;
@@ -2359,7 +2359,7 @@ export default class AntinomiaPlugin extends Plugin {
         `\n_(generato da migrazione retroattiva ${today})_\n`;
       const defeatedFile = await this.createNote("D", defeatedContent);
       if (!defeatedFile) { skipped++; continue; }
-      await this.app.fileManager.processFrontMatter(p, (fm) => {
+      await this.app.fileManager.processFrontMatter(p, (fm: AntinomiaFrontmatter) => {
         fm.origin_tension = `[[${defeatedFile.basename}]]`;
         fm.modified_date = today;
       });
@@ -2375,7 +2375,7 @@ export default class AntinomiaPlugin extends Plugin {
    * ricorda. Linka bidirezionalmente al principio.
    */
   async createDefeatedForPrinciple(principleFile: TFile): Promise<void> {
-    const fm = this.app.metadataCache.getFileCache(principleFile)?.frontmatter;
+    const fm = readFrontmatter(this.app, principleFile);
     if (fm?.antinomia_type !== TYPE.principle) {
       new Notice("Selection: the note is not a principle.");
       return;
@@ -2404,7 +2404,7 @@ export default class AntinomiaPlugin extends Plugin {
       new Notice("Error: could not create the defeated.");
       return;
     }
-    await this.app.fileManager.processFrontMatter(principleFile, (frontm) => {
+    await this.app.fileManager.processFrontMatter(principleFile, (frontm: AntinomiaFrontmatter) => {
       frontm.origin_tension = `[[${defeatedFile.basename}]]`;
       frontm.modified_date = today;
     });
@@ -2425,12 +2425,12 @@ export default class AntinomiaPlugin extends Plugin {
     const all = this.app.vault.getMarkdownFiles();
     let updated = 0;
     for (const f of all) {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       if (fm?.antinomia_type !== TYPE.principle) continue;
       const ot = fm?.origin_tension;
       if (typeof ot !== "string") continue;
       if (ot.includes(removeFile.basename)) {
-        await this.app.fileManager.processFrontMatter(f, (frontm) => {
+        await this.app.fileManager.processFrontMatter(f, (frontm: AntinomiaFrontmatter) => {
           frontm.origin_tension = `[[${keepFile.basename}]]`;
           frontm.modified_date = today;
         });
@@ -2448,7 +2448,7 @@ export default class AntinomiaPlugin extends Plugin {
 
   async markResolved(file: TFile): Promise<void> {
     try {
-      await this.app.fileManager.processFrontMatter(file, (fm) => {
+      await this.app.fileManager.processFrontMatter(file, (fm: AntinomiaFrontmatter) => {
         fm.status = "resolved";
         fm.modified_date = todayISO();
       });
@@ -2466,7 +2466,7 @@ export default class AntinomiaPlugin extends Plugin {
       }
       const { motivo, replaced_by } = data;
       try {
-        await this.app.fileManager.processFrontMatter(file, (fm) => {
+        await this.app.fileManager.processFrontMatter(file, (fm: AntinomiaFrontmatter) => {
           fm.antinomia_type = TYPE.defeated;
           fm.motive = motivo;
           fm.modified_date = todayISO();
@@ -2503,8 +2503,8 @@ export default class AntinomiaPlugin extends Plugin {
   async markAsType(file: TFile, tipo: string): Promise<void> {
     try {
       const today = todayISO();
-      await this.app.fileManager.processFrontMatter(file, (fm) => {
-        fm.antinomia_type = tipo;
+      await this.app.fileManager.processFrontMatter(file, (fm: AntinomiaFrontmatter) => {
+        fm.antinomia_type = tipo as AntinomiaFrontmatter["antinomia_type"];
         fm.modified_date = today;
         if (tipo === TYPE.tension && !fm.status) fm.status = "open";
         if (!fm.base_language) fm.base_language = "italiano";
@@ -2530,7 +2530,7 @@ export default class AntinomiaPlugin extends Plugin {
    */
   async ignoreNote(file: TFile): Promise<void> {
     try {
-      await this.app.fileManager.processFrontMatter(file, (fm) => {
+      await this.app.fileManager.processFrontMatter(file, (fm: AntinomiaFrontmatter) => {
         fm.antinomia_ignora = true;
       });
       new Notice(`Ignorata: ${file.basename}`);
@@ -2553,7 +2553,7 @@ export default class AntinomiaPlugin extends Plugin {
       return;
     }
     const raw = await this.app.vault.read(file);
-    const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+    const fm = readFrontmatter(this.app, file);
     const currentTipo = fm?.antinomia_type ?? "";
     new Notice("Antinomia: classificazione in corso...");
     let result: { text: string; usage?: ClaudeResponse["usage"] };
@@ -2601,8 +2601,9 @@ export default class AntinomiaPlugin extends Plugin {
           return;
         }
         try {
-          await this.app.fileManager.processFrontMatter(file, (frontm) => {
-            frontm.antinomia_type = parsed.tipo;
+          await this.app.fileManager.processFrontMatter(file, (frontm: AntinomiaFrontmatter) => {
+            frontm.antinomia_type =
+              parsed.tipo as AntinomiaFrontmatter["antinomia_type"];
             frontm.modified_date = todayISO();
           });
           new Notice(`Applicato: antinomia_type = ${parsed.tipo}`);
@@ -2614,7 +2615,7 @@ export default class AntinomiaPlugin extends Plugin {
   }
 
   async setTitleOnActiveNote(file: TFile): Promise<void> {
-    const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+    const fm = readFrontmatter(this.app, file);
     const current = (fm?.title as string | undefined) ?? "";
     new TitleEditModal(
       this.app,
@@ -2624,7 +2625,7 @@ export default class AntinomiaPlugin extends Plugin {
       async (value) => {
         if (value === null) return;
         try {
-          await this.app.fileManager.processFrontMatter(file, (frontm) => {
+          await this.app.fileManager.processFrontMatter(file, (frontm: AntinomiaFrontmatter) => {
             if (value === "") delete frontm.title;
             else frontm.title = value;
             frontm.modified_date = todayISO();
@@ -2719,7 +2720,7 @@ export default class AntinomiaPlugin extends Plugin {
       const targetLink = `[[${target.basename}]]`;
       const activeLink = `[[${active.basename}]]`;
 
-      await this.app.fileManager.processFrontMatter(active, (fm) => {
+      await this.app.fileManager.processFrontMatter(active, (fm: AntinomiaFrontmatter) => {
         const arr: string[] = Array.isArray(fm.links) ? fm.links : [];
         if (!arr.some((s) => s === targetLink || s === `"${targetLink}"`)) {
           arr.push(targetLink);
@@ -2727,7 +2728,7 @@ export default class AntinomiaPlugin extends Plugin {
         fm.links = arr;
         fm.modified_date = todayISO();
       });
-      await this.app.fileManager.processFrontMatter(target, (fm) => {
+      await this.app.fileManager.processFrontMatter(target, (fm: AntinomiaFrontmatter) => {
         const arr: string[] = Array.isArray(fm.links) ? fm.links : [];
         if (!arr.some((s) => s === activeLink || s === `"${activeLink}"`)) {
           arr.push(activeLink);

@@ -3,7 +3,7 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { TYPE, VIEW_TYPE_AUDIT, VIEW_TYPE_DASHBOARD, VIEW_TYPE_DEFEATED_LIST, VIEW_TYPE_GRAPH, VIEW_TYPE_OPEN_TENSIONS, VIEW_TYPE_PRINCIPLES_LIST, VIEW_TYPE_SUBSTRATE_LIST, VIEW_TYPE_UNCLASSIFIED } from "../core/constants";
-import { humanTitle } from "../core/frontmatter";
+import { humanTitle, readFrontmatter } from "../core/frontmatter";
 import { substrateTemplate, tensionTemplate } from "../core/templates";
 import type { Profile } from "../core/types";
 import { renderVaultLabel } from "../core/utils";
@@ -55,16 +55,16 @@ export class DashboardView extends ItemView {
     const files = this.app.vault.getMarkdownFiles();
     const byType = (t: string) =>
       files.filter((f) => {
-        const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+        const fm = readFrontmatter(this.app, f);
         return fm?.antinomia_type === t;
       });
     const tensions = byType(TYPE.tension);
     const openTensions = tensions.filter((f) => {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       return fm?.status === "open";
     });
     const resolvedTensions = tensions.filter((f) => {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       return fm?.status === "resolved";
     });
     const substrates = byType(TYPE.substrate);
@@ -72,7 +72,7 @@ export class DashboardView extends ItemView {
     const defeated = byType(TYPE.defeated);
     const meta = byType(TYPE.meta);
     const unclassified = files.filter((f) => {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       return !fm || !fm.antinomia_type;
     });
 
@@ -203,7 +203,7 @@ export class DashboardView extends ItemView {
     container.createEl("h5", { text: "Recent activity" });
     const recent = [...files]
       .filter((f) => {
-        const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+        const fm = readFrontmatter(this.app, f);
         return fm?.antinomia_type;
       })
       .sort((a, b) => b.stat.mtime - a.stat.mtime)

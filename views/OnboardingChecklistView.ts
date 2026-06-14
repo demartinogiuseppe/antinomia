@@ -1,6 +1,7 @@
 // onboarding checklist view. Extracted from main.ts (refactor v1.5).
 
 import { ItemView, Notice, TFile, WorkspaceLeaf } from "obsidian";
+import { readFrontmatter } from "../core/frontmatter";
 import type AntinomiaPlugin from "../main";
 import { TYPE, VIEW_TYPE_ONBOARDING, VIEW_TYPE_SUBSTRATE_LIST } from "../core/constants";
 import { substrateTemplate, tensionTemplate } from "../core/templates";
@@ -38,7 +39,7 @@ export class OnboardingChecklistView extends ItemView {
 
   private countByType(type: string): number {
     return this.app.vault.getMarkdownFiles().filter((f) => {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       return fm?.antinomia_type === type;
     }).length;
   }
@@ -46,7 +47,7 @@ export class OnboardingChecklistView extends ItemView {
   private firstFileByType(type: string): TFile | null {
     return (
       this.app.vault.getMarkdownFiles().find((f) => {
-        const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+        const fm = readFrontmatter(this.app, f);
         return fm?.antinomia_type === type;
       }) ?? null
     );
@@ -54,7 +55,7 @@ export class OnboardingChecklistView extends ItemView {
 
   private hasAnyPresupposti(): boolean {
     return this.app.vault.getMarkdownFiles().some((f) => {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       if (fm?.antinomia_type !== TYPE.tension) return false;
       // Quick check: read file via cache (heading only) is async; we use
       // a lightweight heuristic — file body length > some threshold AND
@@ -73,7 +74,7 @@ export class OnboardingChecklistView extends ItemView {
   private lastScannedKey = "";
   private scanBodyForPresupposti(): boolean {
     const tensions = this.app.vault.getMarkdownFiles().filter((f) => {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       return fm?.antinomia_type === TYPE.tension;
     });
     const key = tensions.map((f) => f.path + f.stat.mtime).join("|");

@@ -1,6 +1,7 @@
 // YouTube transcript ingestion flow. Extracted from main.ts (refactor v1.5).
 
 import { Modal, Notice, requestUrl, Setting, TFile, normalizePath } from "obsidian";
+import { readFrontmatter } from "../core/frontmatter";
 import type AntinomiaPlugin from "../main";
 import { substrateTemplate } from "../core/templates";
 import { FOLDER, VIEW_TYPE_SUBSTRATE_LIST } from "../core/constants";
@@ -491,7 +492,7 @@ export async function createOrUpdateYouTubeHubNote(
     conceptFiles.length > 0
       ? conceptFiles
           .map((f) => {
-            const fm = plugin.app.metadataCache.getFileCache(f)?.frontmatter;
+            const fm = readFrontmatter(plugin.app, f);
             const title =
               typeof fm?.title === "string" && fm.title.trim()
                 ? String(fm.title).trim()

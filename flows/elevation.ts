@@ -8,9 +8,9 @@ import { extractJson } from "../ai/parseResponse";
 import { PRINCIPLE_SYSTEM } from "../ai/prompts";
 import { buildFrictionPayload, parseFrictionFields, withFrictionSuffix } from "../core/aiFriction";
 import { TYPE } from "../core/constants";
-import { stripFrontmatter, yamlQuote } from "../core/frontmatter";
+import { stripFrontmatter, yamlQuote, readFrontmatter } from "../core/frontmatter";
 import { principleBodyTemplate } from "../core/templates";
-import type { PrincipleFields, Profile } from "../core/types";
+import type { AntinomiaFrontmatter, PrincipleFields, Profile } from "../core/types";
 import { todayISO } from "../core/utils";
 import { ElevateToPrincipleModal } from "../modals/ElevateToPrincipleModal";
 
@@ -23,7 +23,7 @@ export async function openElevateModal(plugin: AntinomiaPlugin, file: TFile): Pr
     // rapid clicks both pass the check (the flag is still false while the first
     // is awaiting vault.read) and two modals open. Release on every early exit.
     plugin.elevateModalOpen = true;
-    const fm0 = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+    const fm0 = readFrontmatter(plugin.app, file);
     if (fm0?.antinomia_type !== TYPE.tension) {
       new Notice("Elevate: active note is not a tension.");
       plugin.elevateModalOpen = false;
@@ -76,7 +76,7 @@ export async function elevateTransform(plugin: AntinomiaPlugin, file: TFile, fie
     const oldBody = stripFrontmatter(raw).trim();
     const originBasename = file.basename;
     const today = todayISO();
-    await plugin.app.fileManager.processFrontMatter(file, (fm) => {
+    await plugin.app.fileManager.processFrontMatter(file, (fm: AntinomiaFrontmatter) => {
       fm.antinomia_type = TYPE.principle;
       fm.data = today;
       fm.modified_date = today;
@@ -103,7 +103,7 @@ export async function elevateTransform(plugin: AntinomiaPlugin, file: TFile, fie
 }
 
 export async function elevateSplit(plugin: AntinomiaPlugin, file: TFile, fields?: PrincipleFields): Promise<void> {
-    const oldFm = plugin.app.metadataCache.getFileCache(file)?.frontmatter ?? {};
+    const oldFm = readFrontmatter(plugin.app, file) ?? {};
     const tensionBasename = file.basename;
     const today = todayISO();
     const tensionTitle = typeof oldFm.title === "string" ? oldFm.title : tensionBasename;
@@ -132,7 +132,7 @@ export async function elevateSplit(plugin: AntinomiaPlugin, file: TFile, fields?
       return;
     }
     const principleBasename = principleFile.basename;
-    await plugin.app.fileManager.processFrontMatter(file, (fm) => {
+    await plugin.app.fileManager.processFrontMatter(file, (fm: AntinomiaFrontmatter) => {
       fm.antinomia_type = TYPE.defeated;
       fm.motive = "elevated";
       fm.replaced_by = `[[${principleBasename}]]`;

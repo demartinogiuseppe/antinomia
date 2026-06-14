@@ -4,7 +4,7 @@ import cytoscape from "cytoscape";
 import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { DEFAULT_GRAPH_FILTERS, GRAPH_STYLE_PRESETS, LAYER_COLORS, LAYER_SHAPES, TYPE, VIEW_TYPE_GRAPH } from "../core/constants";
-import { humanTitle, layerKey } from "../core/frontmatter";
+import { humanTitle, layerKey, readFrontmatter } from "../core/frontmatter";
 import type { GraphColors, GraphFilters } from "../core/types";
 import { renderAntinomiaNav } from "../helpers/renderAntinomiaNav";
 import { hoverBus, type HoverPayload } from "../core/hoverBus";
@@ -373,7 +373,7 @@ export class AntinomiaGraphView extends ItemView {
 
     // Pass 1: nodes
     for (const f of allFiles) {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       const key = layerKey(fm);
       if (!key) continue;
       if (!this.filters[key]) continue;
@@ -425,7 +425,7 @@ export class AntinomiaGraphView extends ItemView {
 
     for (const f of allFiles) {
       if (!includedBasenames.has(f.basename)) continue;
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       if (!fm) continue;
 
       // origin_tension: scalar "[[X]]"

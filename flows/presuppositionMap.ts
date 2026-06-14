@@ -11,9 +11,9 @@ import { notifyAIUsage, showErrorModal } from "../ai/notifyUsage";
 import { parsePresuppositionsFromAIResponse } from "../ai/parseResponse";
 import { PRESUPPOSITION_MAP_SYSTEM } from "../ai/prompts";
 import { TYPE } from "../core/constants";
-import { stripFrontmatter, humanTitle } from "../core/frontmatter";
+import { stripFrontmatter, humanTitle, readFrontmatter } from "../core/frontmatter";
 import { presuppositionTemplate } from "../core/templates";
-import type { PresuppositionProposal } from "../core/types";
+import type { AntinomiaFrontmatter, PresuppositionProposal } from "../core/types";
 import { PresuppositionMapModal } from "../modals/PresuppositionMapModal";
 import { CollapseImpactModal } from "../modals/CollapseImpactModal";
 import { AIProgressModal } from "../modals/AIProgressModal";
@@ -54,7 +54,7 @@ export function toWikilinks(basenames: string[], titles?: Map<string, string>): 
 export function buildTitleLookup(app: App): Map<string, string> {
   const map = new Map<string, string>();
   for (const f of app.vault.getMarkdownFiles()) {
-    const fm = app.metadataCache.getFileCache(f)?.frontmatter;
+    const fm = readFrontmatter(app, f);
     if (typeof fm?.title === "string" && fm.title.trim().length > 0) {
       map.set(f.basename, fm.title.trim());
     }
@@ -100,7 +100,7 @@ export interface ExistingPresupposition {
 export function gatherExistingPresuppositions(app: App): ExistingPresupposition[] {
   const out: ExistingPresupposition[] = [];
   for (const file of app.vault.getMarkdownFiles()) {
-    const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+    const fm = readFrontmatter(app, file);
     if (fm?.antinomia_type !== TYPE.presupposition) continue;
     out.push({
       basename: file.basename,
@@ -123,7 +123,7 @@ export async function mapPresuppositionsOfPrinciple(
   attachToButton?: HTMLButtonElement
 ): Promise<void> {
   const app = plugin.app;
-  const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+  const fm = readFrontmatter(app, file);
   if (fm?.antinomia_type !== TYPE.principle) {
     new Notice("Map presuppositions: the active note is not a principle.");
     return;
@@ -282,7 +282,7 @@ export async function applyPresuppositionDecisions(
   for (const [b, t] of newlyCreatedTitles) titleMap.set(b, t);
 
   // principle.presupposes = union of existing + new (aliased wikilinks)
-  await app.fileManager.processFrontMatter(principleFile, (fm) => {
+  await app.fileManager.processFrontMatter(principleFile, (fm: AntinomiaFrontmatter) => {
     const prev = basenamesFromFrontmatter(fm.presupposes);
     fm.presupposes = toWikilinks(mergeUnique(prev, uBasenames), titleMap);
   });
@@ -292,7 +292,7 @@ export async function applyPresuppositionDecisions(
   for (const d of linked) {
     const uFile = app.vault.getMarkdownFiles().find((f) => f.basename === d.basename);
     if (!uFile) continue;
-    await app.fileManager.processFrontMatter(uFile, (fm) => {
+    await app.fileManager.processFrontMatter(uFile, (fm: AntinomiaFrontmatter) => {
       const prev = basenamesFromFrontmatter(fm.presupposes_of);
       fm.presupposes_of = toWikilinks(mergeUnique(prev, [principleBasename]), titleMap);
     });
@@ -304,12 +304,12 @@ export async function applyPresuppositionDecisions(
 
 /** Principle files that depend on the given presupposition note. */
 export function principlesDependingOn(app: App, presupFile: TFile): TFile[] {
-  const fm = app.metadataCache.getFileCache(presupFile)?.frontmatter;
+  const fm = readFrontmatter(app, presupFile);
   const wanted = new Set(basenamesFromFrontmatter(fm?.presupposes_of));
   // Also catch principles that list it in `presupposes` (source of truth either way).
   const out: TFile[] = [];
   for (const f of app.vault.getMarkdownFiles()) {
-    const ffm = app.metadataCache.getFileCache(f)?.frontmatter;
+    const ffm = readFrontmatter(app, f);
     if (ffm?.antinomia_type !== TYPE.principle) continue;
     if (
       wanted.has(f.basename) ||
@@ -327,7 +327,7 @@ export async function showCollapseImpact(
   file: TFile
 ): Promise<void> {
   const app = plugin.app;
-  const fm = app.metadataCache.getFileCache(file)?.frontmatter;
+  const fm = readFrontmatter(app, file);
   if (fm?.antinomia_type !== TYPE.presupposition) {
     new Notice("Collapse impact: the active note is not a presupposition.");
     return;
@@ -343,7 +343,7 @@ export async function markPresuppositionUndermined(
   plugin: AntinomiaPlugin,
   file: TFile
 ): Promise<void> {
-  await plugin.app.fileManager.processFrontMatter(file, (fm) => {
+  await plugin.app.fileManager.processFrontMatter(file, (fm: AntinomiaFrontmatter) => {
     fm.status = "undermined";
     fm.modified_date = new Date().toISOString().slice(0, 10);
   });
@@ -361,11 +361,11 @@ export async function removePresuppositionFromPrinciples(
 ): Promise<void> {
   const titleMap = buildTitleLookup(app);
   for (const f of app.vault.getMarkdownFiles()) {
-    const fm = app.metadataCache.getFileCache(f)?.frontmatter;
+    const fm = readFrontmatter(app, f);
     if (fm?.antinomia_type !== TYPE.principle) continue;
     const cur = basenamesFromFrontmatter(fm.presupposes);
     if (!cur.includes(uBasename)) continue;
-    await app.fileManager.processFrontMatter(f, (m) => {
+    await app.fileManager.processFrontMatter(f, (m: AntinomiaFrontmatter) => {
       m.presupposes = toWikilinks(cur.filter((b) => b !== uBasename), titleMap);
     });
   }

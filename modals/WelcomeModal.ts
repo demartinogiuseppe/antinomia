@@ -1,6 +1,7 @@
 // Antinomia — first-run welcome modal. Extracted from main.ts (refactor v1.5).
 
 import { App, Modal, Notice } from "obsidian";
+import { readFrontmatter } from "../core/frontmatter";
 import type AntinomiaPlugin from "../main";
 import { VIEW_TYPE_ONBOARDING } from "../core/constants";
 import { tensionTemplate } from "../core/templates";
@@ -210,7 +211,7 @@ export class WelcomeModal extends Modal {
 
     // ---- CTA: Create example vault (only if not already created) ----
     const exampleAlreadyExists = this.app.vault.getMarkdownFiles().some((f) => {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       return fm?.antinomia_example === true;
     });
     if (!exampleAlreadyExists) {

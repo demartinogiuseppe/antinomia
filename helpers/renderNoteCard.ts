@@ -2,7 +2,7 @@
 
 import { App, TFile } from "obsidian";
 import type AntinomiaPlugin from "../main";
-import { humanTitle } from "../core/frontmatter";
+import { humanTitle, readFrontmatter } from "../core/frontmatter";
 import { NotePickerModal } from "../modals/NotePickerModal";
 import { mapPresuppositionsOfPrinciple } from "../flows/presuppositionMap";
 
@@ -44,7 +44,7 @@ export function renderNoteCard(
     app.workspace.getLeaf(false).openFile(file);
   };
 
-  const fm = app.metadataCache.getFileCache(file)?.frontmatter as
+  const fm = readFrontmatter(app, file) as
     | Record<string, unknown>
     | undefined;
   if (options.extraInfo) options.extraInfo(card, fm);

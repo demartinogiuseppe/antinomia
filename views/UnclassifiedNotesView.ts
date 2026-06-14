@@ -3,7 +3,7 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { TYPE, VIEW_TYPE_UNCLASSIFIED } from "../core/constants";
-import { humanTitle } from "../core/frontmatter";
+import { humanTitle, readFrontmatter } from "../core/frontmatter";
 import { renderVaultLabel } from "../core/utils";
 import { renderAntinomiaNav } from "../helpers/renderAntinomiaNav";
 
@@ -50,7 +50,7 @@ export class UnclassifiedNotesView extends ItemView {
 
     const all = this.app.vault.getMarkdownFiles();
     const items = all.filter((f) => {
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const fm = readFrontmatter(this.app, f);
       if (fm?.antinomia_type) return false;
       if (fm?.antinomia_ignora === true) return false;
       // skip files that are trashed (Obsidian trash convention varies)
