@@ -177,7 +177,7 @@ async function fetchTranscriptWithFallback(
                 } else {
                   window.open(externalUrl, "_blank");
                 }
-              } catch (e) {
+              } catch {
                 window.open(externalUrl, "_blank");
               }
             })
@@ -399,7 +399,6 @@ async function fetchYouTubeTranscript(
   };
 
   let lines: string[] = [];
-  let chosen: string = "";
   for (const attempt of formatsToTry) {
     let raw = "";
     let status = -1;
@@ -438,7 +437,6 @@ async function fetchYouTubeTranscript(
     else lines = parseLegacyXML(raw);
 
     if (lines.length > 0) {
-      chosen = attempt.format;
       break;
     }
   }

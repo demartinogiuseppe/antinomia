@@ -8,7 +8,7 @@ import { parseFreeInputFromAIResponse } from "../ai/parseResponse";
 import { FREE_INPUT_SYSTEM } from "../ai/prompts";
 import { buildFrictionPayload, parseFrictionFields, withFrictionSuffix } from "../core/aiFriction";
 import { substrateTemplate, tensionTemplate } from "../core/templates";
-import type { AIUsageMeta, FreeInputAnalysis, Profile } from "../core/types";
+import type { AIUsageMeta, FreeInputAnalysis } from "../core/types";
 import { extractYouTubeId } from "../core/utils";
 import { ConfirmModal } from "../modals/ConfirmModal";
 import { FreeInputModal } from "../modals/FreeInputModal";
@@ -17,7 +17,6 @@ import { NewTensionModal } from "../modals/NewTensionModal";
 
 export async function openFreeInputFromClipboard(plugin: AntinomiaPlugin): Promise<void> {
     let clip = "";
-    let source = "unknown";
 
     // Try Electron clipboard first (Obsidian Desktop). Available via require,
     // which Electron injects at runtime and isn't in the DOM lib typings.
@@ -28,7 +27,6 @@ export async function openFreeInputFromClipboard(plugin: AntinomiaPlugin): Promi
         | undefined;
       if (electron?.clipboard?.readText) {
         clip = electron.clipboard.readText() ?? "";
-        source = "electron";
       }
     } catch (e) {
       // electron not available (mobile? web?), fall through
@@ -39,7 +37,6 @@ export async function openFreeInputFromClipboard(plugin: AntinomiaPlugin): Promi
     if (!clip) {
       try {
         clip = await navigator.clipboard.readText();
-        source = "navigator";
       } catch (e) {
         console.error("[Antinomia] navigator.clipboard.readText failed", e);
       }

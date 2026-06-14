@@ -3,7 +3,7 @@
 import cytoscape from "cytoscape";
 import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
 import type AntinomiaPlugin from "../main";
-import { DEFAULT_GRAPH_FILTERS, GRAPH_STYLE_PRESETS, LAYER_COLORS, LAYER_SHAPES, TYPE, VIEW_TYPE_GRAPH } from "../core/constants";
+import { DEFAULT_GRAPH_FILTERS, GRAPH_STYLE_PRESETS, LAYER_COLORS, LAYER_SHAPES, VIEW_TYPE_GRAPH } from "../core/constants";
 import { humanTitle, layerKey, readFrontmatter } from "../core/frontmatter";
 import type { GraphColors, GraphFilters } from "../core/types";
 import { renderAntinomiaNav } from "../helpers/renderAntinomiaNav";
@@ -400,7 +400,6 @@ export class AntinomiaGraphView extends ItemView {
     }
 
     // Pass 2: edges from frontmatter + body wikilinks
-    const wikilinkRe = /\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]+)?\]\]/g;
     const addEdge = (src: string, tgt: string, kind: string): void => {
       if (!src || !tgt) return;
       if (src === tgt) return; // skip self-loops

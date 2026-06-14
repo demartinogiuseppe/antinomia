@@ -10,7 +10,7 @@ import { buildFrictionPayload, parseFrictionFields, withFrictionSuffix } from ".
 import { TYPE } from "../core/constants";
 import { stripFrontmatter, yamlQuote, readFrontmatter } from "../core/frontmatter";
 import { principleBodyTemplate } from "../core/templates";
-import type { AntinomiaFrontmatter, PrincipleFields, Profile } from "../core/types";
+import type { AntinomiaFrontmatter, PrincipleFields } from "../core/types";
 import { todayISO } from "../core/utils";
 import { ElevateToPrincipleModal } from "../modals/ElevateToPrincipleModal";
 

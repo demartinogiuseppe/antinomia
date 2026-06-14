@@ -8,7 +8,6 @@ import type { HunterRun } from "../core/types";
 import { renderVaultLabel } from "../core/utils";
 import { renderAntinomiaNav } from "../helpers/renderAntinomiaNav";
 import { renderFrictionCard } from "../modals/FrictionCard";
-import { OpenTensionsView } from "../views/OpenTensionsView";
 
 export class HunterResultsView extends ItemView {
   private currentRun: HunterRun | null = null;

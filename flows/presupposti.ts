@@ -8,7 +8,7 @@ import { notifyAIUsage, showErrorModal } from "../ai/notifyUsage";
 import { extractJson } from "../ai/parseResponse";
 import { PRESUPPOSTI_SYSTEM } from "../ai/prompts";
 import { TYPE } from "../core/constants";
-import type { AntinomiaFrontmatter, PresuppostiFields, Profile } from "../core/types";
+import type { AntinomiaFrontmatter, PresuppostiFields } from "../core/types";
 import { todayISO } from "../core/utils";
 import { MapPresuppostiModal } from "../modals/MapPresuppostiModal";
 
@@ -130,7 +130,6 @@ export async function applyPresupposti(plugin: AntinomiaPlugin, file: TFile, fie
         new Notice("Error: frontmatter not readable.");
         return;
       }
-      const fmBlock = raw.slice(0, fmEnd + 4);
       let body = raw.slice(fmEnd + 4);
 
       const a = (fields.presupposizioniA || "").trim();

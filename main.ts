@@ -5,7 +5,7 @@ cytoscape.use(fcose as unknown as Parameters<typeof cytoscape.use>[0]);
 
 import { App, Notice, Platform, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf, normalizePath } from "obsidian";
 
-import type { AntinomiaFrontmatter, Profile, GraphColors, BackendPreset, TutorialStep, PdfExtractResult, ClassifyResult, TitleProposal, PresuppostiFields, PdfConcept, PdfConceptsResult, AIUsageMeta, FreeInputAnalysis, HunterConfidence, HunterContradiction, HunterResult, HunterRunMetadata, HunterRun, DefeatedSubmit, TensionFields, SubstrateFields, PrincipleFields, GraphFilters, ClaudeResponse } from "./core/types";
+import type { AntinomiaFrontmatter, Profile, GraphColors, ClassifyResult, PresuppostiFields, PdfConcept, AIUsageMeta, FreeInputAnalysis, PrincipleFields, ClaudeResponse } from "./core/types";
 
 // Loose shapes for Obsidian internals that aren't in the public typings, used
 // only to avoid `any` casts. None of these are guaranteed by the public API.
@@ -49,7 +49,6 @@ import { extractJson } from "./ai/parseResponse";
 
 import { callAI } from "./ai/callAI";
 
-import { notifyAIUsage, renderUsageMetaBanner, ErrorAckModal, showErrorModal } from "./ai/notifyUsage";
 
 
 

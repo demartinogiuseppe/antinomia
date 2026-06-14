@@ -5,7 +5,6 @@ import type AntinomiaPlugin from "../main";
 import { TYPE, VIEW_TYPE_AUDIT, VIEW_TYPE_DASHBOARD, VIEW_TYPE_DEFEATED_LIST, VIEW_TYPE_GRAPH, VIEW_TYPE_OPEN_TENSIONS, VIEW_TYPE_PRINCIPLES_LIST, VIEW_TYPE_SUBSTRATE_LIST, VIEW_TYPE_UNCLASSIFIED } from "../core/constants";
 import { humanTitle, readFrontmatter } from "../core/frontmatter";
 import { substrateTemplate, tensionTemplate } from "../core/templates";
-import type { Profile } from "../core/types";
 import { renderVaultLabel } from "../core/utils";
 import { renderAntinomiaNav } from "../helpers/renderAntinomiaNav";
 import { GuidanceModal } from "../modals/GuidanceModal";

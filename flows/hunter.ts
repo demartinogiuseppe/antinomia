@@ -10,7 +10,7 @@ import { buildFrictionPayload, parseFrictionFields, withFrictionSuffix } from ".
 import { TYPE, VIEW_TYPE_HUNTER_RESULTS } from "../core/constants";
 import { stripFrontmatter, readFrontmatter } from "../core/frontmatter";
 import { HunterResultsView } from "../views/HunterResultsView";
-import type { AntinomiaFrontmatter, ClaudeResponse, HunterConfidence, HunterContradiction, HunterResponse, HunterResult, HunterRun, HunterRunMetadata, Profile } from "../core/types";
+import type { AntinomiaFrontmatter, ClaudeResponse, HunterResponse, HunterResult, HunterRun, HunterRunMetadata } from "../core/types";
 
 export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, attachToButton?: HTMLButtonElement): Promise<void> {
     const profile = plugin.profileFor("hunter");
@@ -185,21 +185,18 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
 
     // Anti-hallucination validation: discard invented basenames, self-pairs, empty descriptions
     const realBasenames = new Set(selected.map((f) => f.basename));
-    let halluFiltered = 0;
     const validated = parsed.pairs.filter((c) => {
       const a = String(c.note_a || "").trim();
       const b = String(c.note_b || "").trim();
       const desc = String(c.description || "").trim();
-      if (!a || !b || a === b) { halluFiltered++; return false; }
-      if (!desc || desc === "undefined") { halluFiltered++; return false; }
+      if (!a || !b || a === b) { return false; }
+      if (!desc || desc === "undefined") { return false; }
       if (!realBasenames.has(a) || !realBasenames.has(b)) {
-        halluFiltered++;
         console.warn("[Antinomia] hunter: discarded pair with non-existent basenames:", a, "<->", b);
         return false;
       }
       // In focus mode, discard pairs that do NOT involve the focusFile
       if (focusFile && a !== focusFile.basename && b !== focusFile.basename) {
-        halluFiltered++;
         return false;
       }
       return true;

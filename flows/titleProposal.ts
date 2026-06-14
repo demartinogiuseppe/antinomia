@@ -7,7 +7,7 @@ import { notifyAIUsage, showErrorModal } from "../ai/notifyUsage";
 import { parseTitleFromAIResponse } from "../ai/parseResponse";
 import { TITLE_SYSTEM } from "../ai/prompts";
 import { buildFrictionPayload, parseFrictionFields, withFrictionSuffix } from "../core/aiFriction";
-import type { AntinomiaFrontmatter, ClaudeResponse, Profile } from "../core/types";
+import type { AntinomiaFrontmatter, ClaudeResponse } from "../core/types";
 import { todayISO } from "../core/utils";
 import { TitleEditModal } from "../modals/TitleEditModal";
 

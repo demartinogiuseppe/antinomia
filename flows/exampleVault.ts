@@ -1,6 +1,6 @@
 // example-vault seeding flow. Extracted from main.ts (refactor v1.5).
 
-import { Notice, moment } from "obsidian";
+import { Notice } from "obsidian";
 import type AntinomiaPlugin from "../main";
 import { FOLDER, TYPE, VIEW_TYPE_OPEN_TENSIONS } from "../core/constants";
 import { yamlQuote, readFrontmatter } from "../core/frontmatter";
@@ -9,7 +9,6 @@ import { ensureFolder, todayISO } from "../core/utils";
 export async function createExampleNotes(plugin: AntinomiaPlugin): Promise<void> {
     await ensureFolder(plugin.app, FOLDER.notes);
     const today = todayISO();
-    const stamp = () => moment().format("YYYYMMDD-HHmmss");
 
     const tensionTpl = (
       title: string,
