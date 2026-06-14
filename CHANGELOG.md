@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.7.4 (June 14, 2026) — Store ERRORs cleared + unused-vars cleanup
+
+Community-store linter pass (Batch 4). No user-visible changes, no `any` shortcuts, no `eslint-disable`.
+
+- **Mandatory store ERRORs → 0:**
+  - `hardcoded-config-path` (1): the Front Matter Title fallback path now uses `app.vault.configDir` instead of a literal `.obsidian` — works on vaults with a custom config folder.
+  - `no-plugin-name-in-command-name` (2): dropped "Antinomia" from two command names (Obsidian already prefixes the plugin name in the palette).
+  - `prefer-active-doc` (2): the hover-bus DOM listeners register on `activeDocument` instead of `document` (popout-window compatibility). Reported as warnings, fixed alongside the errors.
+- **Unused-code cleanup:** removed 39 `no-unused-vars` sites — unused imports, dead locals/counters, and an unused catch binding — across flows, helpers, views, and `main.ts`.
+- **Tooling fix:** `eslint.config.js` now ignores `eslint.async.config.js`, which was making the full `npm run lint` crash on a type-aware rule.
+- **Lint total:** 327 → 278 problems (0 warnings). Baseline updated in `docs/lint-baseline.md`.
+
+### No user-visible changes.
+
 ## v1.7.3 (June 14, 2026) — Linter tooling + async hygiene
 
 Internal tooling + async-safety pass for the Obsidian Community store linter (Batch 3). No user-visible changes, no `any` shortcuts, no `eslint-disable`.
