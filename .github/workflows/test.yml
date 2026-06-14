@@ -20,6 +20,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint (async hygiene)
+        run: npm run lint:async
+
       - name: Run tests
         run: npm test
 
