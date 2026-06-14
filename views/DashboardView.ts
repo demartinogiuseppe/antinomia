@@ -224,7 +224,7 @@ export class DashboardView extends ItemView {
         a.setCssStyles({ cursor: "pointer" });
         a.onclick = (e) => {
           e.preventDefault();
-          this.app.workspace.getLeaf(false).openFile(f);
+          void this.app.workspace.getLeaf(false).openFile(f);
         };
       }
     }

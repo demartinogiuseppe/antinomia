@@ -41,7 +41,7 @@ export function renderNoteCard(
   link.title = `${file.basename} (clicca per aprire)`;
   link.onclick = (e) => {
     e.preventDefault();
-    app.workspace.getLeaf(false).openFile(file);
+    void app.workspace.getLeaf(false).openFile(file);
   };
 
   const fm = readFrontmatter(app, file) as

@@ -131,7 +131,7 @@ export class DismissedPairsView extends ItemView {
       a.title = `${basename} (clicca per aprire)`;
       a.onclick = (e) => {
         e.preventDefault();
-        this.app.workspace.getLeaf(false).openFile(file);
+        void this.app.workspace.getLeaf(false).openFile(file);
       };
     } else {
       const span = parent.createEl("span", { text: basename + " (?)" });

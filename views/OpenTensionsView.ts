@@ -199,7 +199,7 @@ export class OpenTensionsView extends ItemView {
       link.title = `${file.basename} (clicca per aprire)`;
       link.onclick = (e) => {
         e.preventDefault();
-        this.app.workspace.getLeaf(false).openFile(file);
+        void this.app.workspace.getLeaf(false).openFile(file);
       };
 
       const btnRow = card.createEl("div");

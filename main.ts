@@ -1303,7 +1303,7 @@ export default class AntinomiaPlugin extends Plugin {
       if (this.settings.autoOpenDashboard) {
         const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD);
         if (existing.length > 0) {
-          this.app.workspace.revealLeaf(existing[0]);
+          void this.app.workspace.revealLeaf(existing[0]);
         } else {
           void this.activateViewExternal(VIEW_TYPE_DASHBOARD);
         }
@@ -1311,7 +1311,7 @@ export default class AntinomiaPlugin extends Plugin {
       if (this.settings.autoOpenGraph) {
         const existingGraph = this.app.workspace.getLeavesOfType(VIEW_TYPE_GRAPH);
         if (existingGraph.length > 0) {
-          this.app.workspace.revealLeaf(existingGraph[0]);
+          void this.app.workspace.revealLeaf(existingGraph[0]);
         } else {
           void this.activateView(VIEW_TYPE_GRAPH, "tab");
         }
@@ -2798,7 +2798,7 @@ export default class AntinomiaPlugin extends Plugin {
         }
       });
       if (inMain) {
-        workspace.revealLeaf(inMain);
+        void workspace.revealLeaf(inMain);
         return;
       }
       // Crea nuova leaf nel main area (anche se esiste un'altra in sidebar)
@@ -2808,7 +2808,7 @@ export default class AntinomiaPlugin extends Plugin {
         return;
       }
       await leaf.setViewState({ type: viewType, active: true });
-      workspace.revealLeaf(leaf);
+      void workspace.revealLeaf(leaf);
       return;
     }
 
@@ -2825,6 +2825,6 @@ export default class AntinomiaPlugin extends Plugin {
       }
       await leaf.setViewState({ type: viewType, active: true });
     }
-    workspace.revealLeaf(leaf);
+    void workspace.revealLeaf(leaf);
   }
 }

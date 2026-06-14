@@ -264,7 +264,7 @@ export class AuditVaultView extends ItemView {
         a.title = issue.file.basename;
         a.onclick = (e) => {
           e.preventDefault();
-          this.app.workspace.getLeaf(false).openFile(issue.file);
+          void this.app.workspace.getLeaf(false).openFile(issue.file);
         };
       }
     }

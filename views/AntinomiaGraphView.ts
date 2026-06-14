@@ -1219,7 +1219,7 @@ export class AntinomiaGraphView extends ItemView {
     // Click → open note
     this.cy.on("tap", "node", (evt: cytoscape.EventObject) => {
       const basename = evt.target.id();
-      this.app.workspace.openLinkText(basename, "", false);
+      void this.app.workspace.openLinkText(basename, "", false);
     });
 
     // Note: il riassetto post-drag dei NODI e' gestito dal physics loop continuo.

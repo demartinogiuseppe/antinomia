@@ -117,7 +117,7 @@ export class UnclassifiedNotesView extends ItemView {
       link.title = `${file.path} (clicca per aprire)`;
       link.onclick = (e) => {
         e.preventDefault();
-        this.app.workspace.getLeaf(false).openFile(file);
+        void this.app.workspace.getLeaf(false).openFile(file);
       };
       const pathLine = card.createEl("div");
       pathLine.setCssStyles({

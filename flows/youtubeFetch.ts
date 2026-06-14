@@ -730,7 +730,7 @@ export async function runYouTubeConceptIngest(
           VIEW_TYPE_SUBSTRATE_LIST
         );
         if (subLeaves.length > 0) {
-          plugin.app.workspace.revealLeaf(subLeaves[0]);
+          void plugin.app.workspace.revealLeaf(subLeaves[0]);
         }
         plugin.refreshOpenGraphViews();
       }, 700);
