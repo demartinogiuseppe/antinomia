@@ -10,7 +10,7 @@ import { buildFrictionPayload, parseFrictionFields, withFrictionSuffix } from ".
 import { TYPE, VIEW_TYPE_HUNTER_RESULTS } from "../core/constants";
 import { stripFrontmatter, readFrontmatter } from "../core/frontmatter";
 import { HunterResultsView } from "../views/HunterResultsView";
-import type { AntinomiaFrontmatter, ClaudeResponse, HunterConfidence, HunterContradiction, HunterResult, HunterRun, HunterRunMetadata, Profile } from "../core/types";
+import type { AntinomiaFrontmatter, ClaudeResponse, HunterConfidence, HunterContradiction, HunterResponse, HunterResult, HunterRun, HunterRunMetadata, Profile } from "../core/types";
 
 export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, attachToButton?: HTMLButtonElement): Promise<void> {
     const profile = plugin.profileFor("hunter");
@@ -151,7 +151,7 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
         return;
       }
       durationMs = Date.now() - t0;
-      const parsedRaw = extractJson<{ pairs?: unknown; contraddizioni?: unknown }>(result.text);
+      const parsedRaw = extractJson<HunterResponse>(result.text);
       if (parsedRaw && Array.isArray(parsedRaw.pairs)) rawPairs = parsedRaw.pairs;
       else if (parsedRaw && Array.isArray(parsedRaw.contraddizioni)) rawPairs = parsedRaw.contraddizioni;
       if (rawPairs) break; // got a structure — stop retrying

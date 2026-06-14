@@ -8,6 +8,8 @@ import type {
   HunterContradiction,
   HunterConfidence,
   PresuppositionProposal,
+  AICompletionResponse,
+  AIAnthropicResponse,
 } from "../core/types";
 
 /**
@@ -250,21 +252,7 @@ export function parseAIResponse(
   data: unknown,
   apiFormat: "anthropic" | "openai"
 ): { text: string; usage?: ClaudeResponse["usage"] } {
-  const d = (data ?? {}) as {
-    content?: Array<{ type?: string; text?: string }>;
-    choices?: Array<{
-      message?: { content?: string; reasoning_content?: string; reasoning?: string };
-      text?: string;
-      reasoning_content?: string;
-      finish_reason?: string;
-    }>;
-    usage?: {
-      input_tokens?: number;
-      output_tokens?: number;
-      prompt_tokens?: number;
-      completion_tokens?: number;
-    };
-  };
+  const d = (data ?? {}) as AICompletionResponse & AIAnthropicResponse;
   if (apiFormat === "anthropic") {
     const text = (d.content ?? [])
       .filter((b) => b.type === "text" && typeof b.text === "string")

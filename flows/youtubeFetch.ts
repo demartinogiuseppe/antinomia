@@ -310,7 +310,7 @@ async function fetchYouTubeTranscript(
   try {
     // YouTube escapes &amp; as \u0026; normalize before JSON.parse
     const raw = captionMatch[1].replace(/\\u0026/g, "&");
-    captionTracks = JSON.parse(raw);
+    captionTracks = JSON.parse(raw) as Array<Record<string, unknown>>;
   } catch (e) {
     console.error("[Antinomia] captionTracks parse failed", e, captionMatch[1]);
     new Notice("Error parsing captionTracks (YouTube format changed).");

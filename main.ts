@@ -1873,7 +1873,7 @@ export default class AntinomiaPlugin extends Plugin {
     if (!this.settings.profiles || this.settings.profiles.length === 0) {
       this.settings.profiles = JSON.parse(
         JSON.stringify(DEFAULT_SETTINGS.profiles)
-      );
+      ) as Profile[];
     }
     // Sanity: activeProfileId must reference an existing profile
     if (

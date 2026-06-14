@@ -65,6 +65,42 @@ export interface AntinomiaFrontmatter {
   [key: string]: unknown;
 }
 
+/** OpenAI-compatible chat completion response (LM Studio, Groq, Ollama, …). */
+export interface AICompletionResponse {
+  choices?: Array<{
+    message?: { content?: string; reasoning_content?: string; reasoning?: string };
+    text?: string;
+    reasoning_content?: string;
+    finish_reason?: string;
+  }>;
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
+  error?: { message?: string; type?: string };
+}
+
+/** Anthropic Messages API response. */
+export interface AIAnthropicResponse {
+  content?: Array<{ type?: string; text?: string }>;
+  stop_reason?: string;
+  usage?: { input_tokens?: number; output_tokens?: number };
+  error?: { message?: string; type?: string };
+}
+
+export interface HunterPair {
+  note_a?: string;
+  note_b?: string;
+  description?: string;
+  confidence?: "high" | "medium" | "low";
+}
+
+export interface HunterResponse {
+  pairs?: HunterPair[];
+  contraddizioni?: HunterPair[];
+}
+
 export interface Profile {
   id: string;
   name: string;

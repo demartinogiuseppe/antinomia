@@ -270,7 +270,7 @@ export async function callAI(opts: {
           `AI error ${result.status} (${url}): ${result.text.slice(0, 500)}`
         );
       }
-      const data = JSON.parse(result.text);
+      const data: unknown = JSON.parse(result.text);
       return parseAIResponse(data, apiFormat);
     } catch (e) {
       if ((e as Error).message === "hunter_aborted") throw e;
@@ -301,6 +301,6 @@ export async function callAI(opts: {
     } catch { /* intentionally ignored */ }
     throw new Error(`AI error ${res.status} (${url}): ${detail}`);
   }
-  const data = res.json;
+  const data: unknown = res.json;
   return parseAIResponse(data, apiFormat);
 }
