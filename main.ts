@@ -1154,8 +1154,7 @@ export default class AntinomiaPlugin extends Plugin {
         await fmt.saveSettings();
       } else {
         // Fallback: write data.json directly via the vault adapter
-        const dataPath =
-          ".obsidian/plugins/obsidian-front-matter-title-plugin/data.json";
+        const dataPath = `${this.app.vault.configDir}/plugins/obsidian-front-matter-title-plugin/data.json`;
         const adapter = this.app.vault.adapter;
         if (adapter?.write) {
           await adapter.write(dataPath, JSON.stringify(s, null, 2));
@@ -1615,7 +1614,7 @@ export default class AntinomiaPlugin extends Plugin {
     });
     this.addCommand({
       id: "open-graph",
-      name: "open Antinomia Graph (custom)",
+      name: "Open graph (custom)",
       callback: () => this.activateView(VIEW_TYPE_GRAPH, "tab"),
     });
     this.addCommand({
@@ -1717,7 +1716,7 @@ export default class AntinomiaPlugin extends Plugin {
     });
     this.addCommand({
       id: "delete-example-notes",
-      name: "delete examples (notes marked antinomia_example)",
+      name: "Delete example notes",
       callback: () => {
         const count = this.app.vault.getMarkdownFiles().filter((f) => {
           const fm = readFrontmatter(this.app, f);
@@ -1809,8 +1808,10 @@ export default class AntinomiaPlugin extends Plugin {
       (t: EventTarget | null) => emitFor("enter", t),
       50
     );
-    this.registerDomEvent(document, "mouseover", (e) => onEnter(e.target));
-    this.registerDomEvent(document, "mouseout", (e) => emitFor("leave", e.target));
+    this.registerDomEvent(activeDocument, "mouseover", (e) => onEnter(e.target));
+    this.registerDomEvent(activeDocument, "mouseout", (e) =>
+      emitFor("leave", e.target)
+    );
 
     // Subscriber: highlight DOM entries for hovers coming from the graph.
     const highlighted = new Set<HTMLElement>();
