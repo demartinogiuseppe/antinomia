@@ -114,7 +114,6 @@ export async function runHunter(plugin: AntinomiaPlugin, focusFile?: TFile, atta
           baseUrl: profile.baseUrl,
           apiKey: profile.apiKey,
           model: profile.model,
-          format: profile.format,
           system: withFrictionSuffix(
             buildHunterSystem(plugin.settings.hunterReasoningStyle) +
               (attempt === 1 ? REINFORCE : "")
