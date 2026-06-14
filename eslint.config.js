@@ -20,6 +20,7 @@ export default [
       "main.js",
       "esbuild.config.mjs",
       "eslint.config.js",
+      "eslint.async.config.js",
       "**/*.ps1",
       // JSON manifest checks are ERROR-level (already handled) and the online
       // scorecard re-validates them; the local run here is scoped to .ts so the
