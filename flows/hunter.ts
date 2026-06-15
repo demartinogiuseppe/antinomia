@@ -302,3 +302,46 @@ export async function undismissContradiction(plugin: AntinomiaPlugin,
       new Notice("No dismissal found for this pair.");
     }
 }
+
+/**
+ * Mark a pair (A, B) as a false positive — adds B to A's
+ * `hunter_false_positives` frontmatter array AND A to B's. Idempotent:
+ * doesn't duplicate existing entries. Inverse of undismissContradiction.
+ */
+export async function dismissContradiction(
+  plugin: AntinomiaPlugin,
+  aBasename: string,
+  bBasename: string
+): Promise<void> {
+  const findFile = (bn: string): TFile | null => {
+    const all = plugin.app.vault.getMarkdownFiles();
+    return all.find((f) => f.basename === bn) ?? null;
+  };
+  const addOne = async (
+    file: TFile | null,
+    peer: string
+  ): Promise<boolean> => {
+    if (!file) return false;
+    let modified = false;
+    await plugin.app.fileManager.processFrontMatter(file, (fm: AntinomiaFrontmatter) => {
+      const arr = Array.isArray(fm.hunter_false_positives)
+        ? fm.hunter_false_positives
+        : [];
+      if (!arr.some((x: unknown) => String(x) === peer)) {
+        arr.push(peer);
+        fm.hunter_false_positives = arr;
+        modified = true;
+      }
+    });
+    return modified;
+  };
+  const a = findFile(aBasename);
+  const b = findFile(bBasename);
+  const mA = await addOne(a, bBasename);
+  const mB = await addOne(b, aBasename);
+  if (mA || mB) {
+    new Notice(`Marked as false positive: ${aBasename} <-> ${bBasename}`);
+  } else {
+    new Notice("Pair already marked as false positive.");
+  }
+}

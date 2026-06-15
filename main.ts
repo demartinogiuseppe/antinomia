@@ -125,7 +125,7 @@ import { openFreeInputFromClipboard, openFreeInputModal, analyzeFreeInput } from
 
 import { openMapPresupposti, proposePresuppostiFromContent, applyPresupposti } from "./flows/presupposti";
 
-import { runHunter, undismissContradiction } from "./flows/hunter";
+import { runHunter, undismissContradiction, dismissContradiction } from "./flows/hunter";
 
 import { openElevateModal, elevateToPrinciple, elevateTransform, elevateSplit, proposeIfThenFromContent } from "./flows/elevation";
 
@@ -2129,6 +2129,13 @@ export default class AntinomiaPlugin extends Plugin {
     bBasename: string
   ): Promise<void> {
     return undismissContradiction(this, aBasename, bBasename);
+  }
+
+  async dismissContradiction(
+    aBasename: string,
+    bBasename: string
+  ): Promise<void> {
+    return dismissContradiction(this, aBasename, bBasename);
   }
 
   async openMapPresupposti(file: TFile): Promise<void> {
