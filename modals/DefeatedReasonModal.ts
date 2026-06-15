@@ -22,7 +22,7 @@ export class DefeatedReasonModal extends Modal {
     contentEl.createEl("h3", { text: "Archive as defeated" });
     contentEl.createEl("p", { text: "Why was it defeated?" });
 
-    let motivo = "false_positive";
+    let motive = "false_positive";
     let sostituitaDa: string | null = null;
 
     // --- Motivo dropdown ---
@@ -30,14 +30,14 @@ export class DefeatedReasonModal extends Modal {
       dd.addOption("false_positive", "false_positive");
       dd.addOption("elevated", "elevated");
       dd.addOption("genuinely_defeated", "genuinely_defeated");
-      dd.setValue(motivo);
+      dd.setValue(motive);
       dd.onChange((v) => {
-        motivo = v;
+        motive = v;
         renderSostituitaSection();
       });
     });
 
-    // --- Sostituita_da picker (only shown when motivo == "elevated") ---
+    // --- Sostituita_da picker (only shown when motive == "elevated") ---
     const sostBlock = contentEl.createEl("div");
     sostBlock.setCssStyles({ marginBottom: "10px" });
 
@@ -51,7 +51,7 @@ export class DefeatedReasonModal extends Modal {
     const renderSostituitaSection = () => {
       sostBlock.empty();
       labelEl.setText("");
-      if (motivo !== "elevated") return;
+      if (motive !== "elevated") return;
 
       new Setting(sostBlock)
         .setName("Replaced by which principle")
@@ -102,7 +102,7 @@ export class DefeatedReasonModal extends Modal {
           .setButtonText("Archive")
           .setCta()
           .onClick(() => {
-            this.result = { motivo, replaced_by: sostituitaDa };
+            this.result = { motive, replaced_by: sostituitaDa };
             this.close();
           })
       );

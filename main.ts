@@ -1,7 +1,7 @@
 import cytoscape from "cytoscape";
 // @ts-ignore — cytoscape-fcose has no types
 import fcose from "cytoscape-fcose";
-cytoscape.use(fcose as unknown as Parameters<typeof cytoscape.use>[0]);
+cytoscape.use(fcose as Parameters<typeof cytoscape.use>[0]);
 
 import { App, Notice, Platform, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf, normalizePath } from "obsidian";
 
@@ -1037,6 +1037,17 @@ class AntinomiaSettingTab extends PluginSettingTab {
 // Antinomia Graph View — vista grafo custom con filtri per layer
 // ============================================================================
 
+/**
+ * Shape accepted by `loadSettings`: the current v2 settings (all optional, since
+ * persisted data may be partial or absent) plus the legacy v1 top-level fields
+ * (`baseUrl`/`apiKey`/`model`) that the migration reads and then deletes.
+ */
+interface LegacySettingsData extends Partial<AntinomiaSettings> {
+  baseUrl?: string;
+  apiKey?: string;
+  model?: string;
+}
+
 export default class AntinomiaPlugin extends Plugin {
   settings: AntinomiaSettings = DEFAULT_SETTINGS;
   statusBarEl: HTMLElement | null = null;
@@ -1846,7 +1857,7 @@ export default class AntinomiaPlugin extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    const data = (await this.loadData()) ?? {};
+    const data = ((await this.loadData()) ?? {}) as LegacySettingsData;
     // Migration: v1 (top-level baseUrl/apiKey/model) -> v2 (profiles[])
     if (
       (!data.profiles ||
@@ -2466,11 +2477,11 @@ export default class AntinomiaPlugin extends Plugin {
         new Notice("Archiving cancelled.");
         return;
       }
-      const { motivo, replaced_by } = data;
+      const { motive, replaced_by } = data;
       try {
         await this.app.fileManager.processFrontMatter(file, (fm: AntinomiaFrontmatter) => {
           fm.antinomia_type = TYPE.defeated;
-          fm.motive = motivo;
+          fm.motive = motive;
           fm.modified_date = todayISO();
           delete fm.status;
           delete fm.origin;
@@ -2490,7 +2501,7 @@ export default class AntinomiaPlugin extends Plugin {
         }
         const subMsg = replaced_by ? `, sostituita da ${replaced_by}` : "";
         new Notice(
-          `Archived as defeated (${motivo}${subMsg}): ${file.basename}`
+          `Archived as defeated (${motive}${subMsg}): ${file.basename}`
         );
       } catch (e) {
         new Notice(`Error: ${(e as Error).message}`);
@@ -2618,7 +2629,7 @@ export default class AntinomiaPlugin extends Plugin {
 
   async setTitleOnActiveNote(file: TFile): Promise<void> {
     const fm = readFrontmatter(this.app, file);
-    const current = (fm?.title as string | undefined) ?? "";
+    const current = fm?.title ?? "";
     new TitleEditModal(
       this.app,
       current,
