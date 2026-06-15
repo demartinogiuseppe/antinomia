@@ -335,7 +335,7 @@ async function fetchYouTubeTranscript(
   // Universal decoder for YouTube\'s JSON-embedded Unicode escapes:
   //   \\u0026 -> &, \\u003d -> =, \\u003f -> ?, \\u002f -> /, etc.
   const unescUnicode = (s: string): string =>
-    s.replace(/\\u([0-9a-fA-F]{4})/g, (_m, hex) =>
+    s.replace(/\\u([0-9a-fA-F]{4})/g, (_m, hex: string) =>
       String.fromCharCode(parseInt(hex, 16))
     );
 

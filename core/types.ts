@@ -235,6 +235,12 @@ export interface TensionFields {
 export interface SubstrateFields {
   title?: string;
   content?: string;
+  /**
+   * Raw substrate text as produced by the AI extraction (the model returns a
+   * `contenuto` JSON key) and carried through prefill. Distinct from `content`,
+   * which is the field written on submit.
+   */
+  contenuto?: string;
 }
 
 export interface PrincipleFields {

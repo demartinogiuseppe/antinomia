@@ -13,9 +13,7 @@ export function readFrontmatter(
   app: App,
   file: TFile
 ): AntinomiaFrontmatter | undefined {
-  return app.metadataCache.getFileCache(file)?.frontmatter as
-    | AntinomiaFrontmatter
-    | undefined;
+  return app.metadataCache.getFileCache(file)?.frontmatter;
 }
 
 /**

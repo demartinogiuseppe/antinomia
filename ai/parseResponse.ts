@@ -73,7 +73,7 @@ export function normalizeHunterPair(c: unknown): HunterContradiction {
     confidence: ((): HunterConfidence | undefined => {
       const raw = String(o.confidence ?? "").toLowerCase().trim();
       if (raw === "high" || raw === "medium" || raw === "low")
-        return raw as HunterConfidence;
+        return raw;
       if (raw === "alta") return "high";
       if (raw === "media") return "medium";
       if (raw === "bassa") return "low";

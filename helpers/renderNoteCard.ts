@@ -44,9 +44,7 @@ export function renderNoteCard(
     void app.workspace.getLeaf(false).openFile(file);
   };
 
-  const fm = readFrontmatter(app, file) as
-    | Record<string, unknown>
-    | undefined;
+  const fm = readFrontmatter(app, file);
   if (options.extraInfo) options.extraInfo(card, fm);
 
   const btnRow = card.createEl("div");

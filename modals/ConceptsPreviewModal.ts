@@ -169,7 +169,7 @@ export class ConceptsPreviewModal extends Modal {
     selAll.onclick = () => {
       this.concepts.forEach((_, i) => this.selected.add(i));
       itemEls.forEach((el) => {
-        const cb = el.querySelector("input[type=checkbox]") as HTMLInputElement | null;
+        const cb = el.querySelector<HTMLInputElement>("input[type=checkbox]");
         if (cb) cb.checked = true;
       });
       updateCounter();
@@ -177,7 +177,7 @@ export class ConceptsPreviewModal extends Modal {
     deselAll.onclick = () => {
       this.selected.clear();
       itemEls.forEach((el) => {
-        const cb = el.querySelector("input[type=checkbox]") as HTMLInputElement | null;
+        const cb = el.querySelector<HTMLInputElement>("input[type=checkbox]");
         if (cb) cb.checked = false;
       });
       updateCounter();

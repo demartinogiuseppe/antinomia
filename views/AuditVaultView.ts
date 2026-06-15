@@ -80,9 +80,7 @@ export class AuditVaultView extends ItemView {
 
     const files = this.app.vault.getMarkdownFiles();
     const fmOf = (f: TFile) =>
-      readFrontmatter(this.app, f) as
-        | Record<string, unknown>
-        | undefined;
+      readFrontmatter(this.app, f);
 
     interface Issue {
       file: TFile;
@@ -115,7 +113,7 @@ export class AuditVaultView extends ItemView {
 
       // No title (frontmatter `titolo` missing/empty AND no first heading)
       const explicitTitle =
-        typeof fm?.title === "string" && (fm.title as string).trim();
+        typeof fm?.title === "string" && fm.title.trim();
       const cache = this.app.metadataCache.getFileCache(f);
       const firstHeading = cache?.headings?.[0]?.heading;
       if (!explicitTitle && !firstHeading) {
