@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.7.6 (June 15, 2026) — Fix: "Mark as false positive" button threw
+
+### Fixed
+- **Critical:** the "Mark as false positive" button in Hunter Results called a non-existent method (`dismissContradiction`) and threw at runtime. Implemented the missing method — the inverse mirror of `undismissContradiction`: it adds the peer basename to each note's `hunter_false_positives` frontmatter array (idempotent, no duplicate entries).
+- The Hunter "Mark as false positive" → "Reincludi" round-trip now fully works:
+  - Mark: peer basename added to both notes' `hunter_false_positives` (the pair won't be proposed again).
+  - Unmark from the Dismissed Pairs view: peer basename removed.
+
+### No other changes.
+
 ## v1.7.5 (June 15, 2026) — GraphView typing + residual unsafe-any cleanup
 
 Community-store linter pass (Batch 5): type tightening of the `any`-flow buckets. No user-visible changes, no `any` shortcuts, no `eslint-disable`.
