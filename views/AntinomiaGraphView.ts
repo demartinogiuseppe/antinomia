@@ -9,6 +9,33 @@ import type { GraphColors, GraphFilters } from "../core/types";
 import { renderAntinomiaNav } from "../helpers/renderAntinomiaNav";
 import { hoverBus, type HoverPayload } from "../core/hoverBus";
 
+/**
+ * Shape of node `data` in the Cytoscape graph. The field set is determined by
+ * the `collectGraphData()` push() calls. Cytoscape's `.data()` is typed `any`,
+ * so accesses are cast to this interface to keep them type-safe.
+ */
+interface AntinomiaNodeData {
+  id: string;
+  path: string;
+  label: string;
+  fullTitle: string;
+  layer: string;
+  color: string;
+  shape: string;
+  glow: string;
+  glowBright: string;
+  [key: string]: unknown; // tolerate cytoscape's internal additions
+}
+
+/** Shape of edge `data` in the Cytoscape graph. */
+interface AntinomiaEdgeData {
+  id: string;
+  source: string;
+  target: string;
+  kind: string;
+  [key: string]: unknown;
+}
+
 export class AntinomiaGraphView extends ItemView {
   plugin: AntinomiaPlugin;
   filters: GraphFilters = { ...DEFAULT_GRAPH_FILTERS };
@@ -107,7 +134,7 @@ export class AntinomiaGraphView extends ItemView {
     });
     contentEl.setCssStyles({ overflow: "hidden" }); // niente scrollbar lampeggiante quando i nodi fluttuano
     // Anche il parent .view-content puo' avere overflow:auto di default
-    const viewContent = contentEl.closest(".view-content") as HTMLElement | null;
+    const viewContent = contentEl.closest<HTMLElement>(".view-content");
     if (viewContent) viewContent.setCssStyles({ overflow: "hidden" });
 
     // Toolbar
@@ -466,8 +493,9 @@ export class AntinomiaGraphView extends ItemView {
     // style can enlarge + brighten it and the tooltip can name the count.
     const supportCount = new Map<string, number>();
     for (const e of edges) {
-      if (e.data.kind === "presupposes") {
-        supportCount.set(e.data.target, (supportCount.get(e.data.target) ?? 0) + 1);
+      const ed = e.data as AntinomiaEdgeData;
+      if (ed.kind === "presupposes") {
+        supportCount.set(ed.target, (supportCount.get(ed.target) ?? 0) + 1);
       }
     }
     for (const n of nodes) {
@@ -520,7 +548,7 @@ export class AntinomiaGraphView extends ItemView {
     if (!this.cy) return;
     const GALAXY_PARALLAX = 0.15;
     const STARS_PARALLAX = 0.5;
-    const pan = this.cy!.pan();
+    const pan = this.cy.pan();
     if (this.galaxyLayer)
       this.galaxyLayer.setCssStyles({ transform: `translate(${pan.x * GALAXY_PARALLAX}px, ${pan.y * GALAXY_PARALLAX}px)` });
     if (this.starsLayer)
@@ -742,8 +770,8 @@ export class AntinomiaGraphView extends ItemView {
         const sp = src.renderedPosition();
         const tp = tgt.renderedPosition();
         if (!sp || !tp) return;
-        const srcColor = src.data("color") || "#9e9e9e";
-        const tgtColor = tgt.data("color") || "#9e9e9e";
+        const srcColor = (src.data() as AntinomiaNodeData).color || "#9e9e9e";
+        const tgtColor = (tgt.data() as AntinomiaNodeData).color || "#9e9e9e";
         // Shrink the line so it stops at the outer edge of each disc
         // instead of running into the node centers.
         const dx = tp.x - sp.x;
@@ -825,7 +853,7 @@ export class AntinomiaGraphView extends ItemView {
       const minReadable = zoom * 10 >= 8;
       if (!minReadable) return;
       this.cy.nodes().forEach((node: cytoscape.NodeSingular) => {
-        const label = node.data("label");
+        const label = (node.data() as AntinomiaNodeData).label;
         if (!label) return;
         const pos = node.renderedPosition();
         if (!pos) return;
@@ -913,13 +941,14 @@ export class AntinomiaGraphView extends ItemView {
         if ("source" in el.data) continue; // edge: non aggiornare
         const cyNode = this.cy.getElementById(el.data.id ?? "");
         if (cyNode && cyNode.length > 0) {
+          const nd = el.data as AntinomiaNodeData;
           cyNode.data({
-            color: el.data.color,
-            layer: el.data.layer,
-            label: el.data.label,
-            fullTitle: el.data.fullTitle,
-            glow: el.data.glow,
-            glowBright: el.data.glowBright,
+            color: nd.color,
+            layer: nd.layer,
+            label: nd.label,
+            fullTitle: nd.fullTitle,
+            glow: nd.glow,
+            glowBright: nd.glowBright,
           });
         }
       }
@@ -957,7 +986,7 @@ export class AntinomiaGraphView extends ItemView {
       if (toAdd.length > 0) {
         const positioned = toAdd.map((e: cytoscape.ElementDefinition) => {
           if ("source" in e.data) return e;
-          const layer = e.data.layer || "unknown";
+          const layer = (e.data as AntinomiaNodeData).layer || "unknown";
           const ang = this.layerAngleFor(layer);
           return {
             ...e,
@@ -1217,7 +1246,8 @@ export class AntinomiaGraphView extends ItemView {
 
     // Click → open note
     this.cy.on("tap", "node", (evt: cytoscape.EventObject) => {
-      const basename = evt.target.id();
+      const node = evt.target as cytoscape.NodeSingular;
+      const basename = node.id();
       void this.app.workspace.openLinkText(basename, "", false);
     });
 
@@ -1278,9 +1308,10 @@ export class AntinomiaGraphView extends ItemView {
 
     // Hover: tooltip + fade non-neighbors (Obsidian-like)
     this.cy.on("mouseover", "node", (evt: cytoscape.EventObject) => {
-      const node = evt.target;
-      const fullTitle = node.data("fullTitle");
-      const layer = node.data("layer");
+      const node = evt.target as cytoscape.NodeSingular;
+      const data = node.data() as AntinomiaNodeData;
+      const fullTitle = data.fullTitle;
+      const layer = data.layer;
       if (this.graphContainer)
         this.graphContainer.title = `${fullTitle}\n[${layer}]`;
       if (!this.cy) return;
@@ -1291,7 +1322,7 @@ export class AntinomiaGraphView extends ItemView {
       node.openNeighborhood().nodes().addClass("hover-neighbor");
       // Publish so other panes can highlight the same file.
       hoverBus.emit("enter", {
-        path: node.data("path") || "",
+        path: data.path || "",
         basename: node.id(),
         source: "graph",
       });
@@ -1300,9 +1331,9 @@ export class AntinomiaGraphView extends ItemView {
       if (this.graphContainer) this.graphContainer.title = "";
       if (!this.cy) return;
       this.cy.elements().removeClass("hover-focus hover-neighbor");
-      const node = evt.target;
+      const node = evt.target as cytoscape.NodeSingular;
       hoverBus.emit("leave", {
-        path: node.data("path") || "",
+        path: (node.data() as AntinomiaNodeData).path || "",
         basename: node.id(),
         source: "graph",
       });
@@ -1331,7 +1362,7 @@ export class AntinomiaGraphView extends ItemView {
     // Conta i nodi per layer per calibrare il raggio del singolo cluster
     const byLayer: Record<string, cytoscape.NodeSingular[]> = {};
     this.cy.nodes().forEach((n: cytoscape.NodeSingular) => {
-      const layer = n.data("layer") || "unknown";
+      const layer = (n.data() as AntinomiaNodeData).layer || "unknown";
       (byLayer[layer] ??= []).push(n);
     });
 
@@ -1592,7 +1623,7 @@ export class AntinomiaGraphView extends ItemView {
             defeated: 0,
             meta_nota: 0,
           };
-          return order[n.data("layer")] ?? 0;
+          return order[(n.data() as AntinomiaNodeData).layer] ?? 0;
         },
         levelWidth: () => 1,
         minNodeSpacing: 30,
@@ -1675,15 +1706,15 @@ export class AntinomiaGraphView extends ItemView {
       let totalMoved = 0;
       cy.batch(() => {
       for (const n of nodes) {
-        const np = n.position() as Pt;
+        const np = n.position();
         let pushX = 0;
         let pushY = 0;
         for (const e of edges) {
           const s = e.source();
           const t = e.target();
           if (s.id() === n.id() || t.id() === n.id()) continue;
-          const sp = s.position() as Pt;
-          const tp = t.position() as Pt;
+          const sp = s.position();
+          const tp = t.position();
           const { dist, cx, cy: cyClosest } = distPointToSegment(np, sp, tp);
           if (dist < MIN_DIST && dist > 0.0001) {
             // Push perpendicular to the edge, away from the closest point
