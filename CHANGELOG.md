@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.7.5 (June 15, 2026) — GraphView typing + residual unsafe-any cleanup
+
+Community-store linter pass (Batch 5): type tightening of the `any`-flow buckets. No user-visible changes, no `any` shortcuts, no `eslint-disable`.
+
+- **AntinomiaGraphView (56 sites):** new `AntinomiaNodeData` / `AntinomiaEdgeData` interfaces for the Cytoscape graph data shape. All `.data()` accesses and `evt.target` handlers (tap/mouseover/mouseout) are now typed; removed unnecessary assertions (`closest<HTMLElement>`, `this.cy.pan()`, `position()`).
+- **`loadSettings` migration:** typed via a new `LegacySettingsData` interface (`loadData()` returns `any`), covering the whole v1→v2 profiles migration block.
+- **`SubstrateFields.contenuto`:** added the AI-extraction key that flows through prefill, clearing `NewSubstrateModal` accesses plus the long-standing `contenuto` type errors in the free-input and YouTube flows.
+- **Misc:** typed a `String.replace` callback param (youtubeFetch); removed unnecessary type assertions across `frontmatter`, `renderNoteCard`, `AuditVaultView`, `ConceptsPreviewModal`, `parseResponse`.
+- **Lint total:** 278 → 186 problems (unsafe-any family 99 → 7). `npx tsc --noEmit` source errors 24 → 18.
+- **Known, out of scope:** `core/utils.ts` `moment().format` (×6) — Obsidian's `moment` re-export has an unresolvable type (a types/env gap, not fixable without `as any`). Also surfaced a latent bug: `HunterResultsView` calls a non-existent `dismissContradiction` plugin method — left for a dedicated fix since it needs new logic.
+
+### No user-visible changes.
+
 ## v1.7.4 (June 14, 2026) — Store ERRORs cleared + unused-vars cleanup
 
 Community-store linter pass (Batch 4). No user-visible changes, no `any` shortcuts, no `eslint-disable`.
