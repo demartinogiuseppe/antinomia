@@ -1196,13 +1196,44 @@ export default class AntinomiaPlugin extends Plugin {
   }
 
   /**
+   * Resilience boundary for fire-and-forget user flows (called as
+   * `void plugin.x()` from the nav / commands). Runs `fn`; on an unexpected
+   * throw it surfaces a Notice + logs instead of leaving a silent unhandled
+   * rejection (the exact failure mode of the v1.7.6 dismiss bug).
+   *
+   * Left alone on purpose:
+   * - user-initiated aborts (`AbortError`) → silent, no Notice;
+   * - errors already reported upstream (API key / backend unreachable /
+   *   Front Matter Title) → logged without a duplicate generic Notice.
+   *   (We log-and-return rather than re-throw: this is the outermost
+   *   boundary, so re-throwing would just recreate the unhandled rejection.)
+   */
+  private async guardedRun(
+    label: string,
+    fn: () => Promise<void>
+  ): Promise<void> {
+    try {
+      await fn();
+    } catch (e) {
+      if (e instanceof Error && e.name === "AbortError") return;
+      const msg = e instanceof Error ? e.message : String(e);
+      if (/api key|not reachable|front matter title/i.test(msg)) {
+        console.error(`[Antinomia] ${label} (handled upstream):`, e);
+        return;
+      }
+      new Notice(`${label} failed: ${msg}`, 8000);
+      console.error(`[Antinomia] ${label} error:`, e);
+    }
+  }
+
+  /**
    * Contradiction Hunter: scansiona tensioni aperte + substrate, manda al
    * modello, parsea coppie contraddittorie, filtra falsi positivi gia'
    * dismissati, salva ultimo run nei settings, mostra in HunterResultsView.
    * Supporta cancellazione via Stop button (AbortController).
    */
   async runHunter(focusFile?: TFile, attachToButton?: HTMLButtonElement): Promise<void> {
-    return runHunter(this, focusFile, attachToButton);
+    return this.guardedRun("Hunter", () => runHunter(this, focusFile, attachToButton));
   }
 
   /**
@@ -1453,7 +1484,7 @@ export default class AntinomiaPlugin extends Plugin {
     this.addCommand({
       id: "youtube-extract-concepts",
       name: "Substrate from YouTube — extract concepts (AI)",
-      callback: () => void runYouTubeConceptIngest(this),
+      callback: () => void this.runYouTubeConceptIngest(),
     });
     this.addCommand({
       id: "setup-attachments-folder",
@@ -2031,14 +2062,14 @@ export default class AntinomiaPlugin extends Plugin {
    * Tutte marcate `antinomia_example: true` per cancellazione one-click.
    */
   async createExampleNotes(): Promise<void> {
-    return createExampleNotes(this);
+    return this.guardedRun("Create example notes", () => createExampleNotes(this));
   }
 
   /**
    * Delete every note flagged with `antinomia_example: true` in frontmatter.
    */
   async deleteExampleNotes(): Promise<void> {
-    return deleteExampleNotes(this);
+    return this.guardedRun("Delete example notes", () => deleteExampleNotes(this));
   }
 
   /**
@@ -2047,7 +2078,7 @@ export default class AntinomiaPlugin extends Plugin {
    * and routes to the correct creation modal.
    */
   async openFreeInputFromClipboard(): Promise<void> {
-    return openFreeInputFromClipboard(this);
+    return this.guardedRun("Substrate from clipboard", () => openFreeInputFromClipboard(this));
   }
 
   /**
@@ -2102,7 +2133,11 @@ export default class AntinomiaPlugin extends Plugin {
    * "Video YouTube — <id>" (user can override before saving).
    */
   async openSubstrateFromYouTube(prefillUrl = ""): Promise<void> {
-    return openSubstrateFromYouTube(this, prefillUrl);
+    return this.guardedRun("Substrate from YouTube", () => openSubstrateFromYouTube(this, prefillUrl));
+  }
+
+  async runYouTubeConceptIngest(prefillUrl = ""): Promise<void> {
+    return this.guardedRun("YouTube concept extraction", () => runYouTubeConceptIngest(this, prefillUrl));
   }
 
   /**
@@ -2116,7 +2151,7 @@ export default class AntinomiaPlugin extends Plugin {
   elevateModalOpen = false;
 
   async openElevateModal(file: TFile): Promise<void> {
-    return openElevateModal(this, file);
+    return this.guardedRun("Elevate", () => openElevateModal(this, file));
   }
 
   /**
@@ -2139,7 +2174,7 @@ export default class AntinomiaPlugin extends Plugin {
   }
 
   async openMapPresupposti(file: TFile): Promise<void> {
-    return openMapPresupposti(this, file);
+    return this.guardedRun("Map presuppositions", () => openMapPresupposti(this, file));
   }
 
   /**
@@ -2231,11 +2266,11 @@ export default class AntinomiaPlugin extends Plugin {
    * Heavy AI call (taskClass deep). Stop button works via withLoadingButton.
    */
   async openSubstrateFromPDF(): Promise<void> {
-    return openSubstrateFromPDF(this);
+    return this.guardedRun("Substrate from PDF", () => openSubstrateFromPDF(this));
   }
 
   async runPdfIngest(pdf: TFile): Promise<void> {
-    return runPdfIngest(this, pdf);
+    return this.guardedRun("PDF ingest", () => runPdfIngest(this, pdf));
   }
 
   openFreeInputModal(): void {
@@ -2668,7 +2703,7 @@ export default class AntinomiaPlugin extends Plugin {
   }
 
   async proposeTitleAI(file: TFile): Promise<void> {
-    return proposeTitleAI(this, file);
+    return this.guardedRun("Propose title", () => proposeTitleAI(this, file));
   }
 
   /**

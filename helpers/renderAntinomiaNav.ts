@@ -10,7 +10,6 @@ import { NewSubstrateModal } from "../modals/NewSubstrateModal";
 import { NewTensionModal } from "../modals/NewTensionModal";
 import { NotePickerModal } from "../modals/NotePickerModal";
 import { TutorialModal } from "../modals/TutorialModal";
-import { runYouTubeConceptIngest } from "../flows/youtubeFetch";
 import { WelcomeModal } from "../modals/WelcomeModal";
 
 export function renderAntinomiaNav(
@@ -196,7 +195,7 @@ export function renderAntinomiaNav(
     );
     m.addItem((i) =>
       i.setTitle("Substrate from YouTube — extract concepts (AI)").setIcon("sparkles")
-        .onClick(() => void runYouTubeConceptIngest(plugin))
+        .onClick(() => void plugin.runYouTubeConceptIngest())
     );
   });
 
