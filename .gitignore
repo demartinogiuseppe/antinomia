@@ -89,3 +89,22 @@ docs/AntinomiaTest-NewUser/
 
 # Script di cleanup repo (one-shot, locale)
 docs/cleanup-repo-publish.ps1
+
+# === ROUND 2 cleanup 2026-06-16 — stale/off-topic docs + Substack newsletter brand ===
+# La cartella docs/ resta vuota dopo questo (Git non traccia cartelle vuote).
+
+# Doc stale che duplicano file authoritative al root (CHANGELOG.md, README.md)
+docs/CHANGELOG-plugin.md
+docs/PLUGIN-DEV-README.md
+docs/ROADMAP.md
+
+# Off-topic per plugin (skill llm-council di Karpathy, non Antinomia)
+docs/SKILL.md
+
+# Substack post drafts (i post veri sono su giuseppedemartino.substack.com)
+docs/substack-post-3-the-plugin.md
+docs/substack-post-antinomia-is-live.md
+
+# Branding Substack newsletter "The Deeper Layer" — asset NON plugin
+# (3 SVG profile picture + preview HTML descrizione concettuale)
+branding/
