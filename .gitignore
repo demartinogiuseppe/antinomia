@@ -60,3 +60,32 @@ reorganize-*.ps1
 # Artefatti di release (vanno solo su GitHub Release, non nel repo)
 releases/
 release-temp/
+
+# === INTERNAL — NEVER PUBLISH ===
+# Strategic docs / drafts / planning material. Mai pubblicare nel repo.
+# Regola permanente decisa 2026-06-13: pubblicare solo lo stretto necessario.
+
+# Claude Code brief (interni dev)
+docs/claude-code-brief-*.md
+
+# Reddit strategy material
+docs/reddit-warmup-templates.md
+docs/reddit-post-stop-translating.md
+docs/reddit-*.md
+
+# Substack drafts e strategy interno (i post pubblicati restano: substack-post-3-the-plugin.md, substack-post-antinomia-is-live.md)
+docs/substack-archetypes.md
+docs/substack-post-from-note.md
+docs/substack-profile-image-prompts.md
+
+# Temp / planning interni
+docs/_commit_msg.txt
+docs/BUGS-*.md
+docs/REFACTOR-PLAN-*.md
+docs/lint-baseline.md
+
+# Test vault interno
+docs/AntinomiaTest-NewUser/
+
+# Script di cleanup repo (one-shot, locale)
+docs/cleanup-repo-publish.ps1
