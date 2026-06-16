@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.7.7 (June 16, 2026) — Resilience boundary on critical flows
+
+### Resilience
+- Wrapped the user-triggered fire-and-forget flows in a single `guardedRun` boundary — Hunter, example-notes create/delete, clipboard / PDF / YouTube substrate, YouTube concept extraction, elevate, presupposition map, AI title proposal. A flow launched as `void plugin.x()` that threw used to fail as a silent unhandled rejection (the same failure mode as the v1.7.6 dismiss bug); it now surfaces a Notice + console error.
+- The boundary deliberately stays out of the way: user-initiated stops (`AbortError`) are silent, and errors already reported upstream (API key, backend unreachable, Front Matter Title) are logged without a duplicate Notice.
+
+### No user-visible runtime changes — unless an error occurs, which is now reported instead of swallowed.
+
+> Note: the planned "False positives" navigation entry was already present (Hunter ▾ submenu → "False positives"), so no nav change was needed this release.
+
 ## v1.7.6 (June 15, 2026) — Fix: "Mark as false positive" button threw
 
 ### Fixed
