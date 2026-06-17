@@ -188,7 +188,7 @@ export function extractJson<T>(raw: string): T | null {
               try {
                 const normalized = slice
                   .replace(/'([^'\\]*(?:\\.[^'\\]*)*)'(\s*[:,}\]])/g, '"$1"$2')
-                  .replace(/([:,\[]\s*)'([^'\\]*(?:\\.[^'\\]*)*)'/g, '$1"$2"')
+                  .replace(/([:,[]\s*)'([^'\\]*(?:\\.[^'\\]*)*)'/g, '$1"$2"')
                   .replace(/,(\s*[}\]])/g, "$1");
                 const parsed2 = JSON.parse(normalized) as unknown;
                 if (parsed2 && typeof parsed2 === "object") return parsed2 as T;

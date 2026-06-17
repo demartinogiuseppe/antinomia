@@ -1,14 +1,25 @@
 // Antinomia — small, dependency-light utility helpers.
 // Extracted from main.ts (refactor v1.5). No Antinomia-internal imports.
 
-import { App, moment } from "obsidian";
+import { App } from "obsidian";
 
 export function todayISO(): string {
-  return moment().format("YYYY-MM-DD");
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 export function timestampId(): string {
-  return moment().format("YYYYMMDD-HHmmss");
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const h = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  const s = String(d.getSeconds()).padStart(2, "0");
+  return `${y}${m}${day}-${h}${min}${s}`;
 }
 
 export async function ensureFolder(app: App, path: string): Promise<void> {
