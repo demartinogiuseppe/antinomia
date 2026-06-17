@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.7.8 (June 16, 2026) — Residual store-warning cleanup
+
+Internal type/API/dependency tidy-up. No user-visible runtime changes.
+
+- `core/utils.ts`: `todayISO()` / `timestampId()` now use native `Date` instead of Obsidian's `moment` re-export — clears 6 unsafe-any warnings caused by `moment`'s unresolvable type. Local time, identical output.
+- Replaced the 2 remaining `window.confirm()` calls with `ConfirmModal` (clipboard YouTube-URL prompt, long-PDF truncation prompt). Added a backward-compatible promise helper `ConfirmModal.confirm()` so the flows stay linear.
+- Replaced deprecated `setWarning()` with `setDestructive()` (5 sites).
+- Removed an unnecessary regex escape in `parseResponse`.
+- Dependencies: dropped `builtin-modules` (esbuild now uses Node's native `node:module` builtins) and `js-yaml` (test-only; swapped to `yaml`). Shipped `main.js` unaffected.
+
+Not changed this release: the deprecated `display()` settings API is kept — its replacement (`getSettingDefinitions`) requires Obsidian 1.13.0, and `minAppVersion` is 1.7.2; Obsidian officially supports `display()` as the fallback for older versions. The two privacy disclosures (vault enumeration, clipboard access) are intrinsic to the Hunter and clipboard-substrate features.
+
+### No user-visible runtime changes.
+
 ## v1.7.7 (June 16, 2026) — Resilience boundary on critical flows
 
 ### Resilience
