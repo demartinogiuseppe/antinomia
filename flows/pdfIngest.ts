@@ -15,6 +15,7 @@ import { buildFrictionPayload, parseFrictionFields, withFrictionSuffix, type Fri
 import { PdfAnalyzingModal } from "../modals/PdfAnalyzingModal";
 import { ConceptsPreviewModal } from "../modals/ConceptsPreviewModal";
 import { PdfSourcePickerModal } from "../modals/PdfSourcePickerModal";
+import { ConfirmModal } from "../modals/ConfirmModal";
 
 export async function extractConceptsFromPdfText(plugin: AntinomiaPlugin,
     text: string,
@@ -384,11 +385,14 @@ export async function runPdfIngest(plugin: AntinomiaPlugin, pdf: TFile): Promise
     }
 
     if (extracted.truncated) {
-      const proceed = window.confirm(
+      const proceed = await ConfirmModal.confirm(
+        plugin.app,
+        "PDF is long",
         `The PDF is longer than ${PDF_TEXT_HARD_CAP_CHARS.toLocaleString()} characters.\n\n` +
           `Only the first ${PDF_TEXT_HARD_CAP_CHARS.toLocaleString()} chars will be analyzed; the rest will be skipped.\n\n` +
           `Chunking support (full coverage) is planned for v1.5.\n\n` +
-          `OK = proceed with truncated text.\nCancel = abort.`
+          `Confirm = proceed with truncated text.\nCancel = abort.`,
+        "Proceed"
       );
       if (!proceed) return;
     }

@@ -54,8 +54,11 @@ export async function openFreeInputFromClipboard(plugin: AntinomiaPlugin): Promi
     // offer to fetch the transcript directly into a substrate.
     const ytId = extractYouTubeId(clip.trim());
     if (ytId && clip.trim().length < 200) {
-      const proceed = window.confirm(
-        "The clipboard looks like a YouTube URL. Download the transcript and create a pre-filled substrate?\n\nOK = download transcript.\nCancel = continue with free input (AI classifies)."
+      const proceed = await ConfirmModal.confirm(
+        plugin.app,
+        "YouTube URL detected",
+        "The clipboard looks like a YouTube URL. Download the transcript and create a pre-filled substrate?\n\nConfirm = download transcript.\nCancel = continue with free input (AI classifies).",
+        "Download transcript"
       );
       if (proceed) {
         await plugin.openSubstrateFromYouTube(clip.trim());
