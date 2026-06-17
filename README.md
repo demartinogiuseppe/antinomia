@@ -15,7 +15,7 @@
 [![Obsidian Store](https://img.shields.io/badge/Obsidian-Community%20Store-7c3aed?logo=obsidian&logoColor=white)](obsidian://show-plugin?id=antinomia)
 [![tests](https://github.com/demartinogiuseppe/antinomia/actions/workflows/test.yml/badge.svg)](https://github.com/demartinogiuseppe/antinomia/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.6.5-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.7.8-blue)](CHANGELOG.md)
 [![Obsidian](https://img.shields.io/badge/Obsidian-1.7.2%2B-7c3aed)](https://obsidian.md)
 [![Paper DOI](https://img.shields.io/badge/Paper%20DOI-10.5281%2Fzenodo.20369124-blue)](https://doi.org/10.5281/zenodo.20369124)
 [![Software DOI](https://img.shields.io/badge/Software%20DOI-10.5281%2Fzenodo.20506815-blue)](https://doi.org/10.5281/zenodo.20506815)
@@ -25,25 +25,26 @@
 
 ---
 
-## ✅ Status: v1.6.5 — on the Obsidian Community Store
+## ✅ Status: v1.7.8 — on the Obsidian Community Store (desktop + mobile)
 
-Antinomia is **available on the Obsidian Community Store** (and also installable via BRAT). Features are stable, but a few edge-case flows (e.g., duplicate Elevate modal in certain conditions) are under observation. Please open an issue if you find anything odd.
+Antinomia is **available on the Obsidian Community Store** (and also installable via BRAT), on **both desktop and mobile**. Features are stable. Please open an issue if you find anything odd.
 
 **Antinomia is not a decision-support system.** The pairs the Contradiction Hunter proposes are prompts for thinking, **not truths on which to base real decisions** (work, health, finance, relationships). AI models can hallucinate, oversimplify, misinterpret. Use Antinomia as a reflective practice.
 
 ---
 
-## The 5 layers
+## The 6 layers
 
-Every Antinomia note has a frontmatter field `antinomia_type` that places it in one of five layers:
+Every Antinomia note has a frontmatter field `antinomia_type` that places it in one of six layers:
 
 | Type | What it is | Key fields |
 |---|---|---|
 | `tension` | A contradiction between two positions A and B | `status`, `links` |
-| `substrate` | Raw material (quotes, facts, observations) | `source`, `original_language` |
-| `principle` | An operational IF/THEN rule derived from a tension | `origin_tension` |
+| `substrate` | Raw material (quotes, facts, observations) | `source`, `base_language` |
+| `principle` | An operational IF/THEN rule derived from a tension | `origin_tension`, `if_clause`, `then_clause`, `grey_zone`, `presuppositions` |
 | `defeated` | A defeated belief (historical memory) | `motive`, `replaced_by` |
-| `meta_note` | Reflection on using the system | `date` |
+| `meta_note` | Reflection on using the system | `creation_date` |
+| `presupposition` | An implicit assumption a principle silently rests on (mapped via the "Map presuppositions" command) | `presupposes_of` |
 
 **Design invariant:** the layer of a note lives exclusively in its frontmatter. Files never move between folders when a layer changes.
 
@@ -55,10 +56,10 @@ Every Antinomia note has a frontmatter field `antinomia_type` that places it in 
 - **Layer transitions** (Eleva, Risolvi, Archivia) happen via frontmatter — files never move.
 - **Contradiction Hunter (AI)**: scans open tensions and substrates, identifies contradictory pairs with a confidence rating. Constraint: it identifies, it does not resolve.
 - **Antinomia Graph View** (Cytoscape.js + fcose) with per-layer clusters, smooth zoom animations, 6 theme presets.
+- **Presupposition mapping (AI)**: for each principle, identify the implicit assumptions it rests on — these become first-class notes you can challenge.
 - **Multi-backend AI**: Anthropic Cloud, OpenAI, Groq, OpenRouter, LM Studio local, Ollama local. Multiple profiles with a Hunter-specific override.
+- **Mobile support**: works on Obsidian mobile (desktop + mobile). For local LLMs from mobile, use bridge networking — see [Using local LLMs from mobile](#using-local-llms-from-mobile) below.
 - **Complete onboarding**: Welcome modal, 7-card tutorial, 21-note example vault (with KEY note for measuring the Hunter), getting-started checklist.
-
-See [plugin/README.md](plugin/README.md) for the full command reference (Italian).
 
 ---
 
@@ -120,7 +121,7 @@ Antinomia makes **no autonomous network requests** and contains **no telemetry, 
 
 - **The network is used only when you explicitly invoke an AI feature** (Contradiction Hunter, propose title, propose IF/THEN, map presuppositions, classify, free-form input, PDF / YouTube concept extraction). Each such action sends a single request to the **AI backend you configured**, and nowhere else.
 - **Cloud backends** (Anthropic, OpenAI, Groq, OpenRouter): when you run an AI feature, the content of the notes involved in that action (the text the feature needs) is sent to that provider for processing, subject to the provider's own terms and privacy policy. Choose your provider accordingly.
-- **Local backends** (LM Studio, Ollama): requests go only to `localhost` — **nothing leaves your machine**. This is the privacy-preserving option.
+- **Local backends** (LM Studio, Ollama): requests go to your local AI server — by default `localhost`, but Antinomia also recognizes bridge addresses (Tailscale `*.ts.net`, LAN IPs `10.*` / `192.168.*` / `172.16-31.*`, and `.local` / `.lan` / `.home` / `.internal` TLDs) as "local" — i.e., privacy-equivalent to localhost. **Nothing leaves your devices.** This is the privacy-preserving option. See [Using local LLMs from mobile](#using-local-llms-from-mobile) for setup.
 - **YouTube transcript fetch** additionally contacts YouTube's public `timedtext` endpoint to download captions for a video URL you provide; if that fails it offers an opt-in paste fallback. No video data is sent anywhere else.
 - **API keys are stored locally** in your vault's `.obsidian/plugins/antinomia/data.json` (Obsidian's standard plugin-settings file), in plain text. If you sync your vault (Obsidian Sync, iCloud, Git, Dropbox, …), that file — and your keys — travels with it. Keep it out of public repositories and shared folders.
 
@@ -168,7 +169,7 @@ Cloudflare proxies the traffic. For long-term use, configure an Argo Tunnel with
 
 ### Why this matters
 
-These setups let you run **fully private AI** from your phone — your notes go to your desktop's local model, never to a cloud provider. Antinomia treats Tailscale / LAN / Cloudflare addresses as `Local backend` in the UI (Privacy notices reflect this).
+These setups let you run AI on your **own machine** from your phone — your notes go to your desktop's local model, never to a cloud AI provider. Antinomia treats Tailscale and private LAN / internal addresses as `Local backend` in the UI (privacy notices reflect this). A Cloudflare Tunnel (Option 3) reaches your local model too, but its traffic is proxied through Cloudflare's network, so Antinomia does not classify those public URLs as local.
 
 ---
 
@@ -190,7 +191,7 @@ If you use Antinomia in academic or research contexts, please cite both:
 
 **The software** (this plugin):
 
-> De Martino, G. (2026). *Antinomia: an Obsidian plugin for Personal Tension Management* (version 1.2.6) [Software]. Zenodo. https://doi.org/10.5281/zenodo.20506815
+> De Martino, G. (2026). *Antinomia: an Obsidian plugin for Personal Tension Management* [Software]. Zenodo. https://doi.org/10.5281/zenodo.20506815
 
 This is a *concept DOI* — it always resolves to the latest archived version. See [CITATION.cff](CITATION.cff) for the structured format.
 
