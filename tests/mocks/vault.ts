@@ -4,7 +4,7 @@
 // modify, create, getAbstractFileByPath, adapter (mkdir/exists/write/read/list),
 // metadataCache.getFileCache, fileManager.processFrontMatter.
 
-import * as yaml from "js-yaml";
+import { parse, stringify } from "yaml";
 import { TFile } from "obsidian";
 
 function parentOf(path: string): string {
@@ -16,7 +16,7 @@ function readFm(content: string): Record<string, unknown> | undefined {
   const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!m) return undefined;
   try {
-    const parsed = yaml.load(m[1]);
+    const parsed = parse(m[1]);
     return parsed && typeof parsed === "object"
       ? (parsed as Record<string, unknown>)
       : undefined;
@@ -107,11 +107,11 @@ export function makeMockApp(initial: Record<string, string>) {
       const content = contents.get(file.path) ?? "";
       const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
       const fm: Record<string, unknown> = m
-        ? ((yaml.load(m[1]) as Record<string, unknown>) ?? {})
+        ? ((parse(m[1]) as Record<string, unknown>) ?? {})
         : {};
       const body = m ? content.slice(m[0].length) : content;
       fn(fm);
-      const dumped = yaml.dump(fm).trimEnd();
+      const dumped = stringify(fm).trimEnd();
       contents.set(file.path, `---\n${dumped}\n---\n${body}`);
     },
   };

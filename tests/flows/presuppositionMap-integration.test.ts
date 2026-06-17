@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import * as yaml from "js-yaml";
+import { parse } from "yaml";
 import { makeMockApp } from "../mocks/vault";
 import {
   applyPresuppositionDecisions,
@@ -10,7 +10,7 @@ import {
 
 function fmOf(content: string): Record<string, unknown> {
   const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  return m ? ((yaml.load(m[1]) as Record<string, unknown>) ?? {}) : {};
+  return m ? ((parse(m[1]) as Record<string, unknown>) ?? {}) : {};
 }
 
 function makeMockPlugin(initial: Record<string, string>) {

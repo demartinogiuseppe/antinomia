@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
-import * as yaml from "js-yaml";
+import { parse } from "yaml";
 import { makeMockApp } from "../mocks/vault";
 import {
   migrateVault,
@@ -22,7 +22,7 @@ function loadFixtureVault(): Record<string, string> {
 
 function fmOf(content: string): Record<string, unknown> {
   const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  return m ? ((yaml.load(m[1]) as Record<string, unknown>) ?? {}) : {};
+  return m ? ((parse(m[1]) as Record<string, unknown>) ?? {}) : {};
 }
 
 // Migration logs to console.error on the (intentional) malformed fixture path

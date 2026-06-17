@@ -2,7 +2,7 @@ import esbuild from "esbuild";
 import { promises as fs } from "fs";
 import fsSync from "fs";
 import path from "path";
-import builtins from "builtin-modules";
+import { builtinModules as builtins } from "node:module";
 
 // Output va direttamente nel TestVault cosi al rebuild Obsidian vede subito il file aggiornato.
 // Path relativo dalla root del repo: TestVault/.obsidian/plugins/antinomia/
