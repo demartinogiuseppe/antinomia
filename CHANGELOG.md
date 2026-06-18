@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.7.9 (June 18, 2026) — Hotfix: restore store availability
+
+### Fixed
+- **Critical:** v1.7.8 used `ButtonComponent.setDestructive()`, which is newer than the declared `minAppVersion` (1.7.2). The community store's automated check flagged it as an unsupported-API error and the plugin disappeared from the public store. Reverted to `setWarning()` (deprecated but compatible with 1.7.2) on 5 sites:
+  - `main.ts` Delete examples button
+  - `main.ts` Reset onboarding button
+  - `modals/AIProgressModal.ts` Stop button
+  - `modals/CollapseImpactModal.ts` Mark as undermined button
+  - `modals/PdfAnalyzingModal.ts` Stop button
+
+### Note
+- `setWarning()` remains a soft Recommendation (deprecated) in the store scorecard — the same state as v1.7.7, the last version that passed the store check. Moving to `setDestructive()` properly would require bumping `minAppVersion`; deferred to keep Obsidian 1.7.2–1.12.x users supported.
+
 ## v1.7.8 (June 16, 2026) — Residual store-warning cleanup
 
 Internal type/API/dependency tidy-up. No user-visible runtime changes.

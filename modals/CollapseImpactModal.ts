@@ -62,7 +62,7 @@ export class CollapseImpactModal extends Modal {
       .addButton((b) =>
         b
           .setButtonText("Mark this presupposition as undermined")
-          .setDestructive()
+          .setWarning()
           .onClick(async () => {
             this.close();
             await this.onUndermine();

@@ -814,7 +814,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
       .addButton((b) =>
         b
           .setButtonText("Delete examples")
-          .setDestructive()
+          .setWarning()
           .onClick(() => {
             const count = this.app.vault.getMarkdownFiles().filter((f) => {
               const fm = readFrontmatter(this.app, f);
@@ -842,7 +842,7 @@ class AntinomiaSettingTab extends PluginSettingTab {
       .addButton((b) =>
         b
           .setButtonText("Reset")
-          .setDestructive()
+          .setWarning()
           .onClick(async () => {
             this.plugin.settings.onboardingCompleted = false;
             await this.plugin.saveSettings();

@@ -51,7 +51,7 @@ export class PdfAnalyzingModal extends Modal {
     new Setting(contentEl).addButton((b) =>
       b
         .setButtonText("⛔ Stop")
-        .setDestructive()
+        .setWarning()
         .onClick(() => {
           this.controller.abort();
           if (this.elapsedEl) this.elapsedEl.setText("Aborting…");
